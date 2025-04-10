@@ -25,7 +25,7 @@ export function StockNews({ props: symbol }: { props: string }) {
         "width": "100%",
         "height": "100%",
         "colorTheme": "light",
-        "locale": "zh_TW"
+        "locale": "en"
         }`
 
     container.current.appendChild(script)

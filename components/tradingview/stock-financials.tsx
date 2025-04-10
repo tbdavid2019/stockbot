@@ -25,7 +25,7 @@ export function StockFinancials({ props: symbol }: { props: string }) {
         "height": "100%",
         "colorTheme": "light",
         "symbol": "${formattedSymbol}",
-        "locale": "zh_TW"
+        "locale": "en"
       }`
 
     container.current.appendChild(script)

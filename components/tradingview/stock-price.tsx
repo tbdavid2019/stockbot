@@ -26,7 +26,7 @@ export function StockPrice({ props: symbol }: { props: string }) {
         "chartOnly": false,
         "width": "100%",
         "height": "100%",
-        "locale": "zh_TW",
+        "locale": "en",
         "colorTheme": "light",
         "autosize": true,
         "showVolume": false,

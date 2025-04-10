@@ -77,9 +77,7 @@ pnpm dev
 
 Your app should now be running on [localhost:3000](http://localhost:3000/).
 
-## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) to see the latest changes and versions. Major versions are archived.
 
 ## Credits
 
