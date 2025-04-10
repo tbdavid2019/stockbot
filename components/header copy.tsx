@@ -16,6 +16,8 @@ async function UserOrLogin() {
   return (
     <>
       <Link href="https://wow.groq.com/groq-labs/" rel="nofollow">
+        {/* <IconGroq className="size-6 mr-2 dark:hidden" />
+          <IconGroq className="hidden size-6 mr-2 dark:block" /> */}
         <Image
           src="/groqlabs-logo-black.png"
           alt="GroqLabs Logo"
@@ -49,30 +51,17 @@ export function Header() {
           <UserOrLogin />
         </React.Suspense>
       </div>
-      <div className="flex flex-col items-end justify-end space-y-1 text-xs text-right">
-        <div className="text-[10px] text-orange-600 leading-snug">
-          本機器人沒有提供投資建議，若需要投資建議請用{' '}
-          <a
-            href="https://t.me/oli_billion_bot"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-orange-700"
-          >
-            https://t.me/oli_billion_bot
-          </a>
-        </div>
-        <div className="flex items-center justify-end space-x-2">
-          <a
-            target="_blank"
-            href="https://github.com/tbdavid2019/stockbot"
-            rel="noopener noreferrer"
-            className={cn(buttonVariants({ variant: 'outline' }))}
-            style={{ borderRadius: 0 }}
-          >
-            <IconGitHub />
-            <span className="hidden ml-2 md:flex">GitHub</span>
-          </a>
-        </div>
+      <div className="flex items-center justify-end space-x-2">
+        <a
+          target="_blank"
+          href="https://github.com/tbdavid2019/stockbot"
+          rel="noopener noreferrer"
+          className={cn(buttonVariants({ variant: 'outline' }))}
+          style={{ borderRadius: 0 }}
+        >
+          <IconGitHub />
+          <span className="hidden ml-2 md:flex">GitHub</span>
+        </a>
       </div>
     </header>
   )
