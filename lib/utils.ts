@@ -112,15 +112,25 @@ export const getMessageFromCode = (resultCode: string) => {
 //   return symbol;
 // }
 export function formatStockSymbol(symbol: string): string {
-  // 1. 數字股票代碼預設為 TWSE:
-  if (/^\d{4,}$/.test(symbol)) {
-    return `TWSE:${symbol}`;
+  // 去除空白並轉為大寫（便於處理 .tw / .TW）
+  const trimmed = symbol.trim().toUpperCase();
+
+  // 如果是純數字或以 .TW 結尾，就強制用 TWSE 前綴
+  const match = trimmed.match(/^(\d{4,})(\.TW)?$/);
+  if (match) {
+    return `TWSE:${match[1]}`;
   }
 
-  // 2. 若已含 TWSE: 或 TPE:，直接回傳，不處理 %3A
-  if (symbol.startsWith('TWSE:') || symbol.startsWith('TPE:')) {
-    return symbol;
+  // 如果是 TPE: 開頭也轉為 TWSE:
+  if (trimmed.startsWith('TPE:')) {
+    return trimmed.replace('TPE:', 'TWSE:');
   }
 
-  return symbol;
+  // 如果已經是 TWSE: 就直接用
+  if (trimmed.startsWith('TWSE:')) {
+    return trimmed;
+  }
+
+  // 其他情況回傳原值（例如 NYSE:MSFT）
+  return trimmed;
 }
