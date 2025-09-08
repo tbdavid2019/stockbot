@@ -42,8 +42,8 @@ interface MutableAIState {
   get: () => AIState
 }
 
-const MODEL = 'llama3-70b-8192'
-const TOOL_MODEL = 'llama3-70b-8192'
+const MODEL = process.env.MODEL || 'openai/gpt-oss-120b'
+const TOOL_MODEL = process.env.TOOL_MODEL || 'openai/gpt-oss-120b'
 const GROQ_API_KEY_ENV = process.env.GROQ_API_KEY
 
 type ComparisonSymbolObject = {
