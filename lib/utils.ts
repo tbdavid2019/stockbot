@@ -131,6 +131,29 @@ export function formatStockSymbol(symbol: string): string {
     return trimmed;
   }
 
-  // 其他情況回傳原值（例如 NYSE:MSFT）
+  // 如果已經包含交易所前綴（如 NASDAQ:、NYSE: 等），直接返回
+  if (trimmed.includes(':')) {
+    return trimmed;
+  }
+
+  // 常見美股符號處理 - 添加適當的交易所前綴
+  const nasdaqStocks = ['TSLA', 'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NFLX', 'NVDA', 'AMD', 'INTC', 'PYPL', 'ADBE', 'CRM', 'ORCL'];
+  const nyseStocks = ['BRK.A', 'BRK.B', 'JPM', 'JNJ', 'V', 'WMT', 'PG', 'MA', 'UNH', 'HD', 'DIS', 'BAC', 'XOM', 'CVX', 'KO'];
+  
+  if (nasdaqStocks.includes(trimmed)) {
+    return `NASDAQ:${trimmed}`;
+  }
+  
+  if (nyseStocks.includes(trimmed)) {
+    return `NYSE:${trimmed}`;
+  }
+
+  // 如果沒有匹配到特定交易所，對於美股符號默認使用 NASDAQ
+  // 這樣可以涵蓋大多數科技股和新興公司
+  if (/^[A-Z]{1,5}$/.test(trimmed)) {
+    return `NASDAQ:${trimmed}`;
+  }
+
+  // 其他情況回傳原值
   return trimmed;
 }
