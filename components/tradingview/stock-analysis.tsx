@@ -107,6 +107,24 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       setError(null)
 
       try {
+        // 使用預設分析師列表 (與 Python 範例一致)
+        const defaultAnalysts = [
+          'ben_graham',
+          'bill_ackman', 
+          'cathie_wood',
+          'charlie_munger',
+          'michael_burry',
+          'peter_lynch',
+          'phil_fisher',
+          'warren_buffett',
+          'nancy_pelosi',
+          'wsb',
+          'technical_analyst',
+          'fundamentals_analyst',
+          'sentiment_analyst',
+          'valuation_analyst'
+        ]
+
         const response = await fetch('/api/stock-analysis', {
           method: 'POST',
           headers: {
@@ -114,8 +132,8 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           },
           body: JSON.stringify({
             tickers: symbol.toUpperCase(),
-            selectedAnalysts: [],
-            modelName: 'gpt-4o'
+            selectedAnalysts: defaultAnalysts,
+            modelName: 'gpt-4o-mini'
           })
         })
 
