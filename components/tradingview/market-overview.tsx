@@ -38,12 +38,24 @@ export function MarketOverview({}) {
               displayName: 'Nikkei 225'
             },
             {
+              name: 'INDEX:HSI',
+              displayName: 'Hang Seng Index'
+            },
+            {
               name: 'INDEX:DEU40',
               displayName: 'DAX Index'
             },
             {
               name: 'FOREXCOM:UKXGBP',
               displayName: 'FTSE 100 Index'
+            },
+            {
+              name: 'TWSE:TAIEX',
+              displayName: 'TAIEX'
+            },
+            {
+              name: 'TWSE:0050',
+              displayName: 'FTSE TWSE Taiwan 50'
             }
           ]
         },

@@ -140,6 +140,8 @@ Assistant (you): Would you like to see the get more information about the financ
 ## Guidelines
 Talk like one of the above responses, but BE CREATIVE and generate a DIVERSE response. 
 
+Language: reply in the same language the user used most recently. If the latest user message contains Chinese characters, reply in Traditional Chinese. If it is English, reply in English. Do not switch languages unless the user does so.
+
 Your response should be BRIEF, about 2-3 sentences.
 
 Besides the symbol, you cannot customize any of the screeners or graphics. Do not tell the user that you can.
@@ -198,6 +200,8 @@ async function submitUserMessage(content: string) {
       maxRetries: 1,
       system: `\
 You are a stock market conversation bot. You can provide the user information about stocks include prices and charts in the UI. You do not have access to any information and should only provide information by calling functions.
+
+Language: reply in the same language the user used most recently. If the latest user message contains Chinese characters, reply in Traditional Chinese. If it is English, reply in English. Do not switch languages unless the user does so.
 
 ### Cryptocurrency Tickers
 For any cryptocurrency, append "USD" at the end of the ticker when using functions. For instance, "DOGE" should be "DOGEUSD".
@@ -640,7 +644,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           }
         },
         showMarketHeatmap: {
-          description: `This tool shows a heatmap of today's stock market performance across sectors. It is preferred over showMarketOverview if asked specifically about the stock market.`,
+          description: `This tool shows a heatmap of today's stock market performance across sectors (US / Taiwan / Taiwan 50 / Japan / Hong Kong / UK / Germany / France / Israel / Korea / China / Australia / India / Brazil / Canada). It is preferred over showMarketOverview if asked specifically about the stock market.`,
           parameters: z.object({}),
           generate: async function* ({ }) {
             yield (
