@@ -18,32 +18,32 @@ const MARKET_PRESETS: MarketPreset[] = [
   },
   {
     id: 'tw',
-    label: '台灣 (全市場)',
-    dataSource: 'AllTW',
+    label: '台灣 (TPEX)',
+    dataSource: 'TPEX',
     locale: 'zh_TW'
   },
   {
     id: 'jp',
-    label: '日本 (全市場)',
-    dataSource: 'AllJP',
+    label: '日本 (TOCOM)',
+    dataSource: 'TOCOM',
     locale: 'ja'
   },
   {
     id: 'hk',
-    label: '香港 (全市場)',
-    dataSource: 'AllHK',
+    label: '香港 (HSI)',
+    dataSource: 'HSI',
     locale: 'zh_TW'
   },
   {
     id: 'tw50',
-    label: '台灣50 (FTSE TWSE Taiwan 50)',
+    label: '台灣50 (TW50)',
     dataSource: 'TW50',
     locale: 'zh_TW'
   },
   {
     id: 'uk',
-    label: '英國 (全市場)',
-    dataSource: 'AllGB',
+    label: '英國 (LSE)',
+    dataSource: 'LSE',
     locale: 'en'
   },
   {
@@ -54,8 +54,8 @@ const MARKET_PRESETS: MarketPreset[] = [
   },
   {
     id: 'fr',
-    label: '法國 (全市場)',
-    dataSource: 'AllFR',
+    label: '法國 (EURONEXT)',
+    dataSource: 'EURONEXT',
     locale: 'fr'
   },
   {
@@ -66,14 +66,20 @@ const MARKET_PRESETS: MarketPreset[] = [
   },
   {
     id: 'kr',
-    label: '韓國 (全市場)',
-    dataSource: 'AllKR',
+    label: '韓國 (KRX)',
+    dataSource: 'KRX',
     locale: 'ko'
   },
   {
     id: 'cn',
-    label: '中國 (全市場)',
-    dataSource: 'AllCN',
+    label: '中國 (SSE)',
+    dataSource: 'SSE',
+    locale: 'zh_CN'
+  },
+  {
+    id: 'cn_sz',
+    label: '中國 (SZSE)',
+    dataSource: 'SZSE',
     locale: 'zh_CN'
   },
   {
@@ -84,8 +90,8 @@ const MARKET_PRESETS: MarketPreset[] = [
   },
   {
     id: 'in',
-    label: '印度 (全市場)',
-    dataSource: 'AllIN',
+    label: '印度 (BSE)',
+    dataSource: 'BSE',
     locale: 'en'
   },
   {
