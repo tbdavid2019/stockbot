@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const AI_HEDGE_FUND_API_URL = process.env.AI_HEDGE_FUND_API_URL || 'http://46.51.245.98:6000'
+// API 設定 - 分開 host 和 port 避免解析問題
+const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || '46.51.245.98'
+const AI_HEDGE_FUND_PORT = process.env.AI_HEDGE_FUND_PORT || '6000'
 
 // 預設分析師列表 (參考 Python 範例)
 const DEFAULT_ANALYSTS = [
@@ -37,7 +39,11 @@ export async function POST(request: NextRequest) {
       ? selectedAnalysts 
       : DEFAULT_ANALYSTS
 
+    // 建構 URL
+    const apiUrl = new URL(`http://${AI_HEDGE_FUND_HOST}:${AI_HEDGE_FUND_PORT}/api/analysis`)
+    
     console.log('📊 Stock Analysis Request:', {
+      url: apiUrl.toString(),
       tickers: tickers.toUpperCase(),
       analysts: analysts,
       modelName
@@ -48,7 +54,7 @@ export async function POST(request: NextRequest) {
     const timeoutId = setTimeout(() => controller.abort(), 180000) // 180 秒超時
 
     try {
-      const response = await fetch(`${AI_HEDGE_FUND_API_URL}/api/analysis`, {
+      const response = await fetch(apiUrl.toString(), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

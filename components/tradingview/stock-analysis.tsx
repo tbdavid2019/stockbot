@@ -168,8 +168,25 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-        <div className="text-red-600">❌ {error}</div>
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 space-y-4">
+        <div className="text-amber-800">
+          <p className="font-semibold mb-2">⚠️ AI 分析服務暫時無法連線</p>
+          <p className="text-sm">目前 API 服務正在調整中，請移駕至以下連結使用 AI 投資分析：</p>
+        </div>
+        <a 
+          href="https://huggingface.co/spaces/tbdavid2019/ai-hedge-fund"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 text-white font-medium hover:from-yellow-500 hover:to-orange-600 transition-all"
+        >
+          🤗 前往 Hugging Face AI 投資分析
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        </a>
+        <p className="text-xs text-amber-600">
+          💡 提示：在 Hugging Face 頁面輸入股票代碼（如 {symbol}）並選擇分析師即可獲得專業 AI 投資建議
+        </p>
       </div>
     )
   }

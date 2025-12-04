@@ -39,11 +39,55 @@
 - ⚡ **Groq 驅動的性能**：利用 Groq 的尖端推理技術，實現近乎即時的響應和無縫用戶體驗
 - 🌐 **多資產市場覆蓋**：訪問股票、外匯、債券和加密貨幣的全面數據和分析
 - 🇹🇼 **台灣股票市場支持**：現已支援台灣股票市場查詢，包括台積電等台灣上市公司
+- 🤖 **AI 投資分析** (新功能)：整合 AI Hedge Fund API，提供傳奇投資大師（巴菲特、葛拉漢、乾克曼等）的專業投資建議
+
+## AI 投資分析功能
+
+StockBot 整合了 AI Hedge Fund API，可以模擬多位傳奇投資大師的投資風格，為您提供專業的股票分析建議。
+
+### 使用方式
+
+在聊天中直接詢問：
+- "TSLA 值得買嗎？"
+- "分析一下 NVDA"
+- "Should I buy AAPL?"
+
+### 分析師團隊
+
+| 類別 | 分析師 |
+|------|--------|
+| 📊 價值投資大師 | Ben Graham、Warren Buffett、Charlie Munger、Bill Ackman、Peter Lynch、Phil Fisher、Michael Burry |
+| 🚀 成長與創新 | Cathie Wood |
+| 📈 技術與情緒分析 | Technical Analyst、Sentiment Analyst、Nancy Pelosi、WSB |
+| 📐 基本面與估值 | Fundamentals Analyst、Valuation Analyst |
+
+### 目前狀態
+
+> ⚠️ **注意**：由於 Vercel Serverless Functions 對非標準 port (6000) 的連線有限制，目前 API 整合功能在 Vercel 部署環境中暫時無法使用。
+>
+> 🤗 **替代方案**：請移駕至 [AI Hedge Fund on Hugging Face](https://huggingface.co/spaces/tbdavid2019/ai-hedge-fund) 使用完整的 AI 投資分析功能。
+
+### 未來計畫
+
+待 API 服務調整為標準 port (80/443) 或設定 HTTPS 域名後，將可在 Vercel 環境中正常使用。屆時只需修改環境變數：
+
+```bash
+# .env.local
+AI_HEDGE_FUND_HOST=your-api-domain.com
+AI_HEDGE_FUND_PORT=443
+```
+
+### 相關檔案
+
+- `app/api/stock-analysis/route.ts` - API 代理路由
+- `components/tradingview/stock-analysis.tsx` - 分析結果顯示組件
+- `lib/chat/actions.tsx` - 聊天工具定義 (analyzeStockWithAI)
 
 ## Interfaces
 | Description | Widget |
 |-------------|--------|
-| **Heatmap of Daily Market Performance**<br>Visualize market trends at a glance with an interactive heatmap (now supports US / Taiwan / Taiwan 50 / Japan / Hong Kong / UK / Germany / France / Israel / Korea / China / Australia / India / Brazil / Canada). | ![Heatmap of Daily Market Performance](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e) |
+| **AI Investment Analysis** (NEW)<br>Get professional investment advice from legendary investors like Warren Buffett, Ben Graham, and more. Currently redirects to Hugging Face Space. | ![AI Investment Analysis](https://huggingface.co/spaces/tbdavid2019/ai-hedge-fund) |
+| **Heatmap of Daily Market Performance**<br>Visualize market trends at a glance with an interactive heatmap. Supported markets: US (S&P 500), Germany, Australia, Brazil, Canada, Israel. | ![Heatmap of Daily Market Performance](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e) |
 | **Breakdown of Financial Data for Stocks**<br>Get detailed financial metrics and key performance indicators for any stock. | ![Breakdown of Financial Data for Stocks](https://github.com/user-attachments/assets/c1c32dac-8295-4efb-ac1e-2eea8a89e7db) |
 | **Price History of Stock**<br>Track the historical price movement of stocks with customizable date ranges. | ![Price History of Stock](https://github.com/user-attachments/assets/f588068e-4d95-4188-96fd-866d355c993e) |
 | **Candlestick Stock Charts for Specific Assets**<br>Analyze price patterns and trends with detailed candlestick charts. | ![Candlestick Stock Charts for Specific Assets](https://github.com/user-attachments/assets/ce9ea4a8-a1fe-4ce7-be60-3f5d64d50ced) |
