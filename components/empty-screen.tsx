@@ -21,10 +21,7 @@ export function EmptyScreen() {
             <ExternalLink href="https://tradingview.com">
               , TradingView Widgets
             </ExternalLink>
-            , and powered by{' '}
-            <ExternalLink href="https://groq.com">
-              Llama3-70b on Groq
-            </ExternalLink>
+            , and powered by Groq
           </span>
         </p>
       </div>

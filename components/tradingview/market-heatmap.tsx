@@ -104,6 +104,7 @@ const MARKET_PRESETS: MarketPreset[] = [
 
 export function MarketHeatmap({}) {
   const container = useRef<HTMLDivElement>(null)
+  const widgetContainer = useRef<HTMLDivElement>(null)
   const [selectedMarketId, setSelectedMarketId] = useState<string>('us')
 
   const selectedMarket = useMemo(
@@ -112,14 +113,10 @@ export function MarketHeatmap({}) {
   )
 
   useEffect(() => {
-    if (!container.current || !selectedMarket) return
+    if (!container.current || !widgetContainer.current || !selectedMarket) return
 
-    const widgetContainer = container.current.querySelector<HTMLElement>(
-      '.tradingview-widget-container__widget'
-    )
-    if (widgetContainer) {
-      widgetContainer.innerHTML = ''
-    }
+    const target = widgetContainer.current
+    target.innerHTML = ''
 
     const script = document.createElement('script')
     script.src =
@@ -144,9 +141,10 @@ export function MarketHeatmap({}) {
       height: '100%'
     })
 
-    container.current.appendChild(script)
+    target.appendChild(script)
 
     return () => {
+      target.replaceChildren()
       script.remove()
     }
   }, [selectedMarket])
@@ -179,6 +177,7 @@ export function MarketHeatmap({}) {
       >
         <div
           className="tradingview-widget-container__widget"
+          ref={widgetContainer}
           style={{ height: 'calc(100% - 32px)', width: '100%' }}
         ></div>
         <div className="tradingview-widget-copyright">
