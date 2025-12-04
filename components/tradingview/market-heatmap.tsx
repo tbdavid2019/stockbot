@@ -32,7 +32,7 @@ const MARKET_PRESETS: MarketPreset[] = [
     id: 'hk',
     label: '香港 (全市場)',
     dataSource: 'AllHK',
-    locale: 'zh_HK'
+    locale: 'zh_TW'
   },
   {
     id: 'tw50',
@@ -43,7 +43,7 @@ const MARKET_PRESETS: MarketPreset[] = [
   {
     id: 'uk',
     label: '英國 (全市場)',
-    dataSource: 'AllUK',
+    dataSource: 'AllGB',
     locale: 'en'
   },
   {
@@ -84,8 +84,8 @@ const MARKET_PRESETS: MarketPreset[] = [
   },
   {
     id: 'in',
-    label: '印度 (Nifty 500)',
-    dataSource: 'CNX500',
+    label: '印度 (全市場)',
+    dataSource: 'AllIN',
     locale: 'en'
   },
   {
@@ -143,8 +143,8 @@ export function MarketHeatmap({}) {
       locale: selectedMarket.locale,
       symbolUrl: '',
       colorTheme: 'light',
-      hasTopBar: true,
-      isDataSetEnabled: true,
+      hasTopBar: false,
+      isDataSetEnabled: false,
       isZoomEnabled: true,
       hasSymbolTooltip: true,
       isMonoSize: false,
