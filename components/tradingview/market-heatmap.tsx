@@ -115,6 +115,7 @@ export function MarketHeatmap({}) {
   useEffect(() => {
     if (!container.current || !widgetContainer.current || !selectedMarket) return
 
+    const parent = container.current
     const target = widgetContainer.current
     target.innerHTML = ''
 
@@ -141,11 +142,11 @@ export function MarketHeatmap({}) {
       height: '100%'
     })
 
-    target.appendChild(script)
+    parent.appendChild(script)
 
     return () => {
-      target.replaceChildren()
       script.remove()
+      target.innerHTML = ''
     }
   }, [selectedMarket])
 
@@ -172,6 +173,7 @@ export function MarketHeatmap({}) {
 
       <div
         className="tradingview-widget-container"
+        key={selectedMarket.id}
         ref={container}
         style={{ height: '500px', width: '100%' }}
       >
