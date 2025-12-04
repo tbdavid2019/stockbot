@@ -84,8 +84,8 @@ const MARKET_PRESETS: MarketPreset[] = [
   },
   {
     id: 'in',
-    label: '印度 (全市場)',
-    dataSource: 'AllIN',
+    label: '印度 (Nifty 500)',
+    dataSource: 'CNX500',
     locale: 'en'
   },
   {
@@ -104,7 +104,6 @@ const MARKET_PRESETS: MarketPreset[] = [
 
 export function MarketHeatmap({}) {
   const container = useRef<HTMLDivElement>(null)
-  const widgetContainer = useRef<HTMLDivElement>(null)
   const [selectedMarketId, setSelectedMarketId] = useState<string>('us')
 
   const selectedMarket = useMemo(
@@ -113,11 +112,22 @@ export function MarketHeatmap({}) {
   )
 
   useEffect(() => {
-    if (!container.current || !widgetContainer.current || !selectedMarket) return
+    if (!container.current || !selectedMarket) return
 
     const parent = container.current
-    const target = widgetContainer.current
-    target.innerHTML = ''
+    parent.innerHTML = ''
+
+    const widget = document.createElement('div')
+    widget.className = 'tradingview-widget-container__widget'
+    widget.style.height = 'calc(100% - 32px)'
+    widget.style.width = '100%'
+    parent.appendChild(widget)
+
+    const copyright = document.createElement('div')
+    copyright.className = 'tradingview-widget-copyright'
+    copyright.innerHTML =
+      '<a href="https://www.tradingview.com/" rel="noopener nofollow" target="_blank"><span>Track all markets on TradingView</span></a>'
+    parent.appendChild(copyright)
 
     const script = document.createElement('script')
     script.src =
@@ -133,8 +143,7 @@ export function MarketHeatmap({}) {
       locale: selectedMarket.locale,
       symbolUrl: '',
       colorTheme: 'light',
-      hasTopBar: false,
-      // Allow non-default dataSource presets (e.g., AllJP, AllTW).
+      hasTopBar: true,
       isDataSetEnabled: true,
       isZoomEnabled: true,
       hasSymbolTooltip: true,
@@ -147,7 +156,7 @@ export function MarketHeatmap({}) {
 
     return () => {
       script.remove()
-      target.innerHTML = ''
+      parent.innerHTML = ''
     }
   }, [selectedMarket])
 
@@ -178,20 +187,6 @@ export function MarketHeatmap({}) {
         ref={container}
         style={{ height: '500px', width: '100%' }}
       >
-        <div
-          className="tradingview-widget-container__widget"
-          ref={widgetContainer}
-          style={{ height: 'calc(100% - 32px)', width: '100%' }}
-        ></div>
-        <div className="tradingview-widget-copyright">
-          <a
-            href="https://www.tradingview.com/"
-            rel="noopener nofollow"
-            target="_blank"
-          >
-            <span className="">Track all markets on TradingView</span>
-          </a>
-        </div>
       </div>
     </div>
   )
