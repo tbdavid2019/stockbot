@@ -134,7 +134,8 @@ export function MarketHeatmap({}) {
       symbolUrl: '',
       colorTheme: 'light',
       hasTopBar: false,
-      isDataSetEnabled: false,
+      // Allow non-default dataSource presets (e.g., AllJP, AllTW).
+      isDataSetEnabled: true,
       isZoomEnabled: true,
       hasSymbolTooltip: true,
       isMonoSize: false,
