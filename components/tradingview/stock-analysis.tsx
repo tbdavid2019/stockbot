@@ -28,7 +28,6 @@ interface AnalysisResult {
 
 interface StockAnalysisProps {
   symbol: string
-  analysts?: string[]
 }
 
 const ANALYST_DISPLAY_NAMES: { [key: string]: string } = {
@@ -97,7 +96,7 @@ const getActionText = (action: string) => {
   }
 }
 
-export function StockAnalysis({ symbol, analysts = [] }: StockAnalysisProps) {
+export function StockAnalysis({ symbol }: StockAnalysisProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<AnalysisResult | null>(null)
@@ -115,7 +114,7 @@ export function StockAnalysis({ symbol, analysts = [] }: StockAnalysisProps) {
           },
           body: JSON.stringify({
             tickers: symbol.toUpperCase(),
-            selectedAnalysts: analysts.length > 0 ? analysts : [],
+            selectedAnalysts: [],
             modelName: 'gpt-4o'
           })
         })
@@ -134,7 +133,7 @@ export function StockAnalysis({ symbol, analysts = [] }: StockAnalysisProps) {
     }
 
     fetchAnalysis()
-  }, [symbol, analysts])
+  }, [symbol])
 
   if (loading) {
     return (

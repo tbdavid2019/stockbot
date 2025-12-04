@@ -829,15 +829,9 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               .string()
               .describe(
                 'The stock symbol to analyze. e.g. TSLA, AAPL, NVDA, GOOGL.'
-              ),
-            analysts: z
-              .array(z.string())
-              .default([])
-              .describe(
-                'Optional list of specific analysts to use. e.g. ["warren_buffett", "ben_graham"]. Leave empty to use all analysts.'
               )
           }),
-          generate: async function* ({ symbol, analysts }) {
+          generate: async function* ({ symbol }) {
             yield (
               <BotCard>
                 <div className="flex items-center space-x-2 p-4">
@@ -861,7 +855,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       type: 'tool-call',
                       toolName: 'analyzeStockWithAI',
                       toolCallId,
-                      args: { symbol, analysts }
+                      args: { symbol }
                     }
                   ]
                 },
@@ -873,7 +867,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       type: 'tool-result',
                       toolName: 'analyzeStockWithAI',
                       toolCallId,
-                      result: { symbol, analysts }
+                      result: { symbol }
                     }
                   ]
                 }
@@ -889,7 +883,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
             return (
               <BotCard>
-                <StockAnalysis symbol={symbol} analysts={analysts} />
+                <StockAnalysis symbol={symbol} />
                 {caption}
               </BotCard>
             )
