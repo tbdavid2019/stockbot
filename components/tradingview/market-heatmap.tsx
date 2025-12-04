@@ -305,7 +305,7 @@ const MARKET_PRESETS: MarketPreset[] = [
 
 export function MarketHeatmap({}) {
   const container = useRef<HTMLDivElement>(null)
-  const [selectedMarketId, setSelectedMarketId] = useState<string>('us')
+  const [selectedMarketId, setSelectedMarketId] = useState<string>('us_spx')
 
   const selectedMarket = useMemo(
     () => MARKET_PRESETS.find((preset) => preset.id === selectedMarketId) ?? MARKET_PRESETS[0],

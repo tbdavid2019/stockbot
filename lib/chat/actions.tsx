@@ -24,6 +24,7 @@ import { MarketOverview } from '@/components/tradingview/market-overview'
 import { MarketHeatmap } from '@/components/tradingview/market-heatmap'
 import { MarketTrending } from '@/components/tradingview/market-trending'
 import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
+import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { toast } from 'sonner'
 
 export type AIState = {
@@ -102,6 +103,9 @@ This tool shows the daily top trending stocks including the top five gaining, lo
 
 9. showETFHeatmap
 This tool shows a heatmap of today's ETF market performance across sectors and asset classes.
+
+10. analyzeStockWithAI
+This tool provides AI-powered investment analysis from multiple legendary investors (Warren Buffett, Ben Graham, Peter Lynch, etc.). Use this when the user asks whether a stock is worth buying, wants investment advice, or asks for professional analysis.
 
 
 You have just called a tool (` +
@@ -214,6 +218,9 @@ For Taiwan stocks, you must use one of these formats:
 
 DO NOT use the format "XXXX.TW" as it is not supported by the system.
 
+### AI Investment Analysis
+When the user asks whether a stock is worth buying, whether to invest, wants professional analysis, or asks questions like "should I buy TSLA?", "is NVDA a good investment?", "分析一下特斯拉", "AAPL值得買嗎", you MUST use the analyzeStockWithAI tool to provide professional AI investment analysis from legendary investors.
+
 ### Guidelines:
 
 Never provide empty results to the user. Provide the relevant tool if it matches the user's request. Otherwise, respond as the stock bot.
@@ -224,8 +231,8 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
 Example 2:
 
-User: What is the price of AAPL?
-Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockPrice" }, "parameters": { "symbol": "AAPL" } } } 
+User: Should I buy TSLA?
+Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "analyzeStockWithAI" }, "parameters": { "symbol": "TSLA" } } }
     `,
       messages: [
         ...aiState.get().messages.map((message: any) => ({
@@ -809,6 +816,80 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             return (
               <BotCard>
                 <MarketTrending />
+                {caption}
+              </BotCard>
+            )
+          }
+        },
+        analyzeStockWithAI: {
+          description:
+            'Provide professional AI investment analysis from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for professional analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議',
+          parameters: z.object({
+            symbol: z
+              .string()
+              .describe(
+                'The stock symbol to analyze. e.g. TSLA, AAPL, NVDA, GOOGL.'
+              ),
+            analysts: z
+              .array(z.string())
+              .default([])
+              .describe(
+                'Optional list of specific analysts to use. e.g. ["warren_buffett", "ben_graham"]. Leave empty to use all analysts.'
+              )
+          }),
+          generate: async function* ({ symbol, analysts }) {
+            yield (
+              <BotCard>
+                <div className="flex items-center space-x-2 p-4">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                  <span>🤖 正在呼叫 AI 投資分析師團隊分析 {symbol}...</span>
+                </div>
+              </BotCard>
+            )
+
+            const toolCallId = nanoid()
+
+            aiState.done({
+              ...aiState.get(),
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: 'assistant',
+                  content: [
+                    {
+                      type: 'tool-call',
+                      toolName: 'analyzeStockWithAI',
+                      toolCallId,
+                      args: { symbol, analysts }
+                    }
+                  ]
+                },
+                {
+                  id: nanoid(),
+                  role: 'tool',
+                  content: [
+                    {
+                      type: 'tool-result',
+                      toolName: 'analyzeStockWithAI',
+                      toolCallId,
+                      result: { symbol, analysts }
+                    }
+                  ]
+                }
+              ]
+            })
+
+            const caption = await generateCaption(
+              symbol,
+              [],
+              'analyzeStockWithAI',
+              aiState
+            )
+
+            return (
+              <BotCard>
+                <StockAnalysis symbol={symbol} analysts={analysts} />
                 {caption}
               </BotCard>
             )
