@@ -172,12 +172,8 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       const defaultAnalysts = [
         'warren_buffett',
         'cathie_wood',
-        'michael_burry',
         'technical_analyst',
-        'valuation_analyst',
-        'sentiment_analyst',
-        'fundamentals_analyst',
-        'wsb'
+        'valuation_analyst'
       ]
 
       const response = await fetch('/api/stock-analysis', {
@@ -194,7 +190,14 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       })
 
       if (!response.ok) {
-        throw new Error(`API 連線錯誤 (${response.status})`)
+        let errorMsg = `API 連線錯誤 (${response.status})`
+        try {
+          const errData = await response.json()
+          if (errData?.error) errorMsg = errData.error
+        } catch {
+          // ignore
+        }
+        throw new Error(errorMsg)
       }
 
       const data = await response.json()
