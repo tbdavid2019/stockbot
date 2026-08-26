@@ -18,6 +18,14 @@ const DEFAULT_ANALYSTS = [
   'valuation_analyst'
 ]
 
+function parsePythonJson(text: string): any {
+  const sanitized = text
+    .replace(/:\s*NaN\b/g, ': null')
+    .replace(/:\s*Infinity\b/g, ': null')
+    .replace(/:\s*-Infinity\b/g, ': null')
+  return JSON.parse(sanitized)
+}
+
 function requestHedgeFundApi(
   host: string,
   port: string | number,
@@ -47,9 +55,9 @@ function requestHedgeFundApi(
       res.on('end', () => {
         if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
           try {
-            resolve(JSON.parse(data))
-          } catch (e) {
-            resolve({ raw: data })
+            resolve(parsePythonJson(data))
+          } catch (e: any) {
+            reject(new Error(`解析分析數據失敗: ${e.message}`))
           }
         } else {
           reject(new Error(`API 回應代碼 ${res.statusCode}: ${data.slice(0, 300)}`))

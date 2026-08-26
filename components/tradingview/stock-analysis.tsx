@@ -50,19 +50,37 @@ interface TranscriptTurn {
 
 const ANALYST_DISPLAY_NAMES: { [key: string]: string } = {
   ben_graham_agent: '📚 班傑明·葛拉漢 (價值投資之父)',
+  ben_graham: '📚 班傑明·葛拉漢 (價值投資之父)',
   warren_buffett_agent: '🎯 華倫·巴菲特 (股神)',
+  warren_buffett: '🎯 華倫·巴菲特 (股神)',
   charlie_munger_agent: '🧠 查理·蒙格 (巴菲特夥伴)',
+  charlie_munger: '🧠 查理·蒙格 (巴菲特夥伴)',
   peter_lynch_agent: '📈 彼得·林區 (成長投資)',
+  peter_lynch: '📈 彼得·林區 (成長投資)',
   michael_burry_agent: '🔍 麥可·貝瑞 (大空頭)',
+  michael_burry: '🔍 麥可·貝瑞 (大空頭)',
   cathie_wood_agent: '🚀 凱西·伍德 (創新投資)',
+  cathie_wood: '🚀 凱西·伍德 (創新投資)',
   bill_ackman_agent: '💼 比爾·艾克曼 (激進價值)',
+  bill_ackman: '💼 比爾·艾克曼 (激進價值)',
   phil_fisher_agent: '🔬 菲利普·費雪 (成長分析)',
+  phil_fisher: '🔬 菲利普·費雪 (成長分析)',
   technical_analyst_agent: '📊 技術分析師',
+  technical_analyst: '📊 技術分析師',
   sentiment_analyst_agent: '💭 情緒分析師',
+  sentiment_agent: '💭 情緒分析師',
+  sentiment_analyst: '💭 情緒分析師',
   fundamentals_analyst_agent: '📋 基本面分析師',
+  fundamentals_agent: '📋 基本面分析師',
+  fundamentals_analyst: '📋 基本面分析師',
   valuation_analyst_agent: '💰 估值分析師',
+  valuation_agent: '💰 估值分析師',
+  valuation_analyst: '💰 估值分析師',
+  valuation: '💰 估值分析師',
   nancy_pelosi_agent: '🏛️ 國會交易追蹤',
+  nancy_pelosi: '🏛️ 國會交易追蹤',
   wsb_agent: '🎰 WSB 散戶動能',
+  wsb: '🎰 WSB 散戶動能',
   risk_management_agent: '⚖️ 風險管理',
   portfolio_management_agent: '📁 投資組合管理'
 }
@@ -74,8 +92,11 @@ const SPEAKER_ICONS: { [key: string]: string } = {
   'Charlie Munger': '🧠 查理·蒙格',
   'Technical Analyst': '📊 技術分析師',
   'Valuation Analyst': '💰 估值分析師',
+  'Valuation': '💰 估值分析師',
   'Sentiment Analyst': '💭 情緒分析師',
+  'Sentiment': '💭 情緒分析師',
   'Fundamentals Analyst': '📋 基本面分析師',
+  'Fundamentals': '📋 基本面分析師',
   'WSB': '🎰 WSB 散戶',
   'Bill Ackman': '💼 比爾·艾克曼',
   'Peter Lynch': '📈 彼得·林區',
@@ -86,7 +107,8 @@ const SPEAKER_ICONS: { [key: string]: string } = {
 function parseTranscript(raw: string | undefined): TranscriptTurn[] {
   if (!raw) return []
 
-  if (raw.startsWith('[') && raw.endsWith(']')) {
+  // 若為 JSON 陣列字串
+  if (raw.startsWith('[') && raw.endsWith(']') && raw.includes('","')) {
     try {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed)) {
@@ -97,14 +119,22 @@ function parseTranscript(raw: string | undefined): TranscriptTurn[] {
     }
   }
 
-  const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean)
-  return lines.map(l => parseSpeakerLine(l)).filter(Boolean) as TranscriptTurn[]
+  // 支援換行或依據 [發言者]: 標籤自動切分
+  const segments = raw.includes('\n')
+    ? raw.split(/\n+/)
+    : raw.split(/(?=\[[^\]]+\]:\s*)/)
+
+  return segments
+    .map(l => l.trim())
+    .filter(Boolean)
+    .map(l => parseSpeakerLine(l))
+    .filter(Boolean) as TranscriptTurn[]
 }
 
 function parseSpeakerLine(line: string): TranscriptTurn | null {
   if (!line) return null
-  const cleaned = line.replace(/^['"\s\[]+|['"\s\]]+$/g, '').trim()
-  const match = cleaned.match(/^\[([^\]]+)\]:\s*(.+)$/)
+  const cleaned = line.replace(/^['"\s]+|['"\s]+$/g, '').trim()
+  const match = cleaned.match(/^\[([^\]]+)\]:\s*([\s\S]+)$/)
   if (match) {
     return { speaker: match[1].trim(), text: match[2].trim() }
   }
