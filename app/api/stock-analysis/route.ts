@@ -1,3 +1,5 @@
+import { NextRequest, NextResponse } from 'next/server'
+
 // Vercel Serverless Function 執行時間設定 (允許最多 60 秒)
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
