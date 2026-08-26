@@ -112,48 +112,55 @@ export const getMessageFromCode = (resultCode: string) => {
 //   return symbol;
 // }
 export function formatStockSymbol(symbol: string): string {
-  // 去除空白並轉為大寫（便於處理 .tw / .TW）
-  const trimmed = symbol.trim().toUpperCase();
+  if (!symbol) return ''
+  let trimmed = symbol.trim().toUpperCase()
+
+  // 轉換常見的美股特殊代號分隔符 (如 BRK-B, BRK/B -> BRK.B)
+  trimmed = trimmed.replace(/[-/]/g, '.')
 
   // 如果是純數字或以 .TW 結尾，就強制用 TWSE 前綴
-  const match = trimmed.match(/^(\d{4,})(\.TW)?$/);
+  const match = trimmed.match(/^(\d{4,})(\.TW)?$/)
   if (match) {
-    return `TWSE:${match[1]}`;
+    return `TWSE:${match[1]}`
   }
 
   // 如果是 TPE: 開頭也轉為 TWSE:
   if (trimmed.startsWith('TPE:')) {
-    return trimmed.replace('TPE:', 'TWSE:');
+    return trimmed.replace('TPE:', 'TWSE:')
   }
 
   // 如果已經是 TWSE: 就直接用
   if (trimmed.startsWith('TWSE:')) {
-    return trimmed;
+    return trimmed
   }
 
   // 如果已經包含交易所前綴（如 NASDAQ:、NYSE: 等），直接返回
   if (trimmed.includes(':')) {
-    return trimmed;
+    return trimmed
   }
 
-  // 常見美股符號處理 - 添加適當的交易所前綴
-  const nasdaqStocks = ['TSLA', 'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NFLX', 'NVDA', 'AMD', 'INTC', 'PYPL', 'ADBE', 'CRM', 'ORCL'];
-  const nyseStocks = ['BRK.A', 'BRK.B', 'JPM', 'JNJ', 'V', 'WMT', 'PG', 'MA', 'UNH', 'HD', 'DIS', 'BAC', 'XOM', 'CVX', 'KO'];
+  // 常見美股主要交易所對應
+  const nasdaqStocks = [
+    'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NFLX',
+    'NVDA', 'AMD', 'INTC', 'PYPL', 'ADBE', 'CRM', 'ORCL', 'QCOM', 'CSCO', 'AVGO', 'COST'
+  ]
+  const nyseStocks = [
+    'BRK.A', 'BRK.B', 'JPM', 'JNJ', 'V', 'WMT', 'PG', 'MA', 'UNH',
+    'HD', 'DIS', 'BAC', 'XOM', 'CVX', 'KO', 'MS', 'GS', 'C', 'IBM', 'BA', 'NKE', 'PFE'
+  ]
   
   if (nasdaqStocks.includes(trimmed)) {
-    return `NASDAQ:${trimmed}`;
+    return `NASDAQ:${trimmed}`
   }
   
   if (nyseStocks.includes(trimmed)) {
-    return `NYSE:${trimmed}`;
+    return `NYSE:${trimmed}`
   }
 
-  // 如果沒有匹配到特定交易所，對於美股符號默認使用 NASDAQ
-  // 這樣可以涵蓋大多數科技股和新興公司
-  if (/^[A-Z]{1,5}$/.test(trimmed)) {
-    return `NASDAQ:${trimmed}`;
+  // 如果是一般美股代碼 (1-5 字母加可選的點)
+  if (/^[A-Z]{1,5}(\.[A-Z]+)?$/.test(trimmed)) {
+    return trimmed
   }
 
-  // 其他情況回傳原值
-  return trimmed;
+  return trimmed
 }
