@@ -188,6 +188,34 @@ const getActionText = (action?: string) => {
   }
 }
 
+function formatReasoning(reasoning: any): string {
+  if (!reasoning) return ''
+  if (typeof reasoning === 'string') return reasoning
+
+  if (typeof reasoning === 'object') {
+    const parts: string[] = []
+    for (const [k, v] of Object.entries(reasoning)) {
+      if (typeof v === 'object' && v !== null) {
+        const sub = v as any
+        if (sub.details) {
+          parts.push(sub.details)
+        } else if (sub.signal) {
+          parts.push(`${k}: ${sub.signal}`)
+        }
+      } else if (typeof v === 'string') {
+        parts.push(v)
+      }
+    }
+    if (parts.length > 0) return parts.join('；')
+    try {
+      return JSON.stringify(reasoning)
+    } catch {
+      return ''
+    }
+  }
+  return String(reasoning)
+}
+
 export function StockAnalysis({ symbol }: StockAnalysisProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -201,8 +229,17 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
     try {
       const defaultAnalysts = [
         'warren_buffett',
+        'charlie_munger',
+        'ben_graham',
         'cathie_wood',
+        'michael_burry',
+        'peter_lynch',
+        'bill_ackman',
+        'nancy_pelosi',
+        'wsb',
         'technical_analyst',
+        'fundamentals_analyst',
+        'sentiment_analyst',
         'valuation_analyst'
       ]
 
@@ -418,9 +455,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
                 </div>
                 {tickerSignal.reasoning && (
                   <p className="text-xs opacity-85 line-clamp-3 leading-snug">
-                    {typeof tickerSignal.reasoning === 'string'
-                      ? tickerSignal.reasoning
-                      : JSON.stringify(tickerSignal.reasoning)}
+                    {formatReasoning(tickerSignal.reasoning)}
                   </p>
                 )}
               </div>

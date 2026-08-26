@@ -10,11 +10,20 @@ const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || 'dns.glsoft.ai'
 const AI_HEDGE_FUND_PORT = process.env.AI_HEDGE_FUND_PORT || '6000'
 const AI_HEDGE_FUND_FALLBACK_HOST = '46.51.245.98'
 
-// 預設核心分析師團隊 (涵蓋價值、成長、技術與估值)
+// 預設核心分析師團隊 (涵蓋傳奇投資大師與全方位分析模型)
 const DEFAULT_ANALYSTS = [
   'warren_buffett',
+  'charlie_munger',
+  'ben_graham',
   'cathie_wood',
+  'michael_burry',
+  'peter_lynch',
+  'bill_ackman',
+  'nancy_pelosi',
+  'wsb',
   'technical_analyst',
+  'fundamentals_analyst',
+  'sentiment_analyst',
   'valuation_analyst'
 ]
 
