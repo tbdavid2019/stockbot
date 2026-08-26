@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const {
       tickers,
       selectedAnalysts,
-      modelName = 'gpt-4o',
+      modelName,
       enableRoundTable = true,
       roundTableRounds = 1
     } = body
@@ -42,13 +42,20 @@ export async function POST(request: NextRequest) {
     // 建構 URL
     const apiUrl = new URL(`http://${AI_HEDGE_FUND_HOST}:${AI_HEDGE_FUND_PORT}/api/analysis`)
     
-    console.log('📊 Stock Analysis Request:', {
-      url: apiUrl.toString(),
+    const requestPayload: any = {
       tickers: tickers.toUpperCase(),
-      analysts: analysts,
-      modelName,
+      selectedAnalysts: analysts,
       enableRoundTable,
       roundTableRounds
+    }
+
+    if (modelName) {
+      requestPayload.modelName = modelName
+    }
+
+    console.log('📊 Stock Analysis Request:', {
+      url: apiUrl.toString(),
+      ...requestPayload
     })
 
     // 呼叫 AI Hedge Fund API (加入 AbortController 處理超時)
@@ -61,13 +68,7 @@ export async function POST(request: NextRequest) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          tickers: tickers.toUpperCase(),
-          selectedAnalysts: analysts,
-          modelName,
-          enableRoundTable,
-          roundTableRounds
-        }),
+        body: JSON.stringify(requestPayload),
         signal: controller.signal
       })
 

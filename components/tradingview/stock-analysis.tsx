@@ -188,7 +188,6 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         body: JSON.stringify({
           tickers: symbol.toUpperCase(),
           selectedAnalysts: defaultAnalysts,
-          modelName: 'gpt-4o',
           enableRoundTable: true,
           roundTableRounds: 1
         })
