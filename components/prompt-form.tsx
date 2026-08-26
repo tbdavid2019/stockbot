@@ -33,6 +33,7 @@ export function PromptForm({
   const { submitUserMessage } = useActions()
   const [_, setMessages] = useUIState<typeof AI>()
   const [apiKey, setApiKey] = useLocalStorage('groqKey', '')
+  const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
   React.useEffect(() => {
     if (inputRef.current) {
@@ -90,7 +91,11 @@ export function PromptForm({
           ref={inputRef}
           tabIndex={0}
           onKeyDown={onKeyDown}
-          placeholder="Send a message."
+          placeholder={
+            lang === 'zh'
+              ? '輸入訊息...（例如：台積電股價、TSLA 值得買嗎）'
+              : 'Send a message...'
+          }
           className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
           autoFocus
           spellCheck={false}

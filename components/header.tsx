@@ -26,7 +26,7 @@ async function UserOrLogin() {
 
       <div className="flex items-center font-semibold">
         <IconSeparator className="size-6 text-muted-foreground/50" />
-        <a href="/new">StockBot</a>
+        <a href="/new">888 StockBot</a>
         <IconSeparator className="size-6 text-muted-foreground/50" />
         <a
           href="/new"
