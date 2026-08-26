@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // API 設定 - 分開 host 和 port 避免解析問題
-const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || '46.51.245.98'
+const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || 'dns.glsoft.ai'
 const AI_HEDGE_FUND_PORT = process.env.AI_HEDGE_FUND_PORT || '6000'
 
-// 預設分析師列表 (參考 Python 範例)
+// 預設核心分析師團隊 (涵蓋價值、成長、逆向、技術、基本面與情緒)
 const DEFAULT_ANALYSTS = [
-  'ben_graham',
-  'bill_ackman',
-  'cathie_wood',
-  'charlie_munger',
-  'michael_burry',
-  'peter_lynch',
-  'phil_fisher',
   'warren_buffett',
-  'nancy_pelosi',
-  'wsb',
+  'cathie_wood',
+  'michael_burry',
   'technical_analyst',
-  'fundamentals_analyst',
+  'valuation_analyst',
   'sentiment_analyst',
-  'valuation_analyst'
+  'fundamentals_analyst',
+  'wsb'
 ]
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { tickers, selectedAnalysts, modelName = 'gpt-4o-mini' } = body
+    const {
+      tickers,
+      selectedAnalysts,
+      modelName = 'gpt-4o',
+      enableRoundTable = true,
+      roundTableRounds = 1
+    } = body
 
     if (!tickers) {
       return NextResponse.json(
@@ -46,7 +46,9 @@ export async function POST(request: NextRequest) {
       url: apiUrl.toString(),
       tickers: tickers.toUpperCase(),
       analysts: analysts,
-      modelName
+      modelName,
+      enableRoundTable,
+      roundTableRounds
     })
 
     // 呼叫 AI Hedge Fund API (加入 AbortController 處理超時)
@@ -62,7 +64,9 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           tickers: tickers.toUpperCase(),
           selectedAnalysts: analysts,
-          modelName
+          modelName,
+          enableRoundTable,
+          roundTableRounds
         }),
         signal: controller.signal
       })

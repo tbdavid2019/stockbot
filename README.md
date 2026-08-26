@@ -61,32 +61,26 @@ StockBot 整合了 AI Hedge Fund API，可以模擬多位傳奇投資大師的�
 | 📈 技術與情緒分析 | Technical Analyst、Sentiment Analyst、Nancy Pelosi、WSB |
 | 📐 基本面與估值 | Fundamentals Analyst、Valuation Analyst |
 
-### 目前狀態
+### 後端 API 設定
 
-> ⚠️ **注意**：由於 Vercel Serverless Functions 對非標準 port (6000) 的連線有限制，目前 API 整合功能在 Vercel 部署環境中暫時無法使用。
->
-> 🤗 **替代方案**：請移駕至 [AI Hedge Fund on Hugging Face](https://huggingface.co/spaces/tbdavid2019/ai-hedge-fund) 使用完整的 AI 投資分析功能。
-
-### 未來計畫
-
-待 API 服務調整為標準 port (80/443) 或設定 HTTPS 域名後，將可在 Vercel 環境中正常使用。屆時只需修改環境變數：
+AI 投資分析由後端 AI Hedge Fund API 提供服務（預設連線至 `http://dns.glsoft.ai:6000`）。若需自訂可於環境變數設定：
 
 ```bash
 # .env.local
-AI_HEDGE_FUND_HOST=your-api-domain.com
-AI_HEDGE_FUND_PORT=443
+AI_HEDGE_FUND_HOST=dns.glsoft.ai
+AI_HEDGE_FUND_PORT=6000
 ```
 
 ### 相關檔案
 
 - `app/api/stock-analysis/route.ts` - API 代理路由
-- `components/tradingview/stock-analysis.tsx` - 分析結果顯示組件
+- `components/tradingview/stock-analysis.tsx` - 多輪委員會分析與辯論結果組件
 - `lib/chat/actions.tsx` - 聊天工具定義 (analyzeStockWithAI)
 
 ## Interfaces
 | Description | Widget |
 |-------------|--------|
-| **AI Investment Analysis** (NEW)<br>Get professional investment advice from legendary investors like Warren Buffett, Ben Graham, and more. Currently redirects to Hugging Face Space. | ![AI Investment Analysis](https://huggingface.co/spaces/tbdavid2019/ai-hedge-fund) |
+| **AI Investment Analysis** (NEW)<br>Get professional investment advice and multi-round round table debates from legendary investors like Warren Buffett, Cathie Wood, Michael Burry, and more. | AI Hedge Fund API (dns.glsoft.ai:6000) |
 | **Heatmap of Daily Market Performance**<br>Visualize market trends at a glance with an interactive heatmap. Supported markets: US (S&P 500), Germany, Australia, Brazil, Canada, Israel. | ![Heatmap of Daily Market Performance](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e) |
 | **Breakdown of Financial Data for Stocks**<br>Get detailed financial metrics and key performance indicators for any stock. | ![Breakdown of Financial Data for Stocks](https://github.com/user-attachments/assets/c1c32dac-8295-4efb-ac1e-2eea8a89e7db) |
 | **Price History of Stock**<br>Track the historical price movement of stocks with customizable date ranges. | ![Price History of Stock](https://github.com/user-attachments/assets/f588068e-4d95-4188-96fd-866d355c993e) |
