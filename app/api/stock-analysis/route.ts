@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import http from 'node:http'
 
 // Vercel Serverless Function 執行時間設定 (允許最多 60 秒)
 export const maxDuration = 60
@@ -9,17 +10,63 @@ const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || 'dns.glsoft.ai'
 const AI_HEDGE_FUND_PORT = process.env.AI_HEDGE_FUND_PORT || '6000'
 const AI_HEDGE_FUND_FALLBACK_HOST = '46.51.245.98'
 
-// 預設核心分析師團隊 (涵蓋價值、成長、逆向、技術、基本面與情緒)
+// 預設核心分析師團隊 (涵蓋價值、成長、技術與估值)
 const DEFAULT_ANALYSTS = [
   'warren_buffett',
   'cathie_wood',
-  'michael_burry',
   'technical_analyst',
-  'valuation_analyst',
-  'sentiment_analyst',
-  'fundamentals_analyst',
-  'wsb'
+  'valuation_analyst'
 ]
+
+function requestHedgeFundApi(
+  host: string,
+  port: string | number,
+  payload: any,
+  timeoutMs = 55000
+): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify(payload)
+    const options = {
+      hostname: host,
+      port: Number(port),
+      path: '/api/analysis',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      timeout: timeoutMs
+    }
+
+    const req = http.request(options, (res) => {
+      let data = ''
+      res.setEncoding('utf8')
+      res.on('data', (chunk) => {
+        data += chunk
+      })
+      res.on('end', () => {
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+          try {
+            resolve(JSON.parse(data))
+          } catch (e) {
+            resolve({ raw: data })
+          }
+        } else {
+          reject(new Error(`API 回應代碼 ${res.statusCode}: ${data.slice(0, 300)}`))
+        }
+      })
+    })
+
+    req.on('error', (err) => reject(err))
+    req.on('timeout', () => {
+      req.destroy()
+      reject(new Error('AI 分析連線超時（超過 55 秒）'))
+    })
+
+    req.write(postData)
+    req.end()
+  })
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,9 +91,6 @@ export async function POST(request: NextRequest) {
       ? selectedAnalysts 
       : DEFAULT_ANALYSTS
 
-    // 建構 URL
-    const apiUrl = new URL(`http://${AI_HEDGE_FUND_HOST}:${AI_HEDGE_FUND_PORT}/api/analysis`)
-    
     const requestPayload: any = {
       tickers: tickers.toUpperCase(),
       selectedAnalysts: analysts,
@@ -58,61 +102,34 @@ export async function POST(request: NextRequest) {
       requestPayload.modelName = modelName
     }
 
-    console.log('📊 Stock Analysis Request:', {
-      url: apiUrl.toString(),
+    console.log('📊 Stock Analysis Request via node:http:', {
+      host: AI_HEDGE_FUND_HOST,
+      port: AI_HEDGE_FUND_PORT,
       ...requestPayload
     })
 
-    // 呼叫 AI Hedge Fund API (加入 AbortController 處理超時)
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 55000) // 55 秒超時 (在 Vercel 60s 內完成)
-
-    let response: Response | null = null
-    let lastErrorText: string = ''
+    let data = null
+    let lastError: any = null
 
     const hostsToTry = [AI_HEDGE_FUND_HOST, AI_HEDGE_FUND_FALLBACK_HOST].filter(Boolean)
 
     for (const host of hostsToTry) {
       try {
-        const apiUrl = `http://${host}:${AI_HEDGE_FUND_PORT}/api/analysis`
-        const res = await fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(requestPayload),
-          signal: controller.signal
-        })
-
-        if (res.ok) {
-          response = res
-          break
-        } else {
-          lastErrorText = await res.text()
-          console.warn(`⚠️ API response not ok from ${host}: ${res.status} - ${lastErrorText}`)
-        }
-      } catch (fetchError: any) {
-        if (fetchError.name === 'AbortError') {
-          clearTimeout(timeoutId)
-          return NextResponse.json(
-            { error: 'AI 分析請求逾時（超過 55 秒），請稍後再試。' },
-            { status: 504 }
-          )
-        }
-        console.warn(`⚠️ Fetch failed for ${host}: ${fetchError.message}`)
+        data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, requestPayload, 55000)
+        if (data) break
+      } catch (err: any) {
+        lastError = err
+        console.warn(`⚠️ Failed to connect to ${host}:`, err.message)
       }
     }
 
-    clearTimeout(timeoutId)
-
-    if (!response || !response.ok) {
+    if (!data) {
       return NextResponse.json(
-        { error: lastErrorText || '無法連線至 AI 分析後端服務，請確認伺服器狀態。' },
+        { error: lastError?.message || '無法連線至 AI 分析後端服務，請確認伺服器狀態。' },
         { status: 502 }
       )
     }
 
-    const data = await response.json()
     console.log('✅ Analysis completed successfully')
     return NextResponse.json(data)
 
