@@ -105,8 +105,15 @@ export function ChatPanel({
   const { submitUserMessage } = useActions()
   const [lang, setLang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
-  const [dynamicZh, setDynamicZh] = useState<ExampleMessage[]>(exampleMessagesZh)
-  const [dynamicEn, setDynamicEn] = useState<ExampleMessage[]>(exampleMessagesEn)
+  const [cachedPromptsZh, setCachedPromptsZh] = useLocalStorage<ExampleMessage[]>(
+    'stockbot_cached_prompts_zh',
+    exampleMessagesZh
+  )
+  const [cachedPromptsEn, setCachedPromptsEn] = useLocalStorage<ExampleMessage[]>(
+    'stockbot_cached_prompts_en',
+    exampleMessagesEn
+  )
+
   const [isDynamicLoaded, setIsDynamicLoaded] = useState(false)
 
   useEffect(() => {
@@ -118,10 +125,10 @@ export function ChatPanel({
           const data = await res.json()
           if (isMounted) {
             if (data.promptsZh && data.promptsZh.length > 0) {
-              setDynamicZh(data.promptsZh)
+              setCachedPromptsZh(data.promptsZh)
             }
             if (data.promptsEn && data.promptsEn.length > 0) {
-              setDynamicEn(data.promptsEn)
+              setCachedPromptsEn(data.promptsEn)
             }
             setIsDynamicLoaded(true)
           }
@@ -136,7 +143,7 @@ export function ChatPanel({
     }
   }, [])
 
-  const currentExamples = lang === 'zh' ? dynamicZh : dynamicEn
+  const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
 
   return (
     <div className="fixed inset-x-0 bottom-0 w-full bg-gradient-to-b from-muted/30 from-0% to-muted/30 to-50% duration-300 ease-in-out animate-in dark:from-background/10 dark:from-10% dark:to-background/80 peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]">
@@ -155,11 +162,9 @@ export function ChatPanel({
                     ? '💡 建議提示語（點擊直接發問）：'
                     : '💡 Starter Prompts (Click to ask):'}
                 </span>
-                {isDynamicLoaded && (
-                  <span className="hidden sm:inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:text-orange-300">
-                    🔥 {lang === 'zh' ? '今日動態標的' : 'Daily Picks'}
-                  </span>
-                )}
+                <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:text-orange-300">
+                  🔥 {lang === 'zh' ? '今日動態標的' : 'Daily Picks'}
+                </span>
               </div>
               <div className="inline-flex rounded-lg border bg-muted/60 p-0.5 text-xs shadow-sm">
                 <button
@@ -186,16 +191,11 @@ export function ChatPanel({
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {currentExamples.map((example, index) => (
                 <div
                   key={`${lang}-${example.heading}-${index}`}
-                  className={`
-                      cursor-pointer border bg-white p-4 
-                      hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900 rounded-md transition-all shadow-sm
-                      ${index >= 4 ? 'hidden md:block' : ''}
-                      ${index >= 2 ? 'hidden 2xl:block' : ''}
-                    `}
+                  className="cursor-pointer border bg-white p-3.5 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900 rounded-lg transition-all shadow-2xs hover:border-blue-300 dark:hover:border-blue-700"
                   onClick={async () => {
                     setMessages(currentMessages => [
                       ...currentMessages,
@@ -214,8 +214,8 @@ export function ChatPanel({
                     ])
                   }}
                 >
-                  <div className="text-sm font-semibold">{example.heading}</div>
-                  <div className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{example.heading}</div>
+                  <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
                     {example.subheading}
                   </div>
                 </div>

@@ -49,117 +49,142 @@ let cachedData: {
 
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
-function parseStocks(content: string): { usStocks: StockItem[]; twStocks: StockItem[] } {
-  const usStocks: StockItem[] = []
-  const twStocks: StockItem[] = []
+function parseStocks(content: string): {
+  sp500: StockItem[]
+  tw50: StockItem[]
+  twMid: StockItem[]
+} {
+  const sp500: StockItem[] = []
+  const tw50: StockItem[] = []
+  const twMid: StockItem[] = []
 
   if (!content) {
-    return { usStocks: DEFAULT_US_STOCKS, twStocks: DEFAULT_TW_STOCKS }
+    return {
+      sp500: DEFAULT_US_STOCKS,
+      tw50: DEFAULT_TW_STOCKS,
+      twMid: DEFAULT_TW_STOCKS
+    }
   }
 
   const lines = content.split('\n')
+  let currentCategory = 'SP500'
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed.includes('SP500')) {
+      currentCategory = 'SP500'
+    } else if (trimmed.includes('台灣50')) {
+      currentCategory = 'TW50'
+    } else if (trimmed.includes('台灣中型100')) {
+      currentCategory = 'TWMID'
+    }
 
-    // 匹配台股：例如 "2330.TW 台積電       2400.00" 或 "2330 台積電"
-    const twMatch = line.match(/^(\d{4})(?:\.TW)?\s+([\u4e00-\u9fa5A-Za-z0-9]+)\s+([\d.]+)?/)
+    const twMatch = trimmed.match(/^(\d{4})(?:\.TW)?\s+([\u4e00-\u9fa5A-Za-z0-9]+)\s+([\d.]+)?/)
     if (twMatch) {
       const [, symbol, name, price] = twMatch
-      if (!twStocks.some(s => s.symbol === symbol)) {
-        twStocks.push({ symbol, name, price, raw: `${symbol} ${name}` })
+      const item = { symbol, name, price, raw: `${symbol} ${name}` }
+      if (currentCategory === 'TW50' && !tw50.some(s => s.symbol === symbol)) {
+        tw50.push(item)
+      } else if (currentCategory === 'TWMID' && !twMid.some(s => s.symbol === symbol)) {
+        twMid.push(item)
       }
       continue
     }
 
-    // 匹配美股：例如 "NVDA               213.05" 或 "BRK-B              504.32"
-    const usMatch = line.match(/^([A-Z]{1,5}(?:-[A-Z]+)?)\s+([\d.]+)\s+[\d.-]+/i)
+    const usMatch = trimmed.match(/^([A-Z]{1,5}(?:-[A-Z]+)?)\s+([\d.]+)\s+[\d.-]+/i)
     if (usMatch) {
       const symbol = usMatch[1].toUpperCase()
       const price = usMatch[2]
       const blacklist = ['PE', 'PB', 'EV', 'MA', 'CODE', 'DATE', 'PRICE', 'HIGH', 'LOW']
-      if (!blacklist.includes(symbol) && !usStocks.some(s => s.symbol === symbol)) {
-        usStocks.push({ symbol, name: symbol, price })
+      if (!blacklist.includes(symbol)) {
+        const item = { symbol, name: symbol, price }
+        if (currentCategory === 'SP500' && !sp500.some(s => s.symbol === symbol)) {
+          sp500.push(item)
+        }
       }
     }
   }
 
   return {
-    usStocks: usStocks.length > 0 ? usStocks : DEFAULT_US_STOCKS,
-    twStocks: twStocks.length > 0 ? twStocks : DEFAULT_TW_STOCKS
+    sp500: sp500.length > 0 ? sp500 : DEFAULT_US_STOCKS,
+    tw50: tw50.length > 0 ? tw50 : DEFAULT_TW_STOCKS,
+    twMid: twMid.length > 0 ? twMid : DEFAULT_TW_STOCKS
   }
 }
 
-function buildPrompts(usStocks: StockItem[], twStocks: StockItem[]) {
-  const tw1 = twStocks[0] || DEFAULT_TW_STOCKS[0]
-  const tw2 = twStocks[1] || DEFAULT_TW_STOCKS[1]
-  const us1 = usStocks[0] || DEFAULT_US_STOCKS[0]
-  const us2 = usStocks[1] || DEFAULT_US_STOCKS[1]
-  const us3 = usStocks[2] || DEFAULT_US_STOCKS[2]
+function buildPrompts(sp500: StockItem[], tw50: StockItem[], twMid: StockItem[]) {
+  const twTop1 = tw50[0] || DEFAULT_TW_STOCKS[0]
+  const twTop2 = tw50[1] || DEFAULT_TW_STOCKS[1]
+  const twMid1 = twMid[0] || DEFAULT_TW_STOCKS[3]
+
+  const usTop1 = sp500[0] || DEFAULT_US_STOCKS[0]
+  const usTop2 = sp500[1] || DEFAULT_US_STOCKS[1]
+  const usTop3 = sp500[2] || DEFAULT_US_STOCKS[2]
+  const usTop4 = sp500[3] || DEFAULT_US_STOCKS[3]
 
   const promptsZh: ExamplePrompt[] = [
     {
-      heading: `${tw1.name} (${tw1.symbol}) 現價`,
-      subheading: `查詢 ${tw1.name} 即時行情${tw1.price ? ` ($${tw1.price})` : ''}`,
-      message: `${tw1.name} ${tw1.symbol} 目前股價是多少？`
+      heading: `${twTop1.name} (${twTop1.symbol}) 即時股價`,
+      subheading: `查詢 ${twTop1.name} 現價行情${twTop1.price ? ` ($${twTop1.price})` : ''}`,
+      message: `${twTop1.name} ${twTop1.symbol} 目前股價是多少？`
     },
     {
-      heading: `查看 ${us1.symbol} 走勢圖`,
-      subheading: `顯示 $${us1.symbol} 即時走勢與K線圖`,
-      message: `幫我顯示 ${us1.symbol} 的股票走勢圖表`
+      heading: `查看 ${usTop1.symbol} 股票走勢圖`,
+      subheading: `顯示 $${usTop1.symbol} 即時走勢與技術線圖`,
+      message: `幫我顯示 ${usTop1.symbol} 的股票走勢圖表`
     },
     {
-      heading: `AI 投資多輪大師分析`,
-      subheading: `${us2.symbol} 值得買嗎？AI 多輪評估`,
-      message: `${us2.symbol} 值得買嗎？請用多位大師進行 AI 投資分析`
+      heading: `大師分析 ${usTop2.symbol} 值得買嗎？`,
+      subheading: `由巴菲特等大師多輪圓桌委員會評估`,
+      message: `${usTop2.symbol} 值得買嗎？請用多位大師進行 AI 投資分析`
     },
     {
-      heading: `${us3.symbol} 最新財務數據`,
-      subheading: `查看 ${us3.symbol} 營收與財報指標`,
-      message: `${us3.symbol} 最近的財務數據如何？`
+      heading: `${usTop3.symbol} 最新財務數據`,
+      subheading: `查看 ${usTop3.symbol} 營收與財報獲利狀況`,
+      message: `${usTop3.symbol} 最近的財務數據如何？`
     },
     {
-      heading: '今日股票產業板塊表現',
-      subheading: '查看各產業板塊熱力圖',
+      heading: `${twMid1.name} (${twMid1.symbol}) 中型潛力分析`,
+      subheading: `中型100潛力標的${twMid1.price ? ` ($${twMid1.price})` : ''}`,
+      message: `${twMid1.name} ${twMid1.symbol} 財務狀況與投資評價如何？`
+    },
+    {
+      heading: '今日美股/台股市場熱力圖',
+      subheading: '查看各產業板塊漲跌與篩選新標的',
       message: '今天股票市場各產業表現如何？'
-    },
-    {
-      heading: '股票篩選器',
-      subheading: '尋找市場潛力新標的',
-      message: '顯示股票篩選器來尋找新股票'
     }
   ]
 
   const promptsEn: ExamplePrompt[] = [
     {
-      heading: `What is the price`,
-      subheading: `of ${us1.symbol} stock?`,
-      message: `What is the price of ${us1.symbol} stock?`
+      heading: `What is the price of ${usTop1.symbol}?`,
+      subheading: `Current price${usTop1.price ? ` ($${usTop1.price})` : ''}`,
+      message: `What is the price of ${usTop1.symbol} stock?`
     },
     {
-      heading: `Show me a stock chart`,
-      subheading: `for $${us2.symbol}`,
-      message: `Show me a stock chart for $${us2.symbol}`
+      heading: `Show me ${usTop2.symbol} stock chart`,
+      subheading: `Interactive candlestick chart & trends`,
+      message: `Show me a stock chart for $${usTop2.symbol}`
     },
     {
-      heading: `AI Investment Analysis`,
-      subheading: `Should I buy ${us3.symbol}?`,
-      message: `Should I buy ${us3.symbol}? Please provide multi-analyst AI investment analysis`
+      heading: `AI Analysis: Should I buy ${usTop3.symbol}?`,
+      subheading: `Multi-analyst round table debate`,
+      message: `Should I buy ${usTop3.symbol}? Please provide multi-analyst AI investment analysis`
     },
     {
-      heading: `What are ${us1.symbol}'s`,
-      subheading: `latest financials?`,
-      message: `What are ${us1.symbol}'s latest financials?`
+      heading: `${usTop4.symbol} latest financials`,
+      subheading: `Revenue, margins & balance sheet`,
+      message: `What are ${usTop4.symbol}'s latest financials?`
     },
     {
-      heading: 'How is the stock market',
-      subheading: 'performing today by sector?',
+      heading: `Taiwan TSMC (${twTop1.symbol}) Analysis`,
+      subheading: `Global semiconductor leader ($${twTop1.price || '2400'})`,
+      message: `What is the current stock price and outlook for TSMC (${twTop1.symbol})?`
+    },
+    {
+      heading: 'Market Overview by Sector',
+      subheading: `Today's performance heatmap`,
       message: 'How is the stock market performing today by sector?'
-    },
-    {
-      heading: 'Show me a screener',
-      subheading: 'to find new stocks',
-      message: 'Show me a screener to find new stocks'
     }
   ]
 
@@ -199,13 +224,13 @@ export async function GET() {
     }
   }
 
-  const { usStocks, twStocks } = parseStocks(rawContent)
-  const { promptsZh, promptsEn } = buildPrompts(usStocks, twStocks)
+  const { sp500, tw50, twMid } = parseStocks(rawContent)
+  const { promptsZh, promptsEn } = buildPrompts(sp500, tw50, twMid)
 
   cachedData = {
     timestamp: now,
-    usStocks,
-    twStocks,
+    usStocks: sp500,
+    twStocks: [...tw50, ...twMid],
     promptsZh,
     promptsEn
   }
