@@ -14,30 +14,21 @@ import { Session } from '@/lib/types'
 
 async function UserOrLogin() {
   return (
-    <>
-      <Link href="https://wow.groq.com/groq-labs/" rel="nofollow">
-        <Image
-          src="/groqlabs-logo-black.png"
-          alt="GroqLabs Logo"
-          width={100}
-          height={30}
-        />
-      </Link>
-
-      <div className="flex items-center font-semibold">
-        <IconSeparator className="size-6 text-muted-foreground/50" />
-        <a href="/new">888 StockBot</a>
-        <IconSeparator className="size-6 text-muted-foreground/50" />
-        <a
-          href="/new"
-          rel="noopener noreferrer"
-          className={cn(buttonVariants({ variant: 'ghost' }))}
-          style={{ borderRadius: 0, color: '#F55036', padding: '4px' }}
-        >
-          <span className="flex">Start New Chat</span>
-        </a>
-      </div>
-    </>
+    <div className="flex items-center space-x-2 font-semibold">
+      <a href="/new" className="flex items-center gap-1.5 text-base font-bold text-slate-900 dark:text-slate-100 hover:opacity-80 transition-opacity">
+        <span className="text-xl">📈</span>
+        <span>888 StockBot</span>
+      </a>
+      <IconSeparator className="size-6 text-muted-foreground/50" />
+      <a
+        href="/new"
+        rel="noopener noreferrer"
+        className={cn(buttonVariants({ variant: 'ghost' }))}
+        style={{ borderRadius: 0, color: '#F55036', padding: '4px' }}
+      >
+        <span className="flex text-xs font-semibold">Start New Chat</span>
+      </a>
+    </div>
   )
 }
 
