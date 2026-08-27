@@ -91,14 +91,46 @@ AI_HEDGE_FUND_PORT=6000
 | **Trending Stocks**<br>Shows the top five gaining, losing, and most active stocks for the day. | ![Trending Stocks](https://github.com/user-attachments/assets/848c1ebf-7828-4116-a041-6f0ba7156bd5) |
 | **ETF Heatmap**<br>Shows a heatmap of today's ETF market performance across sectors and asset classes. | ![ETF Heatmap](https://github.com/user-attachments/assets/cb2b29d9-acb7-4c8f-90c7-0390e72907f6) |
 
+## LLM 與多階層備援設定 (LLM & Multi-Tier Fallback Configuration)
+
+StockBot 支援 **無限階層動態容錯路由 (Multi-Tier Dynamic Failover Router)**，並將模型拆分為兩大職責：
+- **`TOOL_MODEL` (工具模型)**：專用於 `streamUI` 的 Function Calling、意圖識別與圖表/分析卡片調用。
+- **`MODEL` (文字模型)**：專用於 `generateCaption` 的流暢繁體中文對話與總結生成。
+
+### 常用環境變數一覽
+
+```bash
+# 1. 主要端點 (Primary LLM - 如 Nen / gpt-5.6-luna)
+PRIMARY_BASE_URL=https://nen.com.tw/v1
+PRIMARY_API_KEY=your_primary_api_key
+PRIMARY_TOOL_MODEL=gpt-5.6-luna
+PRIMARY_MODEL=gpt-5.6-luna
+
+# 2. 第 1 備用端點 (Fallback #1 - 如 Groq)
+FALLBACK_1_BASE_URL=https://api.groq.com/openai/v1
+FALLBACK_1_API_KEY=gsk_your_groq_api_key
+FALLBACK_1_TOOL_MODEL=openai/gpt-oss-20b
+FALLBACK_1_MODEL=openai/gpt-oss-20b
+
+# 3. 第 2 備用端點 (Fallback #2 - 如 OpenAI 官方)
+FALLBACK_2_BASE_URL=https://api.openai.com/v1
+FALLBACK_2_API_KEY=sk-proj-your_openai_key
+FALLBACK_2_TOOL_MODEL=gpt-4o-mini
+FALLBACK_2_MODEL=gpt-4o-mini
+
+# 4. 2MD 即時連網搜尋
+TWOMD_PRIMARY_URL=https://2md.aiurl.tw
+
+# 5. AI Hedge Fund 投資分析後端
+AI_HEDGE_FUND_HOST=dns.glsoft.ai
+AI_HEDGE_FUND_PORT=6000
+```
+
 ## Quickstart
 
 > [!IMPORTANT]
-> To use StockBot, you can use a hosted version at [tbdavid-stockbot.vercel.app](https://tbdavid-stockbot.vercel.app/).
+> To use StockBot, you can use a hosted version at [bot.david888.com](https://bot.david888.com/).
 > Alternatively, you can run StockBot locally using the quickstart instructions.
-
-
-You will need a Groq API Key to run the application. You can obtain one [here on the Groq console](https://console.groq.com/keys).
 
 To get started locally, you can run the following:
 
@@ -106,7 +138,7 @@ To get started locally, you can run the following:
 cp .env.example .env.local
 ```
 
-Add your Groq API key to .env.local, then run:
+Configure your LLM API keys in `.env.local`, then run:
 
 ```bash
 pnpm install
