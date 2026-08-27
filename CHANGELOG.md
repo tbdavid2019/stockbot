@@ -21,6 +21,9 @@
     - **Batch 2 (3位長耗時/輿論散戶大師)**：~21 秒背景回傳，動態擴展分析卡片。
     - **Batch 3 (5位價值成長大師)**：~26 秒回傳，補齊 13 位大師全維度分析。
   - 徹底根絕單次請求超時引發的 Vercel 504 Gateway Timeout。
+- **動態每日標的跑馬燈 (Dynamic Ticker Tape with stock.david888.com)**：
+  - 於 [`components/tradingview/ticker-tape.tsx`](components/tradingview/ticker-tape.tsx) 串接 `/api/dynamic-prompts`，每日自動抓取 `stock.david888.com` 最新台股（TW50 / 台灣中型100）與美股（S&P 500）精選標的。
+  - 動態組裝 TradingView 股票代碼格式（如 `TWSE:2330`、`NASDAQ:NVDA`、`NYSE:BRK.B`），並原生適配 Dark / Light 主題切換。
 - **2MD 即時連網搜尋工具 (`searchFinancialWeb`)**：
   - 整合 2MD 搜尋引擎 API（[`lib/2md.ts`](lib/2md.ts)），支援最新財經新聞、公司 IPO/上市狀態、股票代號查找與即時事件檢索。
   - 新增搜尋結果視覺化卡片組件 [`WebSearchResults`](components/stocks/web-search-results.tsx)，提供標題、摘要來源與原文跳轉超連結。

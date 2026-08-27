@@ -1,81 +1,193 @@
 'use client'
 
 import * as React from 'react'
-import { useRef, useEffect } from 'react'
-import Script from 'next/script'
+import { useRef, useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
+
+interface StockItem {
+  symbol: string
+  name: string
+  price?: string
+}
+
+interface DynamicPromptsResponse {
+  usStocks?: StockItem[]
+  twStocks?: StockItem[]
+}
+
+interface TradingViewSymbol {
+  proName?: string
+  title?: string
+  description?: string
+}
+
+const DEFAULT_SYMBOLS: TradingViewSymbol[] = [
+  { proName: 'FOREXCOM:SPXUSD', title: 'S&P 500' },
+  { proName: 'FOREXCOM:NSXUSD', title: 'Nasdaq 100' },
+  { proName: 'BITSTAMP:BTCUSD', title: 'Bitcoin' },
+  { description: '台積電 (2330)', proName: 'TWSE:2330' },
+  { description: '鴻海 (2317)', proName: 'TWSE:2317' },
+  { description: '聯發科 (2454)', proName: 'TWSE:2454' },
+  { description: 'Apple (AAPL)', proName: 'NASDAQ:AAPL' },
+  { description: 'NVIDIA (NVDA)', proName: 'NASDAQ:NVDA' },
+  { description: 'Tesla (TSLA)', proName: 'NASDAQ:TSLA' }
+]
+
+function formatProName(symbol: string): string {
+  const clean = symbol.trim().toUpperCase().replace(/\.TW$/, '')
+  // 台股四碼 (如 2330, 1216, 1229)
+  if (/^\d{4}$/.test(clean)) {
+    return `TWSE:${clean}`
+  }
+  // 美股特殊代碼
+  if (clean === 'BRK-B' || clean === 'BRK/B' || clean === 'BRK.B') {
+    return 'NYSE:BRK.B'
+  }
+  const nasdaqList = [
+    'AAPL',
+    'MSFT',
+    'GOOGL',
+    'GOOG',
+    'NVDA',
+    'TSLA',
+    'AMZN',
+    'META',
+    'AMD',
+    'INTC',
+    'NFLX',
+    'QCOM',
+    'AVGO',
+    'COST',
+    'ASML'
+  ]
+  if (nasdaqList.includes(clean)) {
+    return `NASDAQ:${clean}`
+  }
+  const nyseList = [
+    'LLY',
+    'JPM',
+    'XOM',
+    'V',
+    'UNH',
+    'WMT',
+    'PG',
+    'JNJ',
+    'MA',
+    'HD',
+    'CVX',
+    'MRK',
+    'ABBV',
+    'KO',
+    'PEP',
+    'BAC',
+    'DIS'
+  ]
+  if (nyseList.includes(clean)) {
+    return `NYSE:${clean}`
+  }
+  return clean
+}
 
 export function TickerTape() {
   const container = useRef<HTMLDivElement>(null)
+  const { theme, resolvedTheme } = useTheme()
+  const [symbols, setSymbols] = useState<TradingViewSymbol[]>(DEFAULT_SYMBOLS)
 
+  // 1. 抓取 stock.david888.com 每日最新精選標的
   useEffect(() => {
-    if (!container.current) return
+    let isMounted = true
+
+    async function fetchDailyStocks() {
+      try {
+        const res = await fetch('/api/dynamic-prompts')
+        if (res.ok) {
+          const data: DynamicPromptsResponse = await res.json()
+          if (!isMounted) return
+
+          const dynamicList: TradingViewSymbol[] = [
+            { proName: 'FOREXCOM:SPXUSD', title: 'S&P 500' },
+            { proName: 'FOREXCOM:NSXUSD', title: 'Nasdaq 100' },
+            { proName: 'BITSTAMP:BTCUSD', title: 'Bitcoin' }
+          ]
+
+          // 加入台股當日精選 (前 5 檔)
+          if (Array.isArray(data.twStocks) && data.twStocks.length > 0) {
+            data.twStocks.slice(0, 6).forEach(stk => {
+              dynamicList.push({
+                description: `${stk.name} (${stk.symbol})`,
+                proName: formatProName(stk.symbol)
+              })
+            })
+          }
+
+          // 加入美股當日精選 (前 6 檔)
+          if (Array.isArray(data.usStocks) && data.usStocks.length > 0) {
+            data.usStocks.slice(0, 6).forEach(stk => {
+              dynamicList.push({
+                description: stk.symbol,
+                proName: formatProName(stk.symbol)
+              })
+            })
+          }
+
+          if (dynamicList.length > 3) {
+            setSymbols(dynamicList)
+          }
+        }
+      } catch (err) {
+        console.warn('[TickerTape] Failed to load dynamic tickers:', err)
+      }
+    }
+
+    fetchDailyStocks()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // 2. 渲染 / 更新 TradingView 跑馬燈小工具
+  useEffect(() => {
+    const currentContainer = container.current
+    if (!currentContainer) return
+
+    // 清空舊組件與 script
+    currentContainer.innerHTML = ''
+
+    const widgetDiv = document.createElement('div')
+    widgetDiv.className = 'tradingview-widget-container__widget'
+    currentContainer.appendChild(widgetDiv)
+
+    const colorTheme = resolvedTheme === 'dark' || theme === 'dark' ? 'dark' : 'light'
 
     const script = document.createElement('script')
     script.src =
       'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
     script.async = true
     script.innerHTML = JSON.stringify({
-      symbols: [
-        {
-          proName: 'FOREXCOM:SPXUSD',
-          title: 'S&P 500 Index'
-        },
-        {
-          proName: 'FOREXCOM:NSXUSD',
-          title: 'US 100 Cash CFD'
-        },
-        {
-          proName: 'FX_IDC:EURUSD',
-          title: 'EUR to USD'
-        },
-        {
-          proName: 'BITSTAMP:BTCUSD',
-          title: 'Bitcoin'
-        },
-        {
-          description: 'Apple Inc',
-          proName: 'NASDAQ:AAPL'
-        },
-        {
-          description: 'Alphabet Inc',
-          proName: 'NASDAQ:GOOGL'
-        }
-      ],
+      symbols,
       showSymbolLogo: true,
       isTransparent: true,
       displayMode: 'adaptive',
-      colorTheme: 'light',
-      locale: 'en'
+      colorTheme,
+      locale: 'zh_TW'
     })
 
-    container.current.appendChild(script)
+    currentContainer.appendChild(script)
 
     return () => {
-      if (container.current) {
-        const scriptElement = container.current.querySelector('script')
-        if (scriptElement) {
-          container.current.removeChild(scriptElement)
-        }
+      if (currentContainer) {
+        currentContainer.innerHTML = ''
       }
     }
-  }, [])
+  }, [symbols, theme, resolvedTheme])
 
   return (
     <div
-      className="tradingview-widget-container mb-2 md:min-h-20 min-h-28"
+      className="tradingview-widget-container mb-2 md:min-h-20 min-h-28 w-full"
       ref={container}
     >
       <div className="tradingview-widget-container__widget"></div>
-      <div className="tradingview-widget-copyright flex justify-end mr-2">
-        <a
-          href="https://www.tradingview.com/"
-          rel="noopener nofollow"
-          target="_blank"
-          className="justify-end text-right"
-        >
-          <span className="">Track all markets on TradingView</span>
-        </a>
-      </div>
     </div>
   )
 }
