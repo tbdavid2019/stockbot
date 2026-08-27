@@ -25,6 +25,8 @@ import { MarketHeatmap } from '@/components/tradingview/market-heatmap'
 import { MarketTrending } from '@/components/tradingview/market-trending'
 import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
+import { WebSearchResults } from '@/components/stocks/web-search-results'
+import { searchWeb2MD } from '@/lib/2md'
 import { toast } from 'sonner'
 
 export type AIState = {
@@ -43,9 +45,26 @@ interface MutableAIState {
   get: () => AIState
 }
 
-const MODEL = process.env.MODEL || 'openai/gpt-oss-120b'
-const TOOL_MODEL = process.env.TOOL_MODEL || 'openai/gpt-oss-120b'
+const PRIMARY_BASE_URL = process.env.OPENAI_BASE_URL || process.env.NEN_BASE_URL || 'https://nen.com.tw/v1'
+const PRIMARY_API_KEY = process.env.OPENAI_API_KEY || process.env.NEN_API_KEY || 'sk-XqYJN7YDjomSEeOPn9GsHvSpspYLuQrxdgQc2zcA3kvuZD34'
+const GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
 const GROQ_API_KEY_ENV = process.env.GROQ_API_KEY
+
+const MODEL = process.env.MODEL || 'deepseek-v4-flash'
+const TOOL_MODEL = process.env.TOOL_MODEL || 'deepseek-v4-flash'
+
+function getAIClient() {
+  if (PRIMARY_API_KEY) {
+    return createOpenAI({
+      baseURL: PRIMARY_BASE_URL,
+      apiKey: PRIMARY_API_KEY
+    })
+  }
+  return createOpenAI({
+    baseURL: GROQ_BASE_URL,
+    apiKey: GROQ_API_KEY_ENV
+  })
+}
 
 type ComparisonSymbolObject = {
   symbol: string;
@@ -58,10 +77,7 @@ async function generateCaption(
   toolName: string,
   aiState: MutableAIState
 ): Promise<string> {
-  const groq = createOpenAI({
-    baseURL: 'https://api.groq.com/openai/v1',
-    apiKey: GROQ_API_KEY_ENV
-  })
+  const ai = getAIClient()
   
   const stockString = comparisonSymbols.length === 0
   ? symbol
@@ -107,6 +123,9 @@ This tool shows a heatmap of today's ETF market performance across sectors and a
 10. analyzeStockWithAI
 This tool provides AI-powered investment analysis from multiple legendary investors (Warren Buffett, Ben Graham, Peter Lynch, etc.). Use this when the user asks whether a stock is worth buying, wants investment advice, or asks for professional analysis.
 
+11. searchFinancialWeb
+This tool performs real-time web search and financial entity lookup via 2MD Search Engine. Use this for general questions, company IPO status, ticker lookups, current events, or background facts.
+
 
 You have just called a tool (` +
     toolName +
@@ -126,6 +145,7 @@ or
 Assistant (you): This is the price of AAPL stock. I can also generate a chart or share further financial data.
 
 or 
+
 Assistant (you): Would you like to see a chart of AAPL or get more information about its financials?
 
 Example 2 :
@@ -139,6 +159,7 @@ or
 Assistant (you): This is the chart for AAPL and MSFT stocks. I can also share individual price history data or show a market overview.
 
 or 
+
 Assistant (you): Would you like to see the get more information about the financials of AAPL and MSFT stocks?
 
 ## Guidelines
@@ -153,7 +174,7 @@ Besides the symbol, you cannot customize any of the screeners or graphics. Do no
 
   try {
     const response = await generateText({
-      model: groq(MODEL),
+      model: ai(MODEL),
       messages: [
         {
           role: 'system',
@@ -193,19 +214,21 @@ async function submitUserMessage(content: string) {
   let textNode: undefined | React.ReactNode
 
   try {
-    const groq = createOpenAI({
-      baseURL: 'https://api.groq.com/openai/v1',
-      apiKey: GROQ_API_KEY_ENV
-    })
+    const ai = getAIClient()
 
     const result = await streamUI({
-      model: groq(TOOL_MODEL),
+      model: ai(TOOL_MODEL),
       initial: <SpinnerMessage />,
       maxRetries: 1,
       system: `\
 You are a stock market conversation bot. You can provide the user information about stocks include prices and charts in the UI. You do not have access to any information and should only provide information by calling functions.
 
 Language: reply in the same language the user used most recently. If the latest user message contains Chinese characters, reply in Traditional Chinese. If it is English, reply in English. Do not switch languages unless the user does so.
+
+### 🔴 零幻覺與即時檢索鐵律 (ZERO HALLUCINATION & REAL-TIME SEARCH POLICY)
+1. 你的底層模型內部知識庫可能已經過期。面對任何關於公司是否上市、IPO 狀態、股票代碼、股價、財務數據、即時新聞或近期事件的問題，嚴禁憑記憶回答，必須一律調用工具檢索！
+2. 若使用者詢問公司上市/IPO 狀態、查找股票代碼、近期動態或一般財經事件（例如：「SpaceX 上市了嗎」、「台積電最新消息」），請務必調用 searchFinancialWeb 工具進行 2MD 即時連網搜尋。
+3. 嚴禁任何自行腦補、猜測假新聞、假日期、假上市狀態或假數字！若搜尋無資料，必須如實告知。
 
 ### Cryptocurrency Tickers
 For any cryptocurrency, append "USD" at the end of the ticker when using functions. For instance, "DOGE" should be "DOGEUSD".
@@ -233,6 +256,11 @@ Example 2:
 
 User: Should I buy TSLA?
 Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "analyzeStockWithAI" }, "parameters": { "symbol": "TSLA" } } }
+
+Example 3:
+
+User: SpaceX 上市了嗎？
+Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 上市 IPO 股票代號" } } }
     `,
       messages: [
         ...aiState.get().messages.map((message: any) => ({
@@ -884,6 +912,73 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             return (
               <BotCard>
                 <StockAnalysis symbol={symbol} />
+                {caption}
+              </BotCard>
+            )
+          }
+        },
+        searchFinancialWeb: {
+          description:
+            'Search live financial news, company IPO status, ticker symbols, stock events, or general factual web information via 2MD Search. Use this whenever the user asks whether a company is public/listed, general market developments, or questions needing live web search.',
+          parameters: z.object({
+            query: z
+              .string()
+              .describe('The search query for live 2MD web search.')
+          }),
+          generate: async function* ({ query }) {
+            yield (
+              <BotCard>
+                <div className="flex items-center space-x-2 p-4">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                  <span>🌐 正在透過 2MD 搜尋引擎檢索「{query}」...</span>
+                </div>
+              </BotCard>
+            )
+
+            const results = await searchWeb2MD(query, 5)
+            const toolCallId = nanoid()
+
+            aiState.done({
+              ...aiState.get(),
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: 'assistant',
+                  content: [
+                    {
+                      type: 'tool-call',
+                      toolName: 'searchFinancialWeb',
+                      toolCallId,
+                      args: { query }
+                    }
+                  ]
+                },
+                {
+                  id: nanoid(),
+                  role: 'tool',
+                  content: [
+                    {
+                      type: 'tool-result',
+                      toolName: 'searchFinancialWeb',
+                      toolCallId,
+                      result: { query, results }
+                    }
+                  ]
+                }
+              ]
+            })
+
+            const caption = await generateCaption(
+              query,
+              [],
+              'searchFinancialWeb',
+              aiState
+            )
+
+            return (
+              <BotCard>
+                <WebSearchResults query={query} results={results} />
                 {caption}
               </BotCard>
             )
