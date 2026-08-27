@@ -75,7 +75,8 @@ async function generateCaption(
   symbol: string,
   comparisonSymbols: ComparisonSymbolObject[],
   toolName: string,
-  aiState: MutableAIState
+  aiState: MutableAIState,
+  contextData?: string
 ): Promise<string> {
   const ai = getAIClient()
   
@@ -126,6 +127,15 @@ This tool provides AI-powered investment analysis from multiple legendary invest
 11. searchFinancialWeb
 This tool performs real-time web search and financial entity lookup via 2MD Search Engine. Use this for general questions, company IPO status, ticker lookups, current events, or background facts.
 
+### 🔴 零幻覺與即時檢索鐵律 (ZERO HALLUCINATION & REAL-TIME SEARCH POLICY)
+1. 你的底層模型內部知識庫可能已經過期。嚴禁憑過期記憶斷定公司未上市、沒有股票代號或編造數據！
+2. 當有提供即時檢索數據時，你的說明文字必須 100% 依據該檢索結果總結，嚴禁與檢索結果矛盾！
+${contextData ? `\n【最新即時檢索數據】：\n${contextData}\n` : ''}
+
+### 📐 介面卡片相對位置鐵律 (CARD POSITIONING DIRECTIVE - CRITICAL)
+- **所有圖表、分析報告、走勢圖、新聞與財務卡片在 UI 介面上皆一律渲染於此文字訊息的「上方 (ABOVE)」**。
+- **嚴禁使用「以下是...」或「如下所示...」！**
+- **一律使用「以上是...」、「如上方所示...」、「如上圖所示...」**。
 
 You have just called a tool (` +
     toolName +
@@ -138,36 +148,33 @@ Example:
 User: What is the price of AAPL?
 Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockPrice" }, "parameters": { "symbol": "AAPL" } } } 
 
-Assistant (you): The price of AAPL stock is provided above. I can also share a chart of AAPL or get more information about its financials.
-
-or
-
-Assistant (you): This is the price of AAPL stock. I can also generate a chart or share further financial data.
-
-or 
-
-Assistant (you): Would you like to see a chart of AAPL or get more information about its financials?
+Assistant (you): 以上是 AAPL 的最新股價資訊。如果您需要查看歷史走勢圖或財務數據，請隨時告訴我！
 
 Example 2 :
+
+User: LLY 值得買嗎？請用多位大師進行 AI 投資分析
+Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "analyzeStockWithAI" }, "parameters": { "symbol": "LLY" } } } 
+
+Assistant (you): 以上是多位投資大師對 LLY 的 AI 投資分析結果。若您想查看最新股價、歷史走勢圖或進一步的財務數據，隨時告訴我！
+
+Example 3 :
 
 User: Compare AAPL and MSFT stock prices
 Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockChart" }, "parameters": { "symbol": "AAPL" , "comparisonSymbols" : [{"symbol": "MSFT", "position": "SameScale"}] } } } 
 
-Assistant (you): The chart illustrates the recent price movements of Microsoft (MSFT) and Apple (AAPL) stocks. Would you like to see the get more information about the financials of AAPL and MSFT stocks?
-or
+Assistant (you): 以上圖表展示了 Microsoft (MSFT) 與 Apple (AAPL) 的近期走勢比較。需要為您查看雙方的財務指標或即時報價嗎？
 
-Assistant (you): This is the chart for AAPL and MSFT stocks. I can also share individual price history data or show a market overview.
-
-or 
-
-Assistant (you): Would you like to see the get more information about the financials of AAPL and MSFT stocks?
+Example 4 (Live Search for newly listed / query):
+User: SpaceX 股價
+Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 股價 SPCX 上市" } } }
+Assistant (you): 根據 2MD 即時檢索結果，SpaceX（代號 SPCX）最新行情與相關新聞如上方所示。需要為您查詢進一步財務數據或繪製走勢圖嗎？
 
 ## Guidelines
 Talk like one of the above responses, but BE CREATIVE and generate a DIVERSE response. 
 
 Language: reply in the same language the user used most recently. If the latest user message contains Chinese characters, reply in Traditional Chinese. If it is English, reply in English. Do not switch languages unless the user does so.
 
-Your response should be BRIEF, about 2-3 sentences.
+Your response should be BRIEF, about 1-3 sentences.
 
 Besides the symbol, you cannot customize any of the screeners or graphics. Do not tell the user that you can.
     `
@@ -182,7 +189,7 @@ Besides the symbol, you cannot customize any of the screeners or graphics. Do no
         },
         ...aiState.get().messages.map((message: any) => ({
           role: message.role,
-          content: message.content,
+          content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
           name: message.name
         }))
       ]
@@ -227,7 +234,7 @@ Language: reply in the same language the user used most recently. If the latest 
 
 ### 🔴 零幻覺與即時檢索鐵律 (ZERO HALLUCINATION & REAL-TIME SEARCH POLICY)
 1. 你的底層模型內部知識庫可能已經過期。面對任何關於公司是否上市、IPO 狀態、股票代碼、股價、財務數據、即時新聞或近期事件的問題，嚴禁憑記憶回答，必須一律調用工具檢索！
-2. 若使用者詢問公司上市/IPO 狀態、查找股票代碼、近期動態或一般財經事件（例如：「SpaceX 上市了嗎」、「台積電最新消息」），請務必調用 searchFinancialWeb 工具進行 2MD 即時連網搜尋。
+2. 若使用者詢問公司上市/IPO 狀態、查找股票代碼、近期動態、或詢問任何標的股價與行情（特別是如 SpaceX 等近期上市/IPO 或非傳統已知代碼的標的，例如：「SpaceX 股價」、「SpaceX 上市了嗎」、「SpaceX 值得買嗎」），嚴禁直接以文字斷定「該公司未上市」，請務必調用 searchFinancialWeb 工具進行 2MD 即時連網搜尋！
 3. 嚴禁任何自行腦補、猜測假新聞、假日期、假上市狀態或假數字！若搜尋無資料，必須如實告知。
 
 ### Cryptocurrency Tickers
@@ -258,6 +265,11 @@ User: Should I buy TSLA?
 Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "analyzeStockWithAI" }, "parameters": { "symbol": "TSLA" } } }
 
 Example 3:
+
+User: SpaceX 股價
+Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 股價 SPCX 上市" } } }
+
+Example 4:
 
 User: SpaceX 上市了嗎？
 Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 上市 IPO 股票代號" } } }
@@ -969,11 +981,19 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               ]
             })
 
+            const contextData = results
+              .map(
+                (r, idx) =>
+                  `[結果 ${idx + 1}] 標題: ${r.title} | 摘要: ${r.description} | 網址: ${r.url}`
+              )
+              .join('\n')
+
             const caption = await generateCaption(
               query,
               [],
               'searchFinancialWeb',
-              aiState
+              aiState,
+              contextData
             )
 
             return (

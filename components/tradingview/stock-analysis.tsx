@@ -221,58 +221,149 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [showTranscript, setShowTranscript] = useState(true)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  // 3 批次漸進式加載狀態
+  const [batchStage, setBatchStage] = useState<number>(0) // 1: 核心5位, 2: 輿論3位, 3: 價值成長5位, 4: 全部完成
+  const [batchLoading, setBatchLoading] = useState<boolean>(false)
+  const [batchStatusText, setBatchStatusText] = useState<string>('')
+
+  // 計時器
+  useEffect(() => {
+    let timer: any
+    if (loading || batchLoading) {
+      timer = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1)
+      }, 1000)
+    }
+    return () => {
+      if (timer) clearInterval(timer)
+    }
+  }, [loading, batchLoading])
+
+  const executeBatchRequest = async (analysts: string[], enableRoundTable = false) => {
+    const response = await fetch('/api/stock-analysis', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        tickers: symbol.toUpperCase(),
+        selectedAnalysts: analysts,
+        enableRoundTable,
+        roundTableRounds: 1,
+        async: false
+      })
+    })
+
+    if (!response.ok) {
+      let errorMsg = `API 連線錯誤 (${response.status})`
+      try {
+        const errData = await response.json()
+        if (errData?.error) errorMsg = errData.error
+      } catch {
+        // ignore
+      }
+      throw new Error(errorMsg)
+    }
+
+    return await response.json()
+  }
 
   const fetchAnalysis = async () => {
     setLoading(true)
     setError(null)
+    setElapsedSeconds(0)
+    setBatchStage(1)
+    setBatchStatusText('正在分析第 1 批核心大師（巴菲特、伍德、貝瑞、技術、估值）...')
 
     try {
-      const defaultAnalysts = [
+      // -------------------------------------------------------------
+      // 第 1 批：5 位核心大師 (巴菲特、伍德、貝瑞、技術分析、估值分析)
+      // 耗時約 15~18 秒，完成後立刻在畫面上渲染首屏卡片！
+      // -------------------------------------------------------------
+      const batch1Analysts = [
         'warren_buffett',
-        'charlie_munger',
-        'ben_graham',
         'cathie_wood',
         'michael_burry',
-        'peter_lynch',
-        'bill_ackman',
-        'nancy_pelosi',
-        'wsb',
         'technical_analyst',
-        'fundamentals_analyst',
-        'sentiment_analyst',
         'valuation_analyst'
       ]
 
-      const response = await fetch('/api/stock-analysis', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          tickers: symbol.toUpperCase(),
-          selectedAnalysts: defaultAnalysts,
-          enableRoundTable: true,
-          roundTableRounds: 1
-        })
-      })
+      const data1 = await executeBatchRequest(batch1Analysts, false)
+      setResult(data1)
+      setLoading(false) // 立即呈現首批結果，告別長時間轉圈！
 
-      if (!response.ok) {
-        let errorMsg = `API 連線錯誤 (${response.status})`
-        try {
-          const errData = await response.json()
-          if (errData?.error) errorMsg = errData.error
-        } catch {
-          // ignore
+      // -------------------------------------------------------------
+      // 第 2 批：3 位長耗時/輿論散戶大師 (新聞輿論、WSB 散戶動能、裴洛西國會交易)
+      // 在背景進行追加，回傳後自動合併進對話卡片中
+      // -------------------------------------------------------------
+      setBatchStage(2)
+      setBatchLoading(true)
+      setBatchStatusText('正在追加第 2 批：新聞輿論、WSB 散戶與國會交易...')
+
+      try {
+        const batch2Analysts = ['sentiment_analyst', 'wsb', 'nancy_pelosi']
+        const data2 = await executeBatchRequest(batch2Analysts, false)
+
+        if (data2?.analyst_signals) {
+          setResult((prev) => {
+            if (!prev) return data2
+            return {
+              ...prev,
+              analyst_signals: {
+                ...prev.analyst_signals,
+                ...data2.analyst_signals
+              }
+            }
+          })
         }
-        throw new Error(errorMsg)
+      } catch (err2) {
+        console.warn('Batch 2 fetch warning:', err2)
       }
 
-      const data = await response.json()
-      setResult(data)
+      // -------------------------------------------------------------
+      // 第 3 批：5 位價值與成長大師 (查理蒙格、班傑明葛拉漢、彼得林區、比爾艾克曼、基本面)
+      // 在背景進行追加，合併完成全部 13 位大師全維度分析！
+      // -------------------------------------------------------------
+      setBatchStage(3)
+      setBatchStatusText('正在追加第 3 批：蒙格、葛拉漢、彼得林區與綜合研判...')
+
+      try {
+        const batch3Analysts = [
+          'charlie_munger',
+          'ben_graham',
+          'peter_lynch',
+          'bill_ackman',
+          'fundamentals_analyst'
+        ]
+        const data3 = await executeBatchRequest(batch3Analysts, false)
+
+        if (data3) {
+          setResult((prev) => {
+            if (!prev) return data3
+            return {
+              ...prev,
+              decisions: data3.decisions || prev.decisions,
+              analyst_signals: {
+                ...prev.analyst_signals,
+                ...(data3.analyst_signals || {})
+              }
+            }
+          })
+        }
+      } catch (err3) {
+        console.warn('Batch 3 fetch warning:', err3)
+      }
+
+      setBatchStage(4)
+      setBatchLoading(false)
+      setBatchStatusText('13 位大師全維度分析已完成')
+
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析失敗，請稍後再試')
-    } finally {
       setLoading(false)
+      setBatchLoading(false)
     }
   }
 
@@ -285,11 +376,16 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-900 p-6 shadow-sm">
         <div className="flex flex-col items-center justify-center space-y-3 py-4">
           <div className="h-8 w-8 animate-spin rounded-full border-3 border-blue-500 border-t-transparent"></div>
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-            🤖 AI 投資大師團隊正在進行多輪委員會分析 {symbol}...
-          </span>
-          <span className="text-xs text-slate-400">
-            （多位大師正在交叉辯論與計算估值，預計需 10-25 秒）
+          <div className="text-center space-y-1">
+            <span className="text-sm font-medium text-slate-800 dark:text-slate-200 block">
+              🤖 AI 投資大師團隊正在分析 {symbol.toUpperCase()}...
+            </span>
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
+              {batchStatusText || '正在調度大師模型與財報數據...'}
+            </p>
+          </div>
+          <span className="text-[11px] text-slate-400">
+            （第 1/3 批核心大師研判中，已執行 {elapsedSeconds} 秒，即將呈現首屏）
           </span>
         </div>
       </div>
@@ -307,7 +403,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         </p>
         <button
           onClick={() => fetchAnalysis()}
-          className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-all shadow-sm"
+          className="inline-flex items-center gap-1.5 rounded-md bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700 transition-all shadow-sm cursor-pointer"
         >
           🔄 重新嘗試分析
         </button>
@@ -326,14 +422,27 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
   return (
     <div className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 p-5 shadow-sm">
-      {/* 標題 */}
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex items-center justify-between">
+      {/* 標題與分批狀態 */}
+      <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            🤖 AI 投資大師多輪分析報告：{ticker}
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            由多位傳奇投資大師進行獨立研判與多輪圓桌委員會辯論
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+              🤖 AI 投資大師多維度分析報告：{ticker}
+            </h3>
+            {batchLoading && (
+              <span className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 font-medium">
+                <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>
+                {batchStatusText}
+              </span>
+            )}
+            {batchStage === 4 && (
+              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 font-medium">
+                ✨ 13 位大師全維度分析完畢
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            由多位傳奇投資大師進行獨立研判、量化估值、技術動能與輿論審計
           </p>
         </div>
         {roundTable?.signal && (

@@ -2,7 +2,6 @@
 
 import React from 'react'
 import { TwoMDResultItem } from '@/lib/2md'
-import { ExternalLink, Globe } from 'lucide-react'
 
 export function WebSearchResults({
   query,
@@ -22,7 +21,10 @@ export function WebSearchResults({
   return (
     <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center gap-2 border-b border-border pb-2 text-sm font-semibold text-foreground">
-        <Globe className="h-4 w-4 text-blue-500" />
+        <svg className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+        </svg>
         <span>🌐 2MD 即時連網搜尋結果：{query}</span>
       </div>
       <div className="space-y-2.5">
@@ -40,7 +42,9 @@ export function WebSearchResults({
               <span>
                 {idx + 1}. {item.title}
               </span>
-              <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70 transition-opacity group-hover:opacity-100" />
+              <svg className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70 transition-opacity group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" />
+              </svg>
             </a>
             {item.description && (
               <p className="mt-1 text-xs text-muted-foreground line-clamp-2">

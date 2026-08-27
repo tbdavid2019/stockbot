@@ -13,18 +13,15 @@ const AI_HEDGE_FUND_FALLBACK_HOST = '46.51.245.98'
 // 預設核心分析師團隊 (涵蓋傳奇投資大師與全方位分析模型)
 const DEFAULT_ANALYSTS = [
   'warren_buffett',
-  'charlie_munger',
-  'ben_graham',
   'cathie_wood',
   'michael_burry',
+  'technical_analyst',
+  'valuation_analyst',
+  'fundamentals_analyst',
+  'charlie_munger',
   'peter_lynch',
   'bill_ackman',
-  'nancy_pelosi',
-  'wsb',
-  'technical_analyst',
-  'fundamentals_analyst',
-  'sentiment_analyst',
-  'valuation_analyst'
+  'wsb'
 ]
 
 function parsePythonJson(text: string): any {
@@ -38,20 +35,26 @@ function parsePythonJson(text: string): any {
 function requestHedgeFundApi(
   host: string,
   port: string | number,
-  payload: any,
+  path: string,
+  method: 'GET' | 'POST',
+  payload?: any,
   timeoutMs = 55000
 ): Promise<any> {
   return new Promise((resolve, reject) => {
-    const postData = JSON.stringify(payload)
+    const postData = payload ? JSON.stringify(payload) : null
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    }
+    if (postData) {
+      headers['Content-Length'] = String(Buffer.byteLength(postData))
+    }
+
     const options = {
       hostname: host,
       port: Number(port),
-      path: '/api/analysis',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Content-Length': Buffer.byteLength(postData)
-      },
+      path,
+      method,
+      headers,
       timeout: timeoutMs
     }
 
@@ -69,7 +72,12 @@ function requestHedgeFundApi(
             reject(new Error(`解析分析數據失敗: ${e.message}`))
           }
         } else {
-          reject(new Error(`API 回應代碼 ${res.statusCode}: ${data.slice(0, 300)}`))
+          try {
+            const errJson = JSON.parse(data)
+            reject(new Error(errJson.error || `API 回應代碼 ${res.statusCode}`))
+          } catch {
+            reject(new Error(`API 回應代碼 ${res.statusCode}: ${data.slice(0, 300)}`))
+          }
         }
       })
     })
@@ -80,11 +88,53 @@ function requestHedgeFundApi(
       reject(new Error('AI 分析連線超時（超過 55 秒）'))
     })
 
-    req.write(postData)
+    if (postData) {
+      req.write(postData)
+    }
     req.end()
   })
 }
 
+// 查詢異步任務狀態
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const taskId = searchParams.get('taskId') || searchParams.get('task_id')
+
+    if (!taskId) {
+      return NextResponse.json({ error: '缺少 taskId 參數' }, { status: 400 })
+    }
+
+    const hostsToTry = [AI_HEDGE_FUND_HOST, AI_HEDGE_FUND_FALLBACK_HOST].filter(Boolean)
+    let taskData = null
+    let lastError: any = null
+
+    for (const host of hostsToTry) {
+      try {
+        taskData = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, `/api/task/${taskId}`, 'GET', null, 10000)
+        if (taskData) break
+      } catch (err: any) {
+        lastError = err
+      }
+    }
+
+    if (!taskData) {
+      return NextResponse.json(
+        { error: lastError?.message || '無法查詢任務狀態' },
+        { status: 502 }
+      )
+    }
+
+    return NextResponse.json(taskData)
+  } catch (error: any) {
+    return NextResponse.json(
+      { error: `查詢任務錯誤: ${error.message}` },
+      { status: 500 }
+    )
+  }
+}
+
+// 執行分析 (支援同步與異步任務模式)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
@@ -93,7 +143,8 @@ export async function POST(request: NextRequest) {
       selectedAnalysts,
       modelName,
       enableRoundTable = true,
-      roundTableRounds = 1
+      roundTableRounds = 1,
+      async: isAsync = true
     } = body
 
     if (!tickers) {
@@ -103,7 +154,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 如果沒有選擇分析師，使用預設列表
+    // 如果沒有選擇分析師，使用預設精選列表
     const analysts = (selectedAnalysts && selectedAnalysts.length > 0) 
       ? selectedAnalysts 
       : DEFAULT_ANALYSTS
@@ -112,7 +163,8 @@ export async function POST(request: NextRequest) {
       tickers: tickers.toUpperCase(),
       selectedAnalysts: analysts,
       enableRoundTable,
-      roundTableRounds
+      roundTableRounds,
+      async: isAsync
     }
 
     if (modelName) {
@@ -122,6 +174,7 @@ export async function POST(request: NextRequest) {
     console.log('📊 Stock Analysis Request via node:http:', {
       host: AI_HEDGE_FUND_HOST,
       port: AI_HEDGE_FUND_PORT,
+      isAsync,
       ...requestPayload
     })
 
@@ -130,10 +183,22 @@ export async function POST(request: NextRequest) {
 
     const hostsToTry = [AI_HEDGE_FUND_HOST, AI_HEDGE_FUND_FALLBACK_HOST].filter(Boolean)
 
+    // 優先嘗試異步端點 /api/analysis/async，若後端尚未支援則自動降級為同步
     for (const host of hostsToTry) {
       try {
-        data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, requestPayload, 55000)
-        if (data) break
+        if (isAsync) {
+          try {
+            data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, '/api/analysis/async', 'POST', requestPayload, 15000)
+            if (data) break
+          } catch {
+            // 後端若未重啟或不支援 async 端點，嘗試直接向 /api/analysis 傳送 async: true
+            data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, '/api/analysis', 'POST', requestPayload, 55000)
+            if (data) break
+          }
+        } else {
+          data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, '/api/analysis', 'POST', requestPayload, 55000)
+          if (data) break
+        }
       } catch (err: any) {
         lastError = err
         console.warn(`⚠️ Failed to connect to ${host}:`, err.message)
@@ -147,7 +212,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('✅ Analysis completed successfully')
+    console.log('✅ Analysis request accepted / processed')
     return NextResponse.json(data)
 
   } catch (error: any) {
@@ -158,3 +223,4 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
