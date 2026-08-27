@@ -47,22 +47,26 @@ interface MutableAIState {
 
 const PRIMARY_BASE_URL = process.env.OPENAI_BASE_URL || process.env.NEN_BASE_URL || 'https://nen.com.tw/v1'
 const PRIMARY_API_KEY = process.env.OPENAI_API_KEY || process.env.NEN_API_KEY || 'sk-XqYJN7YDjomSEeOPn9GsHvSpspYLuQrxdgQc2zcA3kvuZD34'
-const GROQ_BASE_URL = 'https://api.groq.com/openai/v1'
-const GROQ_API_KEY_ENV = process.env.GROQ_API_KEY
 
-const MODEL = process.env.MODEL || 'deepseek-v4-flash'
-const TOOL_MODEL = process.env.TOOL_MODEL || 'deepseek-v4-flash'
+// Fallback Model Candidates List (Tried in sequence if previous model or channel fails)
+function getFallbackModelList(): string[] {
+  const envModel = process.env.MODEL || process.env.TOOL_MODEL
+  const models = [
+    // Sanitize: Ignore stale / dead channels like gpt-oss-20b
+    ...(envModel && !envModel.includes('gpt-oss') ? [envModel] : []),
+    'deepseek-v4-flash',
+    'qwen3.5-flash',
+    'gemini-2.5-flash',
+    'deepseek-v3.2',
+    'qwen3.6-flash'
+  ]
+  return Array.from(new Set(models))
+}
 
-function getAIClient() {
-  if (PRIMARY_API_KEY) {
-    return createOpenAI({
-      baseURL: PRIMARY_BASE_URL,
-      apiKey: PRIMARY_API_KEY
-    })
-  }
+function getAIClient(overrideBaseUrl?: string, overrideApiKey?: string) {
   return createOpenAI({
-    baseURL: GROQ_BASE_URL,
-    apiKey: GROQ_API_KEY_ENV
+    baseURL: overrideBaseUrl || PRIMARY_BASE_URL,
+    apiKey: overrideApiKey || PRIMARY_API_KEY
   })
 }
 
@@ -78,8 +82,6 @@ async function generateCaption(
   aiState: MutableAIState,
   contextData?: string
 ): Promise<string> {
-  const ai = getAIClient()
-  
   const stockString = comparisonSymbols.length === 0
   ? symbol
   : [symbol, ...comparisonSymbols.map(obj => obj.symbol)].join(', ');
@@ -110,19 +112,19 @@ This tool shows the latest news and events for a stock or cryptocurrency.
 This tool shows a generic stock screener which can be used to find new stocks based on financial or technical parameters.
 
 6. showMarketOverview
-This tool shows an overview of today's stock, futures, bond, and forex market performance including change values, Open, High, Low, and Close values.
+This tool shows the market overview.
 
 7. showMarketHeatmap
-This tool shows a heatmap of today's stock market performance across sectors.
+This tool shows the market heatmap.
 
-8. showTrendingStocks
-This tool shows the daily top trending stocks including the top five gaining, losing, and most active stocks based on today's performance.
+8. showMarketTrending
+This tool shows the market trending.
 
 9. showETFHeatmap
-This tool shows a heatmap of today's ETF market performance across sectors and asset classes.
+This tool shows the ETF heatmap.
 
 10. analyzeStockWithAI
-This tool provides AI-powered investment analysis from multiple legendary investors (Warren Buffett, Ben Graham, Peter Lynch, etc.). Use this when the user asks whether a stock is worth buying, wants investment advice, or asks for professional analysis.
+This tool provides AI-powered investment analysis from multiple legendary investors (Warren Buffett, Cathie Wood, Michael Burry, Charlie Munger, etc.) and quantitative multi-agent signals.
 
 11. searchFinancialWeb
 This tool performs real-time web search and financial entity lookup via 2MD Search Engine. Use this for general questions, company IPO status, ticker lookups, current events, or background facts.
@@ -139,35 +141,13 @@ ${contextData ? `\n【最新即時檢索數據】：\n${contextData}\n` : ''}
 
 You have just called a tool (` +
     toolName +
-    ` for ` +
-    stockString +
-    `) to respond to the user. Now generate text to go alongside that tool response, which may be a graphic like a chart or price history.
-  
-Example:
+    `) on the user's behalf. Now you need to share a response to the user with this tool response. 
 
+Example:
 User: What is the price of AAPL?
 Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockPrice" }, "parameters": { "symbol": "AAPL" } } } 
 
 Assistant (you): 以上是 AAPL 的最新股價資訊。如果您需要查看歷史走勢圖或財務數據，請隨時告訴我！
-
-Example 2 :
-
-User: LLY 值得買嗎？請用多位大師進行 AI 投資分析
-Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "analyzeStockWithAI" }, "parameters": { "symbol": "LLY" } } } 
-
-Assistant (you): 以上是多位投資大師對 LLY 的 AI 投資分析結果。若您想查看最新股價、歷史走勢圖或進一步的財務數據，隨時告訴我！
-
-Example 3 :
-
-User: Compare AAPL and MSFT stock prices
-Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockChart" }, "parameters": { "symbol": "AAPL" , "comparisonSymbols" : [{"symbol": "MSFT", "position": "SameScale"}] } } } 
-
-Assistant (you): 以上圖表展示了 Microsoft (MSFT) 與 Apple (AAPL) 的近期走勢比較。需要為您查看雙方的財務指標或即時報價嗎？
-
-Example 4 (Live Search for newly listed / query):
-User: SpaceX 股價
-Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 股價 SPCX 上市" } } }
-Assistant (you): 根據 2MD 即時檢索結果，SpaceX（代號 SPCX）最新行情與相關新聞如上方所示。需要為您查詢進一步財務數據或繪製走勢圖嗎？
 
 ## Guidelines
 Talk like one of the above responses, but BE CREATIVE and generate a DIVERSE response. 
@@ -179,25 +159,32 @@ Your response should be BRIEF, about 1-3 sentences.
 Besides the symbol, you cannot customize any of the screeners or graphics. Do not tell the user that you can.
     `
 
-  try {
-    const response = await generateText({
-      model: ai(MODEL),
-      messages: [
-        {
-          role: 'system',
-          content: captionSystemMessage
-        },
-        ...aiState.get().messages.map((message: any) => ({
-          role: message.role,
-          content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
-          name: message.name
-        }))
-      ]
-    })
-    return response.text || ''
-  } catch (err) {
-    return '' // Send tool use without caption.
+  const models = getFallbackModelList()
+  const ai = getAIClient()
+
+  for (const modelName of models) {
+    try {
+      const response = await generateText({
+        model: ai(modelName),
+        messages: [
+          {
+            role: 'system',
+            content: captionSystemMessage
+          },
+          ...aiState.get().messages.map((message: any) => ({
+            role: message.role,
+            content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
+            name: message.name
+          }))
+        ]
+      })
+      if (response.text) return response.text
+    } catch (err: any) {
+      console.warn(`[Caption Fallback] Model ${modelName} failed:`, err?.message)
+    }
   }
+
+  return '' // Send tool use without caption if all fallbacks fail.
 }
 
 async function submitUserMessage(content: string) {
@@ -220,14 +207,17 @@ async function submitUserMessage(content: string) {
   let textStream: undefined | ReturnType<typeof createStreamableValue<string>>
   let textNode: undefined | React.ReactNode
 
-  try {
-    const ai = getAIClient()
+  const models = getFallbackModelList()
+  const ai = getAIClient()
+  let lastError: any = null
 
-    const result = await streamUI({
-      model: ai(TOOL_MODEL),
-      initial: <SpinnerMessage />,
-      maxRetries: 1,
-      system: `\
+  for (const modelName of models) {
+    try {
+      const result = await streamUI({
+        model: ai(modelName),
+        initial: <SpinnerMessage />,
+        maxRetries: 0,
+        system: `\
 You are a stock market conversation bot. You can provide the user information about stocks include prices and charts in the UI. You do not have access to any information and should only provide information by calling functions.
 
 Language: reply in the same language the user used most recently. If the latest user message contains Chinese characters, reply in Traditional Chinese. If it is English, reply in English. Do not switch languages unless the user does so.
@@ -1007,36 +997,29 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
       }
     })
 
-    return {
-      id: nanoid(),
-      display: result.value
+      return {
+        id: nanoid(),
+        display: result.value
+      }
+    } catch (err: any) {
+      console.warn(`[StreamUI Fallback] Model ${modelName} failed:`, err?.message || err)
+      lastError = err
     }
-  } catch (err: any) {
-    // If key is missing, show error message that Groq API Key is missing.
-    if (err.message.includes('OpenAI API key is missing.')) {
-      err.message =
-        'Groq API key is missing. Pass it using the GROQ_API_KEY environment variable. Try restarting the application if you recently changed your environment variables.'
-    }
-    return {
-      id: nanoid(),
-      display: (
-        <div className="border p-4">
-          <div className="text-red-700 font-medium">Error: {err.message}</div>
-          <a
-            href="https://github.com/tbdavid2019/stockbot/issues"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-sm text-red-800 hover:text-red-900"
-          >
-            If you think something has gone wrong, create an
-            <span className="ml-1" style={{ textDecoration: 'underline' }}>
-              {' '}
-              issue on Github.
-            </span>
-          </a>
+  }
+
+  // If all fallback models failed:
+  return {
+    id: nanoid(),
+    display: (
+      <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-2">
+        <div className="text-amber-800 dark:text-amber-300 font-semibold text-sm">
+          ⚠️ AI 對話模型服務暫時無法取得回應（{lastError?.message || '通道切換中'}）
         </div>
-      )
-    }
+        <p className="text-xs text-amber-700 dark:text-amber-400">
+          已自動嘗試多個備用模型通道（DeepSeek、Qwen、Gemini 等）。請稍後重新發送訊息或重試。
+        </p>
+      </div>
+    )
   }
 }
 
