@@ -55,10 +55,10 @@ interface ProviderCandidate {
 function getProviderCandidates(): ProviderCandidate[] {
   const candidates: ProviderCandidate[] = []
 
-  // -------------------------------------------------------------
+  // --------------------------------------------------------------------------
   // 1. 主要 LLM 配置 (Primary / Main Model)
-  // 獨立變數：PRIMARY_MODEL / MAIN_MODEL
-  // -------------------------------------------------------------
+  // 支援環境變數：PRIMARY_BASE_URL, PRIMARY_API_KEY, PRIMARY_MODEL
+  // --------------------------------------------------------------------------
   const primaryKey =
     process.env.PRIMARY_API_KEY ||
     process.env.NEN_API_KEY ||
@@ -81,54 +81,94 @@ function getProviderCandidates(): ProviderCandidate[] {
 
   if (primaryKey) {
     candidates.push({
-      name: `Primary (${primaryModel})`,
+      name: `Primary [${primaryModel}]`,
       baseURL: primaryBaseUrl,
       apiKey: primaryKey,
       model: primaryModel
     })
   }
 
-  // -------------------------------------------------------------
-  // 2. 備用 LLM 配置 (Fallback Model - Groq)
-  // 獨立變數：FALLBACK_MODEL / GROQ_MODEL
-  // -------------------------------------------------------------
-  const fallbackKey =
-    process.env.FALLBACK_API_KEY ||
-    process.env.GROQ_API_KEY
-  const fallbackBaseUrl =
-    process.env.FALLBACK_BASE_URL ||
-    process.env.GROQ_BASE_URL ||
-    'https://api.groq.com/openai/v1'
-  const fallbackModel =
-    process.env.FALLBACK_MODEL ||
-    process.env.GROQ_MODEL ||
-    'openai/gpt-oss-20b'
-
-  if (fallbackKey) {
-    candidates.push({
-      name: `Fallback Groq (${fallbackModel})`,
-      baseURL: fallbackBaseUrl,
-      apiKey: fallbackKey,
-      model: fallbackModel
-    })
-
-    if (fallbackModel !== 'openai/gpt-oss-120b') {
+  // --------------------------------------------------------------------------
+  // 2. 多階層動態備援配置 (Multi-Tier Fallback: FALLBACK_1_*, FALLBACK_2_*, ...)
+  // 支援環境變數：FALLBACK_1_BASE_URL, FALLBACK_1_API_KEY, FALLBACK_1_MODEL ...
+  // --------------------------------------------------------------------------
+  for (let i = 1; i <= 10; i++) {
+    const fbKey =
+      process.env[`FALLBACK_${i}_API_KEY`] ||
+      process.env[`FALLBACK_${i}_KEY`] ||
+      process.env[`LLM_FALLBACK_${i}_KEY`]
+    if (fbKey) {
+      const fbUrl =
+        process.env[`FALLBACK_${i}_BASE_URL`] ||
+        process.env[`FALLBACK_${i}_URL`] ||
+        process.env[`LLM_FALLBACK_${i}_URL`] ||
+        'https://api.groq.com/openai/v1'
+      const fbModel =
+        process.env[`FALLBACK_${i}_MODEL`] ||
+        process.env[`LLM_FALLBACK_${i}_MODEL`] ||
+        'openai/gpt-oss-20b'
       candidates.push({
-        name: 'Fallback Groq (openai/gpt-oss-120b)',
-        baseURL: fallbackBaseUrl,
-        apiKey: fallbackKey,
+        name: `Fallback #${i} [${fbModel}]`,
+        baseURL: fbUrl,
+        apiKey: fbKey,
+        model: fbModel
+      })
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // 3. 具名供應商配置 (Named Providers: GROQ, OPENAI, DEEPSEEK)
+  // --------------------------------------------------------------------------
+  // Groq 專屬配置 (GROQ_BASE_URL, GROQ_API_KEY, GROQ_MODEL)
+  const groqKey = process.env.GROQ_API_KEY || process.env.FALLBACK_API_KEY
+  if (groqKey) {
+    const groqUrl = process.env.GROQ_BASE_URL || process.env.FALLBACK_BASE_URL || 'https://api.groq.com/openai/v1'
+    const groqModel = process.env.GROQ_MODEL || process.env.FALLBACK_MODEL || 'openai/gpt-oss-20b'
+    candidates.push({
+      name: `Groq [${groqModel}]`,
+      baseURL: groqUrl,
+      apiKey: groqKey,
+      model: groqModel
+    })
+    if (groqModel !== 'openai/gpt-oss-120b') {
+      candidates.push({
+        name: `Groq Backup [openai/gpt-oss-120b]`,
+        baseURL: groqUrl,
+        apiKey: groqKey,
         model: 'openai/gpt-oss-120b'
       })
     }
   }
 
-  // -------------------------------------------------------------
-  // 3. 主要端點備援通道 (Nen DeepSeek / Qwen)
-  // -------------------------------------------------------------
+  // 官方 OpenAI 專屬配置 (FALLBACK_OPENAI_KEY / OPENAI_MODEL)
+  const fallbackOpenAIKey = process.env.FALLBACK_OPENAI_KEY
+  if (fallbackOpenAIKey) {
+    candidates.push({
+      name: `OpenAI [${process.env.OPENAI_MODEL || 'gpt-4o-mini'}]`,
+      baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+      apiKey: fallbackOpenAIKey,
+      model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+    })
+  }
+
+  // DeepSeek 官方配置 (DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL)
+  const deepseekKey = process.env.DEEPSEEK_API_KEY
+  if (deepseekKey) {
+    candidates.push({
+      name: `DeepSeek Official [${process.env.DEEPSEEK_MODEL || 'deepseek-chat'}]`,
+      baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
+      apiKey: deepseekKey,
+      model: process.env.DEEPSEEK_MODEL || 'deepseek-chat'
+    })
+  }
+
+  // --------------------------------------------------------------------------
+  // 4. 主要端點備援通道 (Nen 內建備援)
+  // --------------------------------------------------------------------------
   if (primaryKey) {
     if (primaryModel !== 'deepseek-v4-flash') {
       candidates.push({
-        name: 'Primary Backup (deepseek-v4-flash)',
+        name: 'Primary Backup [deepseek-v4-flash]',
         baseURL: primaryBaseUrl,
         apiKey: primaryKey,
         model: 'deepseek-v4-flash'
@@ -136,7 +176,7 @@ function getProviderCandidates(): ProviderCandidate[] {
     }
     if (primaryModel !== 'qwen3.5-flash') {
       candidates.push({
-        name: 'Primary Backup (qwen3.5-flash)',
+        name: 'Primary Backup [qwen3.5-flash]',
         baseURL: primaryBaseUrl,
         apiKey: primaryKey,
         model: 'qwen3.5-flash'
