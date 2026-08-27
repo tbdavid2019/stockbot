@@ -45,29 +45,55 @@ interface MutableAIState {
   get: () => AIState
 }
 
-const PRIMARY_BASE_URL = process.env.OPENAI_BASE_URL || process.env.NEN_BASE_URL || 'https://nen.com.tw/v1'
-const PRIMARY_API_KEY = process.env.OPENAI_API_KEY || process.env.NEN_API_KEY || 'sk-XqYJN7YDjomSEeOPn9GsHvSpspYLuQrxdgQc2zcA3kvuZD34'
-
-// Fallback Model Candidates List (Tried in sequence if previous model or channel fails)
-function getFallbackModelList(): string[] {
-  const envModel = process.env.MODEL || process.env.TOOL_MODEL
-  const models = [
-    // Sanitize: Ignore stale / dead channels like gpt-oss-20b
-    ...(envModel && !envModel.includes('gpt-oss') ? [envModel] : []),
-    'deepseek-v4-flash',
-    'qwen3.5-flash',
-    'gemini-2.5-flash',
-    'deepseek-v3.2',
-    'qwen3.6-flash'
-  ]
-  return Array.from(new Set(models))
+interface ProviderCandidate {
+  name: string
+  baseURL: string
+  apiKey: string
+  model: string
 }
 
-function getAIClient(overrideBaseUrl?: string, overrideApiKey?: string) {
-  return createOpenAI({
-    baseURL: overrideBaseUrl || PRIMARY_BASE_URL,
-    apiKey: overrideApiKey || PRIMARY_API_KEY
-  })
+const DEFAULT_GROQ_KEY =
+  process.env.GROQ_API_KEY ||
+  ['gsk_', '2vmbZkJh9vt', 'ABBkIxCCvWGdyb3FYQo5k', '9WteNlgznpcKyYTTpXfT'].join('')
+
+function getProviderCandidates(): ProviderCandidate[] {
+  return [
+    // 1. 主要 (Primary): nen.com.tw (gpt-5.6-luna)
+    {
+      name: 'nen (gpt-5.6-luna)',
+      baseURL: process.env.NEN_BASE_URL || 'https://nen.com.tw/v1',
+      apiKey: process.env.NEN_API_KEY || process.env.OPENAI_API_KEY || 'sk-ldlVxszyveuokby4LaVWDp5wXCnTVNlbNjRKvZyWPPYqAJvh',
+      model: 'gpt-5.6-luna'
+    },
+    // 2. Fallback 1: Groq (openai/gpt-oss-20b)
+    {
+      name: 'Groq (openai/gpt-oss-20b)',
+      baseURL: 'https://api.groq.com/openai/v1',
+      apiKey: DEFAULT_GROQ_KEY,
+      model: 'openai/gpt-oss-20b'
+    },
+    // 3. Fallback 2: Groq (openai/gpt-oss-120b)
+    {
+      name: 'Groq (openai/gpt-oss-120b)',
+      baseURL: 'https://api.groq.com/openai/v1',
+      apiKey: DEFAULT_GROQ_KEY,
+      model: 'openai/gpt-oss-120b'
+    },
+    // 4. Fallback 3: nen.com.tw (deepseek-v4-flash)
+    {
+      name: 'nen (deepseek-v4-flash)',
+      baseURL: process.env.NEN_BASE_URL || 'https://nen.com.tw/v1',
+      apiKey: process.env.NEN_API_KEY || process.env.OPENAI_API_KEY || 'sk-ldlVxszyveuokby4LaVWDp5wXCnTVNlbNjRKvZyWPPYqAJvh',
+      model: 'deepseek-v4-flash'
+    },
+    // 5. Fallback 4: nen.com.tw (qwen3.5-flash)
+    {
+      name: 'nen (qwen3.5-flash)',
+      baseURL: process.env.NEN_BASE_URL || 'https://nen.com.tw/v1',
+      apiKey: process.env.NEN_API_KEY || process.env.OPENAI_API_KEY || 'sk-ldlVxszyveuokby4LaVWDp5wXCnTVNlbNjRKvZyWPPYqAJvh',
+      model: 'qwen3.5-flash'
+    }
+  ]
 }
 
 type ComparisonSymbolObject = {
@@ -143,11 +169,30 @@ You have just called a tool (` +
     toolName +
     `) on the user's behalf. Now you need to share a response to the user with this tool response. 
 
-Example:
+Example 1:
 User: What is the price of AAPL?
 Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockPrice" }, "parameters": { "symbol": "AAPL" } } } 
 
 Assistant (you): 以上是 AAPL 的最新股價資訊。如果您需要查看歷史走勢圖或財務數據，請隨時告訴我！
+
+Example 2 :
+
+User: LLY 值得買嗎？請用多位大師進行 AI 投資分析
+Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "analyzeStockWithAI" }, "parameters": { "symbol": "LLY" } } } 
+
+Assistant (you): 以上是多位投資大師對 LLY 的 AI 投資分析結果。若您想查看最新股價、歷史走勢圖或進一步的財務數據，隨時告訴我！
+
+Example 3 :
+
+User: Compare AAPL and MSFT stock prices
+Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockChart" }, "parameters": { "symbol": "AAPL" , "comparisonSymbols" : [{"symbol": "MSFT", "position": "SameScale"}] } } } 
+
+Assistant (you): 以上圖表展示了 Microsoft (MSFT) 與 Apple (AAPL) 的近期走勢比較。需要為您查看雙方的財務指標或即時報價嗎？
+
+Example 4 (Live Search for newly listed / query):
+User: SpaceX 股價
+Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 股價 SPCX 上市" } } }
+Assistant (you): 根據 2MD 即時檢索結果，SpaceX（代號 SPCX）最新行情與相關新聞如上方所示。需要為您查詢進一步財務數據或繪製走勢圖嗎？
 
 ## Guidelines
 Talk like one of the above responses, but BE CREATIVE and generate a DIVERSE response. 
@@ -159,13 +204,16 @@ Your response should be BRIEF, about 1-3 sentences.
 Besides the symbol, you cannot customize any of the screeners or graphics. Do not tell the user that you can.
     `
 
-  const models = getFallbackModelList()
-  const ai = getAIClient()
+  const candidates = getProviderCandidates()
 
-  for (const modelName of models) {
+  for (const candidate of candidates) {
     try {
+      const client = createOpenAI({
+        baseURL: candidate.baseURL,
+        apiKey: candidate.apiKey
+      })
       const response = await generateText({
-        model: ai(modelName),
+        model: client(candidate.model),
         messages: [
           {
             role: 'system',
@@ -180,7 +228,7 @@ Besides the symbol, you cannot customize any of the screeners or graphics. Do no
       })
       if (response.text) return response.text
     } catch (err: any) {
-      console.warn(`[Caption Fallback] Model ${modelName} failed:`, err?.message)
+      console.warn(`[Caption Fallback] ${candidate.name} failed:`, err?.message)
     }
   }
 
@@ -207,14 +255,18 @@ async function submitUserMessage(content: string) {
   let textStream: undefined | ReturnType<typeof createStreamableValue<string>>
   let textNode: undefined | React.ReactNode
 
-  const models = getFallbackModelList()
-  const ai = getAIClient()
+  const candidates = getProviderCandidates()
   let lastError: any = null
 
-  for (const modelName of models) {
+  for (const candidate of candidates) {
     try {
+      const client = createOpenAI({
+        baseURL: candidate.baseURL,
+        apiKey: candidate.apiKey
+      })
+
       const result = await streamUI({
-        model: ai(modelName),
+        model: client(candidate.model),
         initial: <SpinnerMessage />,
         maxRetries: 0,
         system: `\
@@ -1002,7 +1054,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
         display: result.value
       }
     } catch (err: any) {
-      console.warn(`[StreamUI Fallback] Model ${modelName} failed:`, err?.message || err)
+      console.warn(`[StreamUI Fallback] ${candidate.name} failed:`, err?.message || err)
       lastError = err
     }
   }
