@@ -4,22 +4,39 @@
 
 ---
 
-## [2026-08-27] - 2MD 即時連網搜尋、零幻覺檢索政策與 NEN 端點支援
+## [2026-08-27] - 無限階層動態容錯路由、雙模型職責分離、3 階段漸進式加載與 2MD 即時連網搜尋
 
 ### ✨ 新增 (Added)
+- **無限階層動態容錯路由 (Multi-Tier Dynamic Failover Router)**：
+  - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 實作全自動故障轉移路由，支援依序輪替：**Primary ➡️ Fallback #1 ➡️ Fallback #2 ➡️ ... ➡️ Fallback #N**。
+  - 支援三大公有雲與具名供應商原生接入（OpenAI、Google Gemini、Azure OpenAI、Groq、DeepSeek）。
+  - 各階層皆擁有獨立的 `BASE_URL`、`API_KEY`、`TOOL_MODEL`、`MODEL`，徹底隔離不同 Provider 之間的模型名稱衝突。
+- **雙模型分工機制 (Dual-Model Separation)**：
+  - **`TOOL_MODEL`**：專職 `streamUI` 的 Function Calling、意圖識別與金融卡片調用。
+  - **`MODEL`**：專職 `generateCaption` 的自然語言總結與繁體中文說明。
+  - 支援各階層獨立配置（如 `PRIMARY_TOOL_MODEL`、`FALLBACK_1_TOOL_MODEL` 等）。
+- **3 階段漸進式加載 (3-Batch Progressive Streaming)**：
+  - 於 [`components/tradingview/stock-analysis.tsx`](components/tradingview/stock-analysis.tsx) 將 13 位大師分析拆分為 3 個非同步批次發送：
+    - **Batch 1 (5位核心大師)**：~18-24 秒內回傳，第一時間渲染首屏卡片。
+    - **Batch 2 (3位長耗時/輿論散戶大師)**：~21 秒背景回傳，動態擴展分析卡片。
+    - **Batch 3 (5位價值成長大師)**：~26 秒回傳，補齊 13 位大師全維度分析。
+  - 徹底根絕單次請求超時引發的 Vercel 504 Gateway Timeout。
 - **2MD 即時連網搜尋工具 (`searchFinancialWeb`)**：
-  - 於 [`lib/chat/actions.tsx`](file:///Users/david/git/tbdavid2019/stockbot/lib/chat/actions.tsx) 整合 2MD 搜尋引擎 API（[`lib/2md.ts`](file:///Users/david/git/tbdavid2019/stockbot/lib/2md.ts)），支援最新財經新聞、公司 IPO/上市狀態、股票代號查找與即時事件檢索。
-  - 新增搜尋結果視覺化卡片組件 [`WebSearchResults`](file:///Users/david/git/tbdavid2019/stockbot/components/stocks/web-search-results.tsx)，提供標題、摘要來源與原文跳轉超連結。
+  - 整合 2MD 搜尋引擎 API（[`lib/2md.ts`](lib/2md.ts)），支援最新財經新聞、公司 IPO/上市狀態、股票代號查找與即時事件檢索。
+  - 新增搜尋結果視覺化卡片組件 [`WebSearchResults`](components/stocks/web-search-results.tsx)，提供標題、摘要來源與原文跳轉超連結。
 - **零幻覺與即時檢索鐵律 (Zero-Hallucination Policy)**：
-  - 在 System Prompt 中加入嚴格檢索規範，嚴禁底層模型憑過期知識臆測公司上市狀態、假日期、假新聞或假數字；面對「SpaceX 股價」等時效性或近期上市標的強制調用 `searchFinancialWeb`。
-  - 在解說生成階段 (`generateCaption`) 注入即時檢索數據上下文 (`contextData`)，防止底層 LLM 二次生成文字時因自身知識截止日過期而說出「尚未上市」等矛盾廢話。
-- **OpenAI-Compatible 主要 API 端點支援**：
-  - 支援 OpenAI 相容 API 端點作為主要 LLM 推理端點，並保留 Groq 作為備用端點。
-- **環境變數範本擴充**：
-  - 更新 [`.env.example`](file:///Users/david/git/tbdavid2019/stockbot/.env.example)，新增 `PRIMARY_BASE_URL`、`PRIMARY_API_KEY`、`FALLBACK_1_*` 等設定說明。
+  - 在 System Prompt 中加入嚴格檢索規範，嚴禁底層模型憑過期知識臆測公司上市狀態、假日期、假新聞或假數字；面對「SpaceX 股價」等時效性標的強制調用 `searchFinancialWeb`。
+  - 在解說生成階段 (`generateCaption`) 注入即時檢索數據上下文 (`contextData`)，防止底層 LLM 二次生成文字時與檢索結果衝突。
+- **UI 卡片相對位置鐵律 (Card Positioning Directive)**：
+  - 所有圖表與分析卡片一律渲染於文字訊息上方，AI 伴隨說明一律使用「以上是...」、「如上方所示...」，嚴禁使用「以下是...」。
 
-### 🔧 變更 (Changed)
-- 更新 [`tsconfig.json`](file:///Users/david/git/tbdavid2019/stockbot/tsconfig.json) 中的 `moduleResolution` 為 `bundler`，提升模組解析相容性。
+### 🐛 修復 (Fixed)
+- **移除舊版硬編碼 `GROQ_API_KEY` 首頁檢查**：
+  - 重構 [`app/actions.ts`](app/actions.ts) 與 [`components/missing-api-key-banner.tsx`](components/missing-api-key-banner.tsx)，改為檢查是否具備任意有效 LLM API 金鑰（Primary / Fallback / Gemini / DeepSeek 等），解決未設定 `GROQ_API_KEY` 時首頁強制彈出錯誤橫幅的問題。
+- **解決 Next.js Webpack 圖示相依編譯報錯**：
+  - 將 [`components/stocks/web-search-results.tsx`](components/stocks/web-search-results.tsx) 中的外部圖示替換為純 Inline SVG，確保零外部相依編譯成功。
+- **公開文件與範本 100% 脫敏與標準化**：
+  - 將 [`.env.example`](.env.example)、[`AGENTS.md`](AGENTS.md)、[`README.md`](README.md) 中所有範例全面替換為公有雲標準端點與變數規範，絕不外洩內部網址與金鑰。
 
 ---
 
@@ -28,7 +45,7 @@
 ### ✨ 新增 (Added)
 - **13+ 傳奇投資大師分析團隊**：
   - 擴充 AI 投資顧問團隊陣容，涵蓋巴菲特 (Warren Buffett)、蒙格 (Charlie Munger)、葛拉漢 (Ben Graham)、彼得林區 (Peter Lynch)、女股神 (Cathie Wood)、麥可貝瑞 (Michael Burry)、費雪 (Phil Fisher)、艾克曼 (Bill Ackman)、Nancy Pelosi、WSB 以及基本面/估值/技術/情緒分析師。
-  - 於 [`components/tradingview/stock-analysis.tsx`](file:///Users/david/git/tbdavid2019/stockbot/components/tradingview/stock-analysis.tsx) 支援多輪投資委員會圓桌辯論歷程（Round-table Debate Transcript）的結構化呈現與人性化看多/看空評分。
+  - 於 [`components/tradingview/stock-analysis.tsx`](components/tradingview/stock-analysis.tsx) 支援多輪投資委員會圓桌辯論歷程（Round-table Debate Transcript）的結構化呈現與人性化看多/看空評分。
 - **動態推薦股票 Prompt Cards**：
   - 串接 `stock.david888.com` 即時取得當日精選標的（台灣五十 TW50 / 標普五百 S&P 500），並加入無閃爍快取機制。
 - **888 StockBot 品牌升級與多語系 (i18n)**：
@@ -42,7 +59,7 @@
 - **TradingView 標的代碼正規化修復**：
   - 修正波克夏 B 股代碼轉換（`BRK-B` 轉換為 `NYSE:BRK.B`），解決財務指標組件無法載入的問題。
 - **Vercel Serverless 超時防護**：
-  - 在 [`app/api/stock-analysis/route.ts`](file:///Users/david/git/tbdavid2019/stockbot/app/api/stock-analysis/route.ts) 設定 `maxDuration = 60s`，避免多輪複雜分析導致 Vercel 請求超時中斷。
+  - 在 [`app/api/stock-analysis/route.ts`](app/api/stock-analysis/route.ts) 設定 `maxDuration = 60s`，避免多輪複雜分析導致 Vercel 請求超時中斷。
 
 ---
 
