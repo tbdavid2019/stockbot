@@ -52,48 +52,61 @@ interface ProviderCandidate {
   model: string
 }
 
-const DEFAULT_GROQ_KEY =
-  process.env.GROQ_API_KEY ||
-  ['gsk_', '2vmbZkJh9vt', 'ABBkIxCCvWGdyb3FYQo5k', '9WteNlgznpcKyYTTpXfT'].join('')
-
 function getProviderCandidates(): ProviderCandidate[] {
-  return [
-    // 1. 主要 (Primary): nen.com.tw (gpt-5.6-luna)
-    {
-      name: 'nen (gpt-5.6-luna)',
-      baseURL: process.env.NEN_BASE_URL || 'https://nen.com.tw/v1',
-      apiKey: process.env.NEN_API_KEY || process.env.OPENAI_API_KEY || 'sk-ldlVxszyveuokby4LaVWDp5wXCnTVNlbNjRKvZyWPPYqAJvh',
-      model: 'gpt-5.6-luna'
-    },
-    // 2. Fallback 1: Groq (openai/gpt-oss-20b)
-    {
+  const candidates: ProviderCandidate[] = []
+
+  const nenKey = process.env.NEN_API_KEY || process.env.OPENAI_API_KEY
+  const nenBaseUrl = process.env.NEN_BASE_URL || process.env.OPENAI_BASE_URL || 'https://nen.com.tw/v1'
+  const primaryModel = process.env.MODEL || process.env.TOOL_MODEL || 'gpt-5.6-luna'
+
+  // 1. 主要 (Primary): nen.com.tw
+  if (nenKey) {
+    candidates.push({
+      name: `nen (${primaryModel})`,
+      baseURL: nenBaseUrl,
+      apiKey: nenKey,
+      model: primaryModel
+    })
+  }
+
+  // 2. Fallback: Groq (openai/gpt-oss-20b / 120b)
+  const groqKey = process.env.GROQ_API_KEY
+  if (groqKey) {
+    candidates.push({
       name: 'Groq (openai/gpt-oss-20b)',
       baseURL: 'https://api.groq.com/openai/v1',
-      apiKey: DEFAULT_GROQ_KEY,
+      apiKey: groqKey,
       model: 'openai/gpt-oss-20b'
-    },
-    // 3. Fallback 2: Groq (openai/gpt-oss-120b)
-    {
+    })
+    candidates.push({
       name: 'Groq (openai/gpt-oss-120b)',
       baseURL: 'https://api.groq.com/openai/v1',
-      apiKey: DEFAULT_GROQ_KEY,
+      apiKey: groqKey,
       model: 'openai/gpt-oss-120b'
-    },
-    // 4. Fallback 3: nen.com.tw (deepseek-v4-flash)
-    {
-      name: 'nen (deepseek-v4-flash)',
-      baseURL: process.env.NEN_BASE_URL || 'https://nen.com.tw/v1',
-      apiKey: process.env.NEN_API_KEY || process.env.OPENAI_API_KEY || 'sk-ldlVxszyveuokby4LaVWDp5wXCnTVNlbNjRKvZyWPPYqAJvh',
-      model: 'deepseek-v4-flash'
-    },
-    // 5. Fallback 4: nen.com.tw (qwen3.5-flash)
-    {
-      name: 'nen (qwen3.5-flash)',
-      baseURL: process.env.NEN_BASE_URL || 'https://nen.com.tw/v1',
-      apiKey: process.env.NEN_API_KEY || process.env.OPENAI_API_KEY || 'sk-ldlVxszyveuokby4LaVWDp5wXCnTVNlbNjRKvZyWPPYqAJvh',
-      model: 'qwen3.5-flash'
+    })
+  }
+
+  // 3. 備用模型通道 (Nen 備援)
+  if (nenKey) {
+    if (primaryModel !== 'deepseek-v4-flash') {
+      candidates.push({
+        name: 'nen (deepseek-v4-flash)',
+        baseURL: nenBaseUrl,
+        apiKey: nenKey,
+        model: 'deepseek-v4-flash'
+      })
     }
-  ]
+    if (primaryModel !== 'qwen3.5-flash') {
+      candidates.push({
+        name: 'nen (qwen3.5-flash)',
+        baseURL: nenBaseUrl,
+        apiKey: nenKey,
+        model: 'qwen3.5-flash'
+      })
+    }
+  }
+
+  return candidates
 }
 
 type ComparisonSymbolObject = {

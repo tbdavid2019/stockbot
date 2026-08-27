@@ -21,7 +21,7 @@ This document contains rules, architectural guidelines, and constraints for AI c
 - Always use `searchFinancialWeb` (2MD Live Search) or TradingView components.
 
 ### 3. ⚙️ Endpoints Architecture
-- **Primary LLM**: `https://nen.com.tw/v1` (Model: `gpt-5.6-luna`, Key: `sk-ldlVxszyveuokby4LaVWDp5wXCnTVNlbNjRKvZyWPPYqAJvh`).
+- **Primary LLM**: `https://nen.com.tw/v1` (Model: `gpt-5.6-luna`, Key: `process.env.OPENAI_API_KEY` / `process.env.NEN_API_KEY`).
 - **Fallback LLM (Groq)**: `https://api.groq.com/openai/v1` (Model: `openai/gpt-oss-20b`, Key: `process.env.GROQ_API_KEY`).
 - **2MD Fast Search**:
   - Primary: `https://2md.aiurl.tw`
