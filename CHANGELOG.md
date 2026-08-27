@@ -13,10 +13,10 @@
 - **零幻覺與即時檢索鐵律 (Zero-Hallucination Policy)**：
   - 在 System Prompt 中加入嚴格檢索規範，嚴禁底層模型憑過期知識臆測公司上市狀態、假日期、假新聞或假數字；面對「SpaceX 股價」等時效性或近期上市標的強制調用 `searchFinancialWeb`。
   - 在解說生成階段 (`generateCaption`) 注入即時檢索數據上下文 (`contextData`)，防止底層 LLM 二次生成文字時因自身知識截止日過期而說出「尚未上市」等矛盾廢話。
-- **NEN 主要 API 端點支援**：
-  - 支援 `https://nen.com.tw/v1` 作為主要 LLM 推理端點（預設模型 `deepseek-v4-flash`），並保留 Groq 作為備用端點。
+- **OpenAI-Compatible 主要 API 端點支援**：
+  - 支援 OpenAI 相容 API 端點作為主要 LLM 推理端點，並保留 Groq 作為備用端點。
 - **環境變數範本擴充**：
-  - 更新 [`.env.example`](file:///Users/david/git/tbdavid2019/stockbot/.env.example)，新增 `OPENAI_BASE_URL`、`NEN_BASE_URL`、`NEN_API_KEY`、`SEARCH_2MD_API_URL` 等設定說明。
+  - 更新 [`.env.example`](file:///Users/david/git/tbdavid2019/stockbot/.env.example)，新增 `PRIMARY_BASE_URL`、`PRIMARY_API_KEY`、`FALLBACK_1_*` 等設定說明。
 
 ### 🔧 變更 (Changed)
 - 更新 [`tsconfig.json`](file:///Users/david/git/tbdavid2019/stockbot/tsconfig.json) 中的 `moduleResolution` 為 `bundler`，提升模組解析相容性。

@@ -9,10 +9,11 @@ This document contains rules, architectural guidelines, environment variable spe
 ### 1. 🛑 Zero-Excuse & Zero-Arguing Policy (嚴禁推拖與爭辯)
 - **NEVER** argue with the user or lecture the user by saying "身為 AI 助理，我無法修改模型權重/訓練資料".
 - When the user provides feedback, points out discrepancies, or asks for live facts:
-  1. Immediately use live search tools (`searchWeb2MD` / 2MD API) to find real facts.
+  1. Immediately use live search tools (`searchFinancialWeb` / 2MD API) to find real facts.
   2. Answer based on verified live search results.
   3. Keep responses objective, grounded, and concise.
   4. Always maintain and update project documentation (`AGENTS.md`, `README.md`, `.env.example`).
+  5. **Never hardcode private endpoints or sensitive credentials into repository files.**
 
 ### 2. 🌐 Zero-Hallucination & Live Web Verification (零幻覺與即時檢索鐵律)
 - Internal static training memory is stale. Never rely on internal weights to guess:
@@ -42,7 +43,8 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 
 ### 2. 🛡️ 無限階層動態容錯路由 (Multi-Tier Dynamic Failover Router)
 在 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 中實作了全自動故障轉移機制：
-- 依序嘗試：**Primary ➡️ Fallback #1 ➡️ Fallback #2 ➡️ ... ➡️ Fallback #N ➡️ 供應商內建備用通道**。
+- 支援任意公有雲（OpenAI、Azure OpenAI、Google Gemini、Groq、DeepSeek 等）。
+- 依序嘗試：**Primary ➡️ Fallback #1 ➡️ Fallback #2 ➡️ ... ➡️ Fallback #N**。
 - 每一層皆擁有獨立的 `BASE_URL`、`API_KEY`、`TOOL_MODEL`、`MODEL`，徹底隔離不同 Provider 之間的模型名稱衝突。
 
 ### 3. ⚡ 3 階段漸進式加載 (3-Batch Progressive Streaming)
@@ -58,18 +60,18 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 
 | 變數名稱 | 類型 | 範例 / 預設值 | 說明 |
 | :--- | :--- | :--- | :--- |
-| **`PRIMARY_BASE_URL`** | URL | `https://nen.com.tw/v1` | 主要 LLM 端點 Base URL（相容 `OPENAI_BASE_URL`） |
-| **`PRIMARY_API_KEY`** | Secret | `sk-...` | 主要 LLM 端點 API Key（相容 `OPENAI_API_KEY`, `NEN_API_KEY`） |
-| **`PRIMARY_TOOL_MODEL`** | String | `gpt-5.6-luna` | 主要端點工具調用模型（相容 `TOOL_MODEL`） |
-| **`PRIMARY_MODEL`** | String | `gpt-5.6-luna` | 主要端點文字生成模型（相容 `MODEL`） |
+| **`PRIMARY_BASE_URL`** | URL | `https://api.openai.com/v1` | 主要 LLM 端點 Base URL（相容 `OPENAI_BASE_URL`） |
+| **`PRIMARY_API_KEY`** | Secret | `sk-proj-...` | 主要 LLM 端點 API Key（相容 `OPENAI_API_KEY`） |
+| **`PRIMARY_TOOL_MODEL`** | String | `gpt-4o-mini` | 主要端點工具調用模型（相容 `TOOL_MODEL`） |
+| **`PRIMARY_MODEL`** | String | `gpt-4o-mini` | 主要端點文字生成模型（相容 `MODEL`） |
 | **`FALLBACK_1_BASE_URL`** | URL | `https://api.groq.com/openai/v1` | 第 1 備用端點 Base URL（相容 `GROQ_BASE_URL`） |
 | **`FALLBACK_1_API_KEY`** | Secret | `gsk_...` | 第 1 備用端點 API Key（相容 `GROQ_API_KEY`） |
 | **`FALLBACK_1_TOOL_MODEL`** | String | `openai/gpt-oss-20b` | 第 1 備用端點工具模型（相容 `GROQ_TOOL_MODEL`） |
 | **`FALLBACK_1_MODEL`** | String | `openai/gpt-oss-20b` | 第 1 備用端點文字模型（相容 `GROQ_MODEL`） |
-| **`FALLBACK_2_BASE_URL`** | URL | `https://api.openai.com/v1` | 第 2 備用端點 Base URL（如 OpenAI 官方） |
-| **`FALLBACK_2_API_KEY`** | Secret | `sk-proj-...` | 第 2 備用端點 API Key |
-| **`FALLBACK_2_TOOL_MODEL`** | String | `gpt-4o-mini` | 第 2 備用端點工具模型 |
-| **`FALLBACK_2_MODEL`** | String | `gpt-4o-mini` | 第 2 備用端點文字模型 |
+| **`FALLBACK_2_BASE_URL`** | URL | `https://generativelanguage.googleapis.com/v1beta/openai/` | 第 2 備用端點 Base URL（如 Google Gemini / Azure） |
+| **`FALLBACK_2_API_KEY`** | Secret | `AIza...` | 第 2 備用端點 API Key（如 `GEMINI_API_KEY`） |
+| **`FALLBACK_2_TOOL_MODEL`** | String | `gemini-2.5-flash` | 第 2 備用端點工具模型 |
+| **`FALLBACK_2_MODEL`** | String | `gemini-2.5-flash` | 第 2 備用端點文字模型 |
 | **`TWOMD_PRIMARY_URL`** | URL | `https://2md.aiurl.tw` | 2MD 即時連網搜尋主端點 |
 | **`AI_HEDGE_FUND_HOST`** | Host | `dns.glsoft.ai` | AI Hedge Fund API 主機位置 |
 | **`AI_HEDGE_FUND_PORT`** | Port | `6000` | AI Hedge Fund API 端口 |

@@ -100,23 +100,23 @@ StockBot 支援 **無限階層動態容錯路由 (Multi-Tier Dynamic Failover Ro
 ### 常用環境變數一覽
 
 ```bash
-# 1. 主要端點 (Primary LLM - 如 Nen / gpt-5.6-luna)
-PRIMARY_BASE_URL=https://nen.com.tw/v1
+# 1. 主要端點 (Primary LLM - 如 OpenAI / Azure / 自訂端點)
+PRIMARY_BASE_URL=https://api.openai.com/v1
 PRIMARY_API_KEY=your_primary_api_key
-PRIMARY_TOOL_MODEL=gpt-5.6-luna
-PRIMARY_MODEL=gpt-5.6-luna
+PRIMARY_TOOL_MODEL=gpt-4o-mini
+PRIMARY_MODEL=gpt-4o-mini
 
-# 2. 第 1 備用端點 (Fallback #1 - 如 Groq)
+# 2. 第 1 備用端點 (Fallback #1 - 如 Groq 極速推理)
 FALLBACK_1_BASE_URL=https://api.groq.com/openai/v1
 FALLBACK_1_API_KEY=gsk_your_groq_api_key
 FALLBACK_1_TOOL_MODEL=openai/gpt-oss-20b
 FALLBACK_1_MODEL=openai/gpt-oss-20b
 
-# 3. 第 2 備用端點 (Fallback #2 - 如 OpenAI 官方)
-FALLBACK_2_BASE_URL=https://api.openai.com/v1
-FALLBACK_2_API_KEY=sk-proj-your_openai_key
-FALLBACK_2_TOOL_MODEL=gpt-4o-mini
-FALLBACK_2_MODEL=gpt-4o-mini
+# 3. 第 2 備用端點 (Fallback #2 - 如 Google Gemini / Azure OpenAI)
+FALLBACK_2_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
+FALLBACK_2_API_KEY=your_gemini_api_key
+FALLBACK_2_TOOL_MODEL=gemini-2.5-flash
+FALLBACK_2_MODEL=gemini-2.5-flash
 
 # 4. 2MD 即時連網搜尋
 TWOMD_PRIMARY_URL=https://2md.aiurl.tw

@@ -57,38 +57,31 @@ function getProviderCandidates(): ProviderCandidate[] {
   const candidates: ProviderCandidate[] = []
 
   // --------------------------------------------------------------------------
-  // 1. 主要 LLM 配置 (Primary / Main Model)
+  // 1. 主要 LLM 配置 (Primary / Main Model - 如 OpenAI / Azure / 自訂端點)
   // 支援環境變數：
   //   PRIMARY_BASE_URL (或 OPENAI_BASE_URL)
-  //   PRIMARY_API_KEY  (或 OPENAI_API_KEY, NEN_API_KEY)
+  //   PRIMARY_API_KEY  (或 OPENAI_API_KEY)
   //   PRIMARY_TOOL_MODEL (或 TOOL_MODEL) -> 專用於工具調用與意圖識別
   //   PRIMARY_MODEL      (或 MODEL)      -> 專用於伴隨說明文字與自然語言生成
   // --------------------------------------------------------------------------
   const primaryKey =
     process.env.PRIMARY_API_KEY ||
-    process.env.NEN_API_KEY ||
     process.env.OPENAI_API_KEY
   const primaryBaseUrl =
     process.env.PRIMARY_BASE_URL ||
-    process.env.NEN_BASE_URL ||
-    (process.env.OPENAI_BASE_URL && !process.env.OPENAI_BASE_URL.includes('groq.com') ? process.env.OPENAI_BASE_URL : 'https://nen.com.tw/v1')
+    process.env.OPENAI_BASE_URL ||
+    'https://api.openai.com/v1'
   
   let primaryModel =
     process.env.PRIMARY_MODEL ||
     process.env.MAIN_MODEL ||
     process.env.MODEL ||
-    'gpt-5.6-luna'
-  if (primaryModel.includes('gpt-oss') || primaryModel.startsWith('groq/')) {
-    primaryModel = 'gpt-5.6-luna'
-  }
+    'gpt-4o-mini'
 
   let primaryToolModel =
     process.env.PRIMARY_TOOL_MODEL ||
     process.env.TOOL_MODEL ||
     primaryModel
-  if (primaryToolModel.includes('gpt-oss') || primaryToolModel.startsWith('groq/')) {
-    primaryToolModel = 'gpt-5.6-luna'
-  }
 
   if (primaryKey) {
     candidates.push({
@@ -139,7 +132,7 @@ function getProviderCandidates(): ProviderCandidate[] {
   }
 
   // --------------------------------------------------------------------------
-  // 3. 具名供應商配置 (Named Providers: GROQ, OPENAI, DEEPSEEK)
+  // 3. 具名三大公有雲與主流供應商配置 (Named Providers: GROQ, GOOGLE, DEEPSEEK, AZURE)
   // --------------------------------------------------------------------------
   // Groq 專屬配置 (GROQ_BASE_URL, GROQ_API_KEY, GROQ_TOOL_MODEL, GROQ_MODEL)
   const groqKey = process.env.GROQ_API_KEY || process.env.FALLBACK_API_KEY
@@ -166,17 +159,17 @@ function getProviderCandidates(): ProviderCandidate[] {
     }
   }
 
-  // 官方 OpenAI 專屬配置
-  const fallbackOpenAIKey = process.env.FALLBACK_OPENAI_KEY
-  if (fallbackOpenAIKey) {
-    const oaiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini'
-    const oaiToolModel = process.env.OPENAI_TOOL_MODEL || oaiModel
+  // Google Gemini (OpenAI 相容端點)
+  const geminiKey = process.env.GEMINI_API_KEY
+  if (geminiKey) {
+    const geminiUrl = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/'
+    const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
     candidates.push({
-      name: `OpenAI [${oaiModel}]`,
-      baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-      apiKey: fallbackOpenAIKey,
-      model: oaiModel,
-      toolModel: oaiToolModel
+      name: `Google Gemini [${geminiModel}]`,
+      baseURL: geminiUrl,
+      apiKey: geminiKey,
+      model: geminiModel,
+      toolModel: geminiModel
     })
   }
 
@@ -191,30 +184,6 @@ function getProviderCandidates(): ProviderCandidate[] {
       model: dsModel,
       toolModel: dsModel
     })
-  }
-
-  // --------------------------------------------------------------------------
-  // 4. 主要端點備援通道 (Nen 內建備援)
-  // --------------------------------------------------------------------------
-  if (primaryKey) {
-    if (primaryModel !== 'deepseek-v4-flash') {
-      candidates.push({
-        name: 'Primary Backup [deepseek-v4-flash]',
-        baseURL: primaryBaseUrl,
-        apiKey: primaryKey,
-        model: 'deepseek-v4-flash',
-        toolModel: 'deepseek-v4-flash'
-      })
-    }
-    if (primaryModel !== 'qwen3.5-flash') {
-      candidates.push({
-        name: 'Primary Backup [qwen3.5-flash]',
-        baseURL: primaryBaseUrl,
-        apiKey: primaryKey,
-        model: 'qwen3.5-flash',
-        toolModel: 'qwen3.5-flash'
-      })
-    }
   }
 
   return candidates
