@@ -49,7 +49,8 @@ interface ProviderCandidate {
   name: string
   baseURL: string
   apiKey: string
-  model: string
+  model: string // 伴隨說明文字與摘要生成模型 (Caption / Chat Model)
+  toolModel: string // 工具調用與意圖分流模型 (Function Calling / Tool Model)
 }
 
 function getProviderCandidates(): ProviderCandidate[] {
@@ -57,7 +58,11 @@ function getProviderCandidates(): ProviderCandidate[] {
 
   // --------------------------------------------------------------------------
   // 1. 主要 LLM 配置 (Primary / Main Model)
-  // 支援環境變數：PRIMARY_BASE_URL, PRIMARY_API_KEY, PRIMARY_MODEL
+  // 支援環境變數：
+  //   PRIMARY_BASE_URL (或 OPENAI_BASE_URL)
+  //   PRIMARY_API_KEY  (或 OPENAI_API_KEY, NEN_API_KEY)
+  //   PRIMARY_TOOL_MODEL (或 TOOL_MODEL) -> 專用於工具調用與意圖識別
+  //   PRIMARY_MODEL      (或 MODEL)      -> 專用於伴隨說明文字與自然語言生成
   // --------------------------------------------------------------------------
   const primaryKey =
     process.env.PRIMARY_API_KEY ||
@@ -68,29 +73,40 @@ function getProviderCandidates(): ProviderCandidate[] {
     process.env.NEN_BASE_URL ||
     (process.env.OPENAI_BASE_URL && !process.env.OPENAI_BASE_URL.includes('groq.com') ? process.env.OPENAI_BASE_URL : 'https://nen.com.tw/v1')
   
-  // 避開模型名稱衝突：如果 MODEL 誤設成 Groq 專屬名稱，主要端點自動隔離並採用 gpt-5.6-luna
   let primaryModel =
     process.env.PRIMARY_MODEL ||
     process.env.MAIN_MODEL ||
     process.env.MODEL ||
-    process.env.TOOL_MODEL ||
     'gpt-5.6-luna'
   if (primaryModel.includes('gpt-oss') || primaryModel.startsWith('groq/')) {
     primaryModel = 'gpt-5.6-luna'
   }
 
+  let primaryToolModel =
+    process.env.PRIMARY_TOOL_MODEL ||
+    process.env.TOOL_MODEL ||
+    primaryModel
+  if (primaryToolModel.includes('gpt-oss') || primaryToolModel.startsWith('groq/')) {
+    primaryToolModel = 'gpt-5.6-luna'
+  }
+
   if (primaryKey) {
     candidates.push({
-      name: `Primary [${primaryModel}]`,
+      name: `Primary [Tool: ${primaryToolModel} | Chat: ${primaryModel}]`,
       baseURL: primaryBaseUrl,
       apiKey: primaryKey,
-      model: primaryModel
+      model: primaryModel,
+      toolModel: primaryToolModel
     })
   }
 
   // --------------------------------------------------------------------------
   // 2. 多階層動態備援配置 (Multi-Tier Fallback: FALLBACK_1_*, FALLBACK_2_*, ...)
-  // 支援環境變數：FALLBACK_1_BASE_URL, FALLBACK_1_API_KEY, FALLBACK_1_MODEL ...
+  // 支援環境變數：
+  //   FALLBACK_{i}_BASE_URL
+  //   FALLBACK_{i}_API_KEY
+  //   FALLBACK_{i}_TOOL_MODEL
+  //   FALLBACK_{i}_MODEL
   // --------------------------------------------------------------------------
   for (let i = 1; i <= 10; i++) {
     const fbKey =
@@ -107,11 +123,17 @@ function getProviderCandidates(): ProviderCandidate[] {
         process.env[`FALLBACK_${i}_MODEL`] ||
         process.env[`LLM_FALLBACK_${i}_MODEL`] ||
         'openai/gpt-oss-20b'
+      const fbToolModel =
+        process.env[`FALLBACK_${i}_TOOL_MODEL`] ||
+        process.env[`LLM_FALLBACK_${i}_TOOL_MODEL`] ||
+        fbModel
+
       candidates.push({
-        name: `Fallback #${i} [${fbModel}]`,
+        name: `Fallback #${i} [Tool: ${fbToolModel} | Chat: ${fbModel}]`,
         baseURL: fbUrl,
         apiKey: fbKey,
-        model: fbModel
+        model: fbModel,
+        toolModel: fbToolModel
       })
     }
   }
@@ -119,46 +141,55 @@ function getProviderCandidates(): ProviderCandidate[] {
   // --------------------------------------------------------------------------
   // 3. 具名供應商配置 (Named Providers: GROQ, OPENAI, DEEPSEEK)
   // --------------------------------------------------------------------------
-  // Groq 專屬配置 (GROQ_BASE_URL, GROQ_API_KEY, GROQ_MODEL)
+  // Groq 專屬配置 (GROQ_BASE_URL, GROQ_API_KEY, GROQ_TOOL_MODEL, GROQ_MODEL)
   const groqKey = process.env.GROQ_API_KEY || process.env.FALLBACK_API_KEY
   if (groqKey) {
     const groqUrl = process.env.GROQ_BASE_URL || process.env.FALLBACK_BASE_URL || 'https://api.groq.com/openai/v1'
     const groqModel = process.env.GROQ_MODEL || process.env.FALLBACK_MODEL || 'openai/gpt-oss-20b'
+    const groqToolModel = process.env.GROQ_TOOL_MODEL || groqModel
+
     candidates.push({
-      name: `Groq [${groqModel}]`,
+      name: `Groq [Tool: ${groqToolModel} | Chat: ${groqModel}]`,
       baseURL: groqUrl,
       apiKey: groqKey,
-      model: groqModel
+      model: groqModel,
+      toolModel: groqToolModel
     })
     if (groqModel !== 'openai/gpt-oss-120b') {
       candidates.push({
         name: `Groq Backup [openai/gpt-oss-120b]`,
         baseURL: groqUrl,
         apiKey: groqKey,
-        model: 'openai/gpt-oss-120b'
+        model: 'openai/gpt-oss-120b',
+        toolModel: 'openai/gpt-oss-120b'
       })
     }
   }
 
-  // 官方 OpenAI 專屬配置 (FALLBACK_OPENAI_KEY / OPENAI_MODEL)
+  // 官方 OpenAI 專屬配置
   const fallbackOpenAIKey = process.env.FALLBACK_OPENAI_KEY
   if (fallbackOpenAIKey) {
+    const oaiModel = process.env.OPENAI_MODEL || 'gpt-4o-mini'
+    const oaiToolModel = process.env.OPENAI_TOOL_MODEL || oaiModel
     candidates.push({
-      name: `OpenAI [${process.env.OPENAI_MODEL || 'gpt-4o-mini'}]`,
+      name: `OpenAI [${oaiModel}]`,
       baseURL: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
       apiKey: fallbackOpenAIKey,
-      model: process.env.OPENAI_MODEL || 'gpt-4o-mini'
+      model: oaiModel,
+      toolModel: oaiToolModel
     })
   }
 
-  // DeepSeek 官方配置 (DEEPSEEK_BASE_URL, DEEPSEEK_API_KEY, DEEPSEEK_MODEL)
+  // DeepSeek 官方配置
   const deepseekKey = process.env.DEEPSEEK_API_KEY
   if (deepseekKey) {
+    const dsModel = process.env.DEEPSEEK_MODEL || 'deepseek-chat'
     candidates.push({
-      name: `DeepSeek Official [${process.env.DEEPSEEK_MODEL || 'deepseek-chat'}]`,
+      name: `DeepSeek Official [${dsModel}]`,
       baseURL: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com/v1',
       apiKey: deepseekKey,
-      model: process.env.DEEPSEEK_MODEL || 'deepseek-chat'
+      model: dsModel,
+      toolModel: dsModel
     })
   }
 
@@ -171,7 +202,8 @@ function getProviderCandidates(): ProviderCandidate[] {
         name: 'Primary Backup [deepseek-v4-flash]',
         baseURL: primaryBaseUrl,
         apiKey: primaryKey,
-        model: 'deepseek-v4-flash'
+        model: 'deepseek-v4-flash',
+        toolModel: 'deepseek-v4-flash'
       })
     }
     if (primaryModel !== 'qwen3.5-flash') {
@@ -179,7 +211,8 @@ function getProviderCandidates(): ProviderCandidate[] {
         name: 'Primary Backup [qwen3.5-flash]',
         baseURL: primaryBaseUrl,
         apiKey: primaryKey,
-        model: 'qwen3.5-flash'
+        model: 'qwen3.5-flash',
+        toolModel: 'qwen3.5-flash'
       })
     }
   }
@@ -357,7 +390,7 @@ async function submitUserMessage(content: string) {
       })
 
       const result = await streamUI({
-        model: client(candidate.model),
+        model: client(candidate.toolModel),
         initial: <SpinnerMessage />,
         maxRetries: 0,
         system: `\
