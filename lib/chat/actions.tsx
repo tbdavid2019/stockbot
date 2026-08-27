@@ -55,52 +55,90 @@ interface ProviderCandidate {
 function getProviderCandidates(): ProviderCandidate[] {
   const candidates: ProviderCandidate[] = []
 
-  const nenKey = process.env.NEN_API_KEY || process.env.OPENAI_API_KEY
-  const nenBaseUrl = process.env.NEN_BASE_URL || process.env.OPENAI_BASE_URL || 'https://nen.com.tw/v1'
-  const primaryModel = process.env.MODEL || process.env.TOOL_MODEL || 'gpt-5.6-luna'
+  // -------------------------------------------------------------
+  // 1. 主要 LLM 配置 (Primary / Main Model)
+  // 獨立變數：PRIMARY_MODEL / MAIN_MODEL
+  // -------------------------------------------------------------
+  const primaryKey =
+    process.env.PRIMARY_API_KEY ||
+    process.env.NEN_API_KEY ||
+    process.env.OPENAI_API_KEY
+  const primaryBaseUrl =
+    process.env.PRIMARY_BASE_URL ||
+    process.env.NEN_BASE_URL ||
+    (process.env.OPENAI_BASE_URL && !process.env.OPENAI_BASE_URL.includes('groq.com') ? process.env.OPENAI_BASE_URL : 'https://nen.com.tw/v1')
+  
+  // 避開模型名稱衝突：如果 MODEL 誤設成 Groq 專屬名稱，主要端點自動隔離並採用 gpt-5.6-luna
+  let primaryModel =
+    process.env.PRIMARY_MODEL ||
+    process.env.MAIN_MODEL ||
+    process.env.MODEL ||
+    process.env.TOOL_MODEL ||
+    'gpt-5.6-luna'
+  if (primaryModel.includes('gpt-oss') || primaryModel.startsWith('groq/')) {
+    primaryModel = 'gpt-5.6-luna'
+  }
 
-  // 1. 主要 (Primary): nen.com.tw
-  if (nenKey) {
+  if (primaryKey) {
     candidates.push({
-      name: `nen (${primaryModel})`,
-      baseURL: nenBaseUrl,
-      apiKey: nenKey,
+      name: `Primary (${primaryModel})`,
+      baseURL: primaryBaseUrl,
+      apiKey: primaryKey,
       model: primaryModel
     })
   }
 
-  // 2. Fallback: Groq (openai/gpt-oss-20b / 120b)
-  const groqKey = process.env.GROQ_API_KEY
-  if (groqKey) {
+  // -------------------------------------------------------------
+  // 2. 備用 LLM 配置 (Fallback Model - Groq)
+  // 獨立變數：FALLBACK_MODEL / GROQ_MODEL
+  // -------------------------------------------------------------
+  const fallbackKey =
+    process.env.FALLBACK_API_KEY ||
+    process.env.GROQ_API_KEY
+  const fallbackBaseUrl =
+    process.env.FALLBACK_BASE_URL ||
+    process.env.GROQ_BASE_URL ||
+    'https://api.groq.com/openai/v1'
+  const fallbackModel =
+    process.env.FALLBACK_MODEL ||
+    process.env.GROQ_MODEL ||
+    'openai/gpt-oss-20b'
+
+  if (fallbackKey) {
     candidates.push({
-      name: 'Groq (openai/gpt-oss-20b)',
-      baseURL: 'https://api.groq.com/openai/v1',
-      apiKey: groqKey,
-      model: 'openai/gpt-oss-20b'
+      name: `Fallback Groq (${fallbackModel})`,
+      baseURL: fallbackBaseUrl,
+      apiKey: fallbackKey,
+      model: fallbackModel
     })
-    candidates.push({
-      name: 'Groq (openai/gpt-oss-120b)',
-      baseURL: 'https://api.groq.com/openai/v1',
-      apiKey: groqKey,
-      model: 'openai/gpt-oss-120b'
-    })
+
+    if (fallbackModel !== 'openai/gpt-oss-120b') {
+      candidates.push({
+        name: 'Fallback Groq (openai/gpt-oss-120b)',
+        baseURL: fallbackBaseUrl,
+        apiKey: fallbackKey,
+        model: 'openai/gpt-oss-120b'
+      })
+    }
   }
 
-  // 3. 備用模型通道 (Nen 備援)
-  if (nenKey) {
+  // -------------------------------------------------------------
+  // 3. 主要端點備援通道 (Nen DeepSeek / Qwen)
+  // -------------------------------------------------------------
+  if (primaryKey) {
     if (primaryModel !== 'deepseek-v4-flash') {
       candidates.push({
-        name: 'nen (deepseek-v4-flash)',
-        baseURL: nenBaseUrl,
-        apiKey: nenKey,
+        name: 'Primary Backup (deepseek-v4-flash)',
+        baseURL: primaryBaseUrl,
+        apiKey: primaryKey,
         model: 'deepseek-v4-flash'
       })
     }
     if (primaryModel !== 'qwen3.5-flash') {
       candidates.push({
-        name: 'nen (qwen3.5-flash)',
-        baseURL: nenBaseUrl,
-        apiKey: nenKey,
+        name: 'Primary Backup (qwen3.5-flash)',
+        baseURL: primaryBaseUrl,
+        apiKey: primaryKey,
         model: 'qwen3.5-flash'
       })
     }
