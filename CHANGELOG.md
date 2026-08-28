@@ -4,6 +4,20 @@
 
 ---
 
+## [2026-08-28] - 15 輪多輪自主工具循環、David888 WikiPublisher 自主發布器與 2MD Web Reader
+
+### ✨ 新增 (Added)
+- **15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)**：
+  - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 支援最多 15 輪多步自主工具調用與推理鏈，實現複雜調研：搜尋 ➔ 網頁深讀 ➔ 13 位大師分析 ➔ 線圖繪製 ➔ 自動產出並發布 Wiki 報告。
+- **David888 WikiPublisher 自主發布器 (`publishToDavid888Wiki`)**：
+  - 整合 [`https://wiki.david888.com/api`](lib/wiki.ts) REST API 與 `SKILL.md` 規範。
+  - 當生成長篇研究報告、深度估值模型或投資備忘錄時，自動整理結構化 Markdown（含 `[TOC]`、數據表、Mermaid 流程圖、GitHub Alerts 與註腳）發布至 David888 Wiki。
+  - 回傳公開分享網址 (`shareUrl`)、2D 簡報模式 (`/present`) 與雙欄電子書模式 (`/book`)，並渲染視覺化卡片 [`WikiPublishResultCard`](components/stocks/wiki-publish-result.tsx)。
+- **2MD Web Reader 網頁全文深讀工具 (`readWebPage`)**：
+  - 於 [`lib/2md.ts`](lib/2md.ts) 實作 `readUrl2MD`，支援將任意線上財經新聞、公告或網址轉換為乾淨 Markdown，供 LLM 深度研讀分析。
+
+---
+
 ## [2026-08-27] - 無限階層動態容錯路由、雙模型職責分離、3 階段漸進式加載與 2MD 即時連網搜尋
 
 ### ✨ 新增 (Added)

@@ -26,7 +26,9 @@ import { MarketTrending } from '@/components/tradingview/market-trending'
 import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
-import { searchWeb2MD } from '@/lib/2md'
+import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
+import { searchWeb2MD, readUrl2MD } from '@/lib/2md'
+import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
 
 export type AIState = {
@@ -248,6 +250,12 @@ This tool provides AI-powered investment analysis from multiple legendary invest
 11. searchFinancialWeb
 This tool performs real-time web search and financial entity lookup via 2MD Search Engine. Use this for general questions, company IPO status, ticker lookups, current events, or background facts.
 
+12. readWebPage
+This tool fetches full web page or online news article text and converts it to markdown using 2MD Web Reader.
+
+13. publishToDavid888Wiki
+This tool publishes an in-depth financial research report, stock thesis, valuation summary, or multi-chapter analysis to David888 Wiki (https://wiki.david888.com/api), returning a permanent public share link (shareUrl), 2D presentation deck (/present), and dual-pane eBook reader (/book).
+
 ### 🔴 零幻覺與即時檢索鐵律 (ZERO HALLUCINATION & REAL-TIME SEARCH POLICY)
 1. 你的底層模型內部知識庫可能已經過期。嚴禁憑過期記憶斷定公司未上市、沒有股票代號或編造數據！
 2. 當有提供即時檢索數據時，你的說明文字必須 100% 依據該檢索結果總結，嚴禁與檢索結果矛盾！
@@ -383,6 +391,12 @@ For Taiwan stocks, you must use one of these formats:
 
 DO NOT use the format "XXXX.TW" as it is not supported by the system.
 
+### 🔄 15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)
+你是一個具備強大自主推理 (ReAct) 能力的 AI 投資分析大腦。你可以連續調用最多 15 輪工具鏈，完成深度複雜任務：
+1. **深度連網研調 (Deep Research)**：可先調用 searchFinancialWeb 搜尋 ➔ 發現精確文章或新聞網址 ➔ 調用 readWebPage 深度研讀全文。
+2. **多維大師分析 (Master Consensus)**：遇到投資價值評估時調用 analyzeStockWithAI 獲取 13 位傳奇大師觀點。
+3. **自主發布執行器 (David888 WikiPublisher)**：當使用者要求產出長篇研究報告、深度估值模型、投資備忘錄 (Investment Memo) 或多章節分析時，請自動整理完整 Markdown 內容（包含 [TOC]、章節標題、數據表格、Mermaid 流程圖、GitHub Alerts > [!TIP] 與註腳）並調用 publishToDavid888Wiki(title, content, theme) 發布至 David888 Wiki，回傳公開 shareUrl、簡報 (/present) 與電子書 (/book) 閱讀網址！
+
 ### AI Investment Analysis
 When the user asks whether a stock is worth buying, whether to invest, wants professional analysis, or asks questions like "should I buy TSLA?", "is NVDA a good investment?", "分析一下特斯拉", "AAPL值得買嗎", you MUST use the analyzeStockWithAI tool to provide professional AI investment analysis from legendary investors.
 
@@ -404,10 +418,10 @@ Example 3:
 User: SpaceX 股價
 Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 股價 SPCX 上市" } } }
 
-Example 4:
+Example 4 (Wiki Publishing):
 
-User: SpaceX 上市了嗎？
-Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 上市 IPO 股票代號" } } }
+User: 請幫我為 TSMC 寫一份深度的 Q3 投資研究報告並發布到 Wiki
+Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "publishToDavid888Wiki" }, "parameters": { "title": "TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告", "slug": "tsmc-2026-q3-report", "content": "# TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告\n\n> 執行摘要：台積電在全球先進製程保持領先地位...\n\n[TOC]\n\n## 1. 核心競爭優勢與製程進展\n...", "theme": "claude-canvas" } } }
     `,
       messages: [
         ...aiState.get().messages.map((message: any) => ({
@@ -1134,6 +1148,202 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             return (
               <BotCard>
                 <WebSearchResults query={query} results={results} />
+                {caption}
+              </BotCard>
+            )
+          }
+        },
+        readWebPage: {
+          description:
+            'Read full web page, online article, or financial news content and convert to clean markdown using 2MD Web Reader. Use this when the user supplies a specific URL, or when you need the complete text from a search result link to do deeper research.',
+          parameters: z.object({
+            url: z
+              .string()
+              .describe('The URL of the webpage or article to fetch and read.')
+          }),
+          generate: async function* ({ url }) {
+            yield (
+              <BotCard>
+                <div className="flex items-center space-x-2 p-4">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                  <span>📖 正在透過 2MD Web Reader 讀取網頁全文...</span>
+                </div>
+              </BotCard>
+            )
+
+            const text = await readUrl2MD(url)
+            const toolCallId = nanoid()
+
+            aiState.done({
+              ...aiState.get(),
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: 'assistant',
+                  content: [
+                    {
+                      type: 'tool-call',
+                      toolName: 'readWebPage',
+                      toolCallId,
+                      args: { url }
+                    }
+                  ]
+                },
+                {
+                  id: nanoid(),
+                  role: 'tool',
+                  content: [
+                    {
+                      type: 'tool-result',
+                      toolName: 'readWebPage',
+                      toolCallId,
+                      result: {
+                        url,
+                        content: text ? text.slice(0, 3000) : '無法讀取網頁內容'
+                      }
+                    }
+                  ]
+                }
+              ]
+            })
+
+            const contextData = `【網頁全文擷取 (${url})】：\n${text ? text.slice(0, 2000) : '未獲取到內容'}`
+
+            const caption = await generateCaption(
+              url,
+              [],
+              'readWebPage',
+              aiState,
+              contextData
+            )
+
+            return (
+              <BotCard>
+                <div className="rounded-xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-2 text-xs">
+                  <div className="font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                    <span>🌐 2MD Web Reader 網頁全文讀取完成</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 font-mono truncate">
+                    {url}
+                  </p>
+                </div>
+                {caption}
+              </BotCard>
+            )
+          }
+        },
+        publishToDavid888Wiki: {
+          description:
+            'Publish an in-depth financial research report, stock thesis, comprehensive valuation summary, or multi-chapter analysis to David888 Wiki (https://wiki.david888.com/api). This automatically creates a permanent public share link (shareUrl), 2D presentation deck (shareUrl + "/present"), and dual-pane eBook reader (shareUrl + "/book"). Always use this whenever an extensive report, investment thesis, or research document is ready to be published for the user.',
+          parameters: z.object({
+            title: z
+              .string()
+              .describe('The title of the report or research article.'),
+            slug: z
+              .string()
+              .optional()
+              .describe(
+                'URL slug for the note path, e.g. "tsmc-2026-q3-analysis" or "nvda-valuation-thesis".'
+              ),
+            content: z
+              .string()
+              .describe(
+                'Full markdown content of the report including sections, analysis, tables, mermaid charts, alerts, and footnotes.'
+              ),
+            theme: z
+              .enum([
+                'claude-canvas',
+                'retro',
+                'professional',
+                'notion-clean',
+                'tokyo-night',
+                'ayu-light',
+                'neo-brutalism',
+                'shopify-mint'
+              ])
+              .optional()
+              .default('claude-canvas')
+              .describe('Theme for the wiki page.')
+          }),
+          generate: async function* ({ title, slug, content, theme }) {
+            yield (
+              <BotCard>
+                <div className="flex items-center space-x-2 p-4">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"></div>
+                  <span>📝 正在將深度研究報告發布至 David888 Wiki...</span>
+                </div>
+              </BotCard>
+            )
+
+            const result = await publishToWiki({
+              title,
+              slug,
+              markdown: content,
+              theme
+            })
+
+            const toolCallId = nanoid()
+
+            aiState.done({
+              ...aiState.get(),
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: 'assistant',
+                  content: [
+                    {
+                      type: 'tool-call',
+                      toolName: 'publishToDavid888Wiki',
+                      toolCallId,
+                      args: { title, slug, content, theme }
+                    }
+                  ]
+                },
+                {
+                  id: nanoid(),
+                  role: 'tool',
+                  content: [
+                    {
+                      type: 'tool-result',
+                      toolName: 'publishToDavid888Wiki',
+                      toolCallId,
+                      result
+                    }
+                  ]
+                }
+              ]
+            })
+
+            const contextData = result.success
+              ? `【Wiki 發布成功】：標題: ${title} | 公開分享網址 (shareUrl): ${result.shareUrl} | 簡報網址: ${result.presentUrl} | 電子書網址: ${result.bookUrl}`
+              : `【Wiki 發布失敗】：${result.error}`
+
+            const caption = await generateCaption(
+              title,
+              [],
+              'publishToDavid888Wiki',
+              aiState,
+              contextData
+            )
+
+            return (
+              <BotCard>
+                {result.success ? (
+                  <WikiPublishResultCard
+                    title={title}
+                    shareUrl={result.shareUrl!}
+                    presentUrl={result.presentUrl}
+                    bookUrl={result.bookUrl}
+                    theme={theme}
+                    path={result.path}
+                  />
+                ) : (
+                  <div className="p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 text-xs">
+                    ⚠️ Wiki 發布失敗：{result.error}
+                  </div>
+                )}
                 {caption}
               </BotCard>
             )

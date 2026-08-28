@@ -63,3 +63,32 @@ export async function searchWeb2MD(
 
   return []
 }
+
+export async function readUrl2MD(targetUrl: string): Promise<string> {
+  const cleanTarget = targetUrl.replace(/^https?:\/\//, '')
+  for (const baseUrl of ENDPOINTS) {
+    try {
+      const endpoint = `${baseUrl.replace(/\/+$/, '')}/${cleanTarget}`
+      const res = await fetch(endpoint, {
+        headers: {
+          Accept: 'text/markdown, text/plain, */*',
+          'User-Agent': 'stockbot/2.0'
+        },
+        next: { revalidate: 300 }
+      })
+
+      if (res.ok) {
+        const text = await res.text()
+        if (text && text.length > 20) {
+          return text
+        }
+      }
+    } catch (err) {
+      console.warn(`[2MD ReadUrl] Failed on ${baseUrl}:`, err)
+      continue
+    }
+  }
+
+  return ''
+}
+

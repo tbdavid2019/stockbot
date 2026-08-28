@@ -54,6 +54,11 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - **Batch 3 (5位價值成長大師)**：~26 秒回傳，補齊全維度分析。
 - 徹底根絕單次請求超時引發的 504 Gateway Timeout。
 
+### 4. 🔄 15 輪多步自主推理與發布執行器 (15-Round ReAct Loop & WikiPublisher)
+- 支援最多 15 輪工具連續調用鏈（搜尋 ➔ 網頁深讀 ➔ 大師分析 ➔ 線圖呈現 ➔ 發布 Wiki 報告）。
+- **`publishToDavid888Wiki`**：串接 `https://wiki.david888.com/api`，產出 Markdown 深度報告並自動回傳 `shareUrl`、`/present` 簡報與 `/book` 電子書。
+- **`readWebPage`**：透過 2MD Web Reader 萃取線上新聞/網址全文。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)
