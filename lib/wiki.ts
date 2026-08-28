@@ -45,6 +45,57 @@ export interface WikiPublishResult {
 
 const WIKI_API_BASE = process.env.WIKI_API_BASE || 'https://wiki.david888.com/api'
 
+/**
+ * Enforces mandatory document structure rule from SKILL.md:
+ * 1. ALWAYS start with `# Document Title` on the very first line (unless YAML frontmatter is used).
+ * 2. Strip any conversational preamble/small talk before `# Title`.
+ * 3. Ensure [TOC], blockquotes, and alerts are placed AFTER `# Title`.
+ */
+function sanitizeWikiMarkdown(markdown: string, fallbackTitle?: string): string {
+  let text = markdown.trim()
+
+  // 1. If text starts with YAML frontmatter (--- ... ---), keep it intact
+  if (text.startsWith('---')) {
+    return text
+  }
+
+  // 2. Strip any conversational chatter before the first '# ' (Level-1 heading)
+  const firstH1Index = text.indexOf('# ')
+  if (firstH1Index > 0) {
+    text = text.substring(firstH1Index).trim()
+  } else if (firstH1Index === -1) {
+    // No H1 heading found, prepend one using fallbackTitle
+    const title = fallbackTitle || '投資研究分析報告'
+    text = `# ${title}\n\n${text}`
+  }
+
+  // 3. Ensure [TOC] is not erroneously placed before the first heading
+  if (text.startsWith('[TOC]')) {
+    text = text.replace(/^\[TOC\]\s*/i, '').trim()
+  }
+
+  // 4. For long articles (>400 chars), ensure [TOC] is placed after heading/summary
+  if (!text.includes('[TOC]') && text.length > 400) {
+    const h1WithQuoteMatch = text.match(/^(#\s+[^\n]+\n+(?:>[^\n]+\n*)+)/m)
+    if (h1WithQuoteMatch) {
+      text = text.replace(
+        h1WithQuoteMatch[0],
+        `${h1WithQuoteMatch[0].trim()}\n\n[TOC]\n\n`
+      )
+    } else {
+      const firstHeadingMatch = text.match(/^#\s+[^\n]+/m)
+      if (firstHeadingMatch) {
+        text = text.replace(
+          firstHeadingMatch[0],
+          `${firstHeadingMatch[0]}\n\n[TOC]\n`
+        )
+      }
+    }
+  }
+
+  return text
+}
+
 export async function publishToWiki(
   options: WikiPublishOptions
 ): Promise<WikiPublishResult> {
@@ -58,20 +109,8 @@ export async function publishToWiki(
 
     const endpoint = `${WIKI_API_BASE.replace(/\/+$/, '')}/${encodeURIComponent(path)}`
 
-    // Ensure markdown has title and TOC if missing
-    let text = options.markdown.trim()
-    if (options.title && !text.startsWith('# ')) {
-      text = `# ${options.title}\n\n[TOC]\n\n${text}`
-    } else if (!text.includes('[TOC]') && text.length > 500) {
-      // Auto insert [TOC] after first heading for long reports
-      const firstHeadingMatch = text.match(/^#\s+.+$/m)
-      if (firstHeadingMatch) {
-        text = text.replace(
-          firstHeadingMatch[0],
-          `${firstHeadingMatch[0]}\n\n[TOC]\n`
-        )
-      }
-    }
+    // Apply strict SKILL.md document structure formatting
+    const text = sanitizeWikiMarkdown(options.markdown, options.title)
 
     const payload = {
       text,
@@ -84,8 +123,8 @@ export async function publishToWiki(
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'stockbot-wiki-publisher/1.0'
+        'Content-Type': 'application/json; charset=utf-8',
+        'User-Agent': 'stockbot-wiki-publisher/2.0'
       },
       body: JSON.stringify(payload)
     })

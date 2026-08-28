@@ -10,7 +10,8 @@
 - **15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)**：
   - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 支援最多 15 輪多步自主工具調用與推理鏈，實現複雜調研：搜尋 ➔ 網頁深讀 ➔ 13 位大師分析 ➔ 線圖繪製 ➔ 自動產出並發布 Wiki 報告。
 - **David888 WikiPublisher 自主發布器 (`publishToDavid888Wiki`)**：
-  - 整合 [`https://wiki.david888.com/api`](lib/wiki.ts) REST API 與 `SKILL.md` 規範。
+  - 整合 [`https://wiki.david888.com/api`](lib/wiki.ts) REST API，嚴格遵守最新 `SKILL.md` 規範。
+  - **👑 首行標題鐵律 (Mandatory Level-1 Title Rule)**：落實 Markdown 文件第一行必須以 `# Document Title` 開頭之嚴格要求，後端自動過濾並清理開頭對話性閒聊（Preamble/Chatter），並確保 `[TOC]` 與 `> 執行摘要` 緊隨於第一行 `# Title` 之後，確保 HTML `<title>`、Open Graph 與社群預覽卡片精確解析。
   - 當生成長篇研究報告、深度估值模型或投資備忘錄時，自動整理結構化 Markdown（含 `[TOC]`、數據表、Mermaid 流程圖、GitHub Alerts 與註腳）發布至 David888 Wiki。
   - 回傳公開分享網址 (`shareUrl`)、2D 簡報模式 (`/present`) 與雙欄電子書模式 (`/book`)，並渲染視覺化卡片 [`WikiPublishResultCard`](components/stocks/wiki-publish-result.tsx)。
 - **2MD Web Reader 網頁全文深讀工具 (`readWebPage`)**：
