@@ -8,20 +8,24 @@ import { CodeBlock } from '@/components/ui/codeblock'
 import { FollowupPrompts } from './followup-prompts'
 import { CopyButton } from '@/components/copy-button'
 
+import { StreamableValue } from 'ai/rsc'
+import { useStreamableText } from '@/lib/hooks/use-streamable-text'
+
 interface BotCaptionProps {
-  content: string
+  content: string | StreamableValue<string>
 }
 
 export function BotCaption({ content }: BotCaptionProps) {
-  if (!content) return null
+  const text = useStreamableText(content)
+  if (!text) return null
 
   // Check if caption contains suggested follow-ups delimiter
-  const parts = content.split(
+  const parts = text.split(
     /---SUGGESTIONS---|===SUGGESTIONS===|【自主續問建議】|【續問建議】/i
   )
 
-  const mainText = parts[0]?.trim()
-  const suggestionsText = parts[1]?.trim()
+  const mainText = parts[0]?.trim() || ''
+  const suggestionsText = parts[1]?.trim() || ''
 
   let suggestions: string[] = []
   if (suggestionsText) {

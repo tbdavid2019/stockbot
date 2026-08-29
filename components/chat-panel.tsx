@@ -44,6 +44,9 @@ const promptLabelsEn = [
   '⚡ Market inspiration for today'
 ]
 
+const promptModesZh = ['🎲 隨機靈感', '📊 市場雷達', '🧭 深度拆解', '⚡ 快問快答']
+const promptModesEn = ['🎲 Random picks', '📊 Market radar', '🧭 Deep dive', '⚡ Quick scan']
+
 function shufflePrompts(
   prompts: ExampleMessage[],
   previousPrompts: ExampleMessage[] = []
@@ -126,6 +129,31 @@ const exampleMessagesZh: ExampleMessage[] = [
     heading: '財報體檢室',
     subheading: '營收、毛利率與自由現金流一次看',
     message: '請幫我做一份公司的最新財報與現金流體檢'
+  },
+  {
+    heading: '聯發科 (2454) 走勢診斷',
+    subheading: '技術面、量價與關鍵支撐壓力',
+    message: '請分析聯發科（2454）目前的趨勢、量價與支撐壓力'
+  },
+  {
+    heading: '鴻海 (2317) 法人觀察',
+    subheading: '基本面、法人動向與產業展望',
+    message: '請分析鴻海（2317）的基本面、法人動向與產業展望'
+  },
+  {
+    heading: 'NVDA 供應鏈雷達',
+    subheading: '找出 AI 伺服器上下游連動標的',
+    message: '請整理 NVDA 的供應鏈與相關概念股，並比較產業位置'
+  },
+  {
+    heading: 'JPM 財務體檢',
+    subheading: '營收、獲利、資產品質與估值',
+    message: '請整理 JPM 最新財務數據、資產品質與估值'
+  },
+  {
+    heading: '總經風向球',
+    subheading: '美債、美元、黃金與股市如何連動？',
+    message: '請分析美債殖利率、美元與黃金對台股美股的影響'
   }
 ]
 
@@ -183,6 +211,31 @@ const exampleMessagesEn: ExampleMessage[] = [
     heading: 'Financial health check',
     subheading: 'Revenue, margins and free cash flow',
     message: 'Give me a financial health check for a company'
+  },
+  {
+    heading: 'MediaTek (2454) technical check',
+    subheading: 'Trend, volume, support and resistance',
+    message: 'Analyze the trend, volume, support and resistance for MediaTek (2454)'
+  },
+  {
+    heading: 'Hon Hai (2317) investor watch',
+    subheading: 'Fundamentals, institutions and industry outlook',
+    message: 'Analyze Hon Hai (2317) fundamentals, institutional flow and outlook'
+  },
+  {
+    heading: 'NVDA supply-chain radar',
+    subheading: 'AI server links and related companies',
+    message: 'Map NVDA supply-chain and related companies, then compare their positions'
+  },
+  {
+    heading: 'JPM financial health check',
+    subheading: 'Earnings, asset quality and valuation',
+    message: 'Summarize JPM latest financials, asset quality and valuation'
+  },
+  {
+    heading: 'Macro market compass',
+    subheading: 'Treasuries, dollar, gold and equities',
+    message: 'Explain how Treasury yields, the dollar and gold may affect Taiwan and US stocks'
   }
 ]
 
@@ -239,6 +292,7 @@ export function ChatPanel({
 
   const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
   const promptLabels = lang === 'zh' ? promptLabelsZh : promptLabelsEn
+  const promptModes = lang === 'zh' ? promptModesZh : promptModesEn
 
   useEffect(() => {
     setVisibleExamples(shufflePrompts(currentExamples))
@@ -297,14 +351,9 @@ export function ChatPanel({
                 <span className="text-sm font-medium text-muted-foreground">
                   {promptLabels[promptLabelIndex]}
                 </span>
-                <a
-                  href="https://stock.david888.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 transition-colors hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/70"
-                >
-                  📡 每日模板
-                </a>
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                  {promptModes[promptLabelIndex % promptModes.length]}
+                </span>
               </div>
               <button
                 type="button"

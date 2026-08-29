@@ -17,23 +17,23 @@ export interface MarketQuote extends StockItem {
   market: 'TW' | 'US'
 }
 
-const FALLBACK_QUOTES: MarketQuote[] = [
-  { market: 'TW', symbol: '2330', name: '台積電', price: '2400' },
-  { market: 'TW', symbol: '1216', name: '統一', price: '77.4' },
-  { market: 'TW', symbol: '2882', name: '國泰金', price: '103' },
-  { market: 'TW', symbol: '2344', name: '華邦電', price: '179' },
-  { market: 'US', symbol: 'AAPL', name: 'AAPL', price: '309.90' },
-  { market: 'US', symbol: 'NVDA', name: 'NVDA', price: '213.05' },
-  { market: 'US', symbol: 'MSFT', name: 'MSFT', price: '450.00' },
-  { market: 'US', symbol: 'TSLA', name: 'TSLA', price: '220.00' }
-]
+function shuffleQuotes(quotes: MarketQuote[]) {
+  const shuffled = [...quotes]
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const currentQuote = shuffled[index]
+    shuffled[index] = shuffled[swapIndex]
+    shuffled[swapIndex] = currentQuote
+  }
+  return shuffled
+}
 
 export function MarketQuotes({
   onSelect
 }: {
   onSelect?: (quote: MarketQuote) => void
 }) {
-  const [quotes, setQuotes] = useState<MarketQuote[]>(FALLBACK_QUOTES)
+  const [quotes, setQuotes] = useState<MarketQuote[]>([])
 
   useEffect(() => {
     let isMounted = true
@@ -48,17 +48,17 @@ export function MarketQuotes({
 
         const twQuotes = Array.isArray(data.twStocks)
           ? data.twStocks
-              .slice(0, 6)
+              .slice(0, 12)
               .map(stock => ({ ...stock, market: 'TW' as const }))
           : []
         const usQuotes = Array.isArray(data.usStocks)
           ? data.usStocks
-              .slice(0, 6)
+              .slice(0, 12)
               .map(stock => ({ ...stock, market: 'US' as const }))
           : []
 
-        const nextQuotes = [...twQuotes, ...usQuotes]
-        setQuotes(nextQuotes.length > 0 ? nextQuotes : FALLBACK_QUOTES)
+        const nextQuotes = shuffleQuotes([...twQuotes, ...usQuotes])
+        setQuotes(nextQuotes)
       } catch (error) {
         console.warn('[MarketQuotes] Failed to load live quotes:', error)
       }
@@ -72,6 +72,8 @@ export function MarketQuotes({
       window.clearInterval(refreshTimer)
     }
   }, [])
+
+  if (quotes.length === 0) return null
 
   return (
     <div className="w-full overflow-hidden border-t border-border">

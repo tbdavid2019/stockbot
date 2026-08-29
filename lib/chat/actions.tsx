@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { generateText } from 'ai'
+import { generateText, streamText } from 'ai'
 import {
   createAI,
   getMutableAIState,
@@ -12,7 +12,7 @@ import { createOpenAI } from '@ai-sdk/openai'
 import { BotCard, BotMessage } from '@/components/stocks/message'
 
 import { z } from 'zod'
-import { nanoid } from '@/lib/utils'
+import { nanoid, formatStockSymbol } from '@/lib/utils'
 import { SpinnerMessage } from '@/components/stocks/message'
 import { Message } from '@/lib/types'
 import { StockChart } from '@/components/tradingview/stock-chart'
@@ -219,12 +219,13 @@ type ComparisonSymbolObject = {
   position: 'SameScale'
 }
 
-async function generateCaption(
+async function streamCaption(
   symbol: string,
   comparisonSymbols: ComparisonSymbolObject[],
   toolName: string,
   aiState: MutableAIState,
-  contextData?: string
+  contextData: string | undefined,
+  captionStream: ReturnType<typeof createStreamableValue<string>>
 ): Promise<string> {
   const stockString =
     comparisonSymbols.length === 0
@@ -302,6 +303,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
   ]
 
   const candidates = getProviderCandidates().slice(0, 2)
+  let accumulatedText = ''
 
   for (const candidate of candidates) {
     try {
@@ -309,24 +311,46 @@ Language: reply in the same language the user used most recently. If Chinese, re
         baseURL: candidate.baseURL,
         apiKey: candidate.apiKey
       })
-      const response = await generateText({
+      const result = await streamText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(2500),
+        abortSignal: AbortSignal.timeout(5000),
         messages: messagesToModel
       })
-      if (response.text && response.text.trim().length > 0) {
-        return response.text
+
+      for await (const delta of result.textStream) {
+        accumulatedText += delta
+        captionStream.update(delta)
+      }
+
+      if (accumulatedText.trim().length > 0) {
+        captionStream.done()
+        return accumulatedText
       }
     } catch (err: any) {
-      console.warn(`[Caption Fallback] ${candidate.name} failed:`, err?.message)
+      console.warn(`[Caption Stream Fallback] ${candidate.name} failed:`, err?.message)
     }
   }
 
-  // Intelligent fallback caption if all external LLM text generation calls fail
+  // Fallback
   const isZh = /[\u4e00-\u9fa5]/.test(symbol) || true
-  return isZh
+  const fallback = isZh
     ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游連動\n- 🏦 分析美債殖利率與聯準會利率政策影響\n- 📑 解讀最新季度財務報表與獲利能力`
     : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor consensus analysis\n- ⛓️ Analyze related supply chain & peer stocks\n- 🏦 Impact of 10Y Treasury yield & Fed rate cuts\n- 📑 Breakdown latest quarterly financials & margins`
+
+  captionStream.update(fallback)
+  captionStream.done()
+  return fallback
+}
+
+async function generateCaption(
+  symbol: string,
+  comparisonSymbols: ComparisonSymbolObject[],
+  toolName: string,
+  aiState: MutableAIState,
+  contextData?: string
+): Promise<string> {
+  const dummyStream = createStreamableValue('')
+  return streamCaption(symbol, comparisonSymbols, toolName, aiState, contextData, dummyStream)
 }
 
 async function submitUserMessage(content: string) {
@@ -573,22 +597,20 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             }),
 
             generate: async function* ({ symbol, comparisonSymbols }) {
-              yield (
-                <BotCard>
-                  <></>
-                </BotCard>
-              )
-
+              const formattedSymbol = formatStockSymbol(symbol)
               const normalizedComparison = Array.isArray(comparisonSymbols)
                 ? (comparisonSymbols
                     .map((item: any) => {
                       if (!item) return null
                       if (typeof item === 'string') {
-                        return { symbol: item, position: 'SameScale' as const }
+                        return {
+                          symbol: formatStockSymbol(item),
+                          position: 'SameScale' as const
+                        }
                       }
                       if (typeof item === 'object' && item.symbol) {
                         return {
-                          symbol: String(item.symbol),
+                          symbol: formatStockSymbol(String(item.symbol)),
                           position: 'SameScale' as const
                         }
                       }
@@ -600,25 +622,33 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   }[])
                 : []
 
+              const captionStream = createStreamableValue('')
+
+              yield (
+                <BotCard>
+                  <StockChart
+                    symbol={formattedSymbol}
+                    comparisonSymbols={normalizedComparison}
+                  />
+                  <BotCaption content={captionStream.value} />
+                </BotCard>
+              )
+
               let liveContext = ''
               try {
-                liveContext = await fetchLiveStockContext(symbol)
+                liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
                 console.warn('[showStockChart] fetchLiveStockContext failed:', e)
               }
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  symbol,
-                  normalizedComparison,
-                  'showStockChart',
-                  aiState,
-                  liveContext
-                )
-              } catch (e) {
-                caption = `以上是 ${symbol} 的最新即時走勢圖表與市場數據。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                formattedSymbol,
+                normalizedComparison,
+                'showStockChart',
+                aiState,
+                liveContext,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -635,7 +665,10 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-call',
                           toolName: 'showStockChart',
                           toolCallId,
-                          args: { symbol, comparisonSymbols: normalizedComparison }
+                          args: {
+                            symbol: formattedSymbol,
+                            comparisonSymbols: normalizedComparison
+                          }
                         }
                       ]
                     },
@@ -648,7 +681,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           toolName: 'showStockChart',
                           toolCallId,
                           result: {
-                            symbol,
+                            symbol: formattedSymbol,
                             comparisonSymbols: normalizedComparison,
                             caption
                           }
@@ -664,7 +697,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockChart
-                    symbol={symbol}
+                    symbol={formattedSymbol}
                     comparisonSymbols={normalizedComparison}
                   />
                   <BotCaption content={caption} />
@@ -683,31 +716,31 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(symbol)
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <StockPrice props={formattedSymbol} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
               let liveContext = ''
               try {
-                liveContext = await fetchLiveStockContext(symbol)
+                liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
                 console.warn('[showStockPrice] fetchLiveStockContext failed:', e)
               }
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  symbol,
-                  [],
-                  'showStockPrice',
-                  aiState,
-                  liveContext
-                )
-              } catch (e) {
-                caption = `以上是 ${symbol} 的最新即時報價與市場指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                formattedSymbol,
+                [],
+                'showStockPrice',
+                aiState,
+                liveContext,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -724,7 +757,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-call',
                           toolName: 'showStockPrice',
                           toolCallId,
-                          args: { symbol }
+                          args: { symbol: formattedSymbol }
                         }
                       ]
                     },
@@ -736,7 +769,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-result',
                           toolName: 'showStockPrice',
                           toolCallId,
-                          result: { symbol, caption }
+                          result: { symbol: formattedSymbol, caption }
                         }
                       ]
                     }
@@ -748,7 +781,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               return (
                 <BotCard>
-                  <StockPrice props={symbol} />
+                  <StockPrice props={formattedSymbol} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
@@ -765,31 +798,31 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(symbol)
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <NativeFinancialsCard symbol={formattedSymbol} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
               let liveContext = ''
               try {
-                liveContext = await fetchLiveStockContext(symbol)
+                liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
                 console.warn('[showStockFinancials] fetchLiveStockContext failed:', e)
               }
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  symbol,
-                  [],
-                  'StockFinancials',
-                  aiState,
-                  liveContext
-                )
-              } catch (e) {
-                caption = `以上是 ${symbol} 的財務報表數據與核心獲利指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                formattedSymbol,
+                [],
+                'StockFinancials',
+                aiState,
+                liveContext,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -806,7 +839,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-call',
                           toolName: 'showStockFinancials',
                           toolCallId,
-                          args: { symbol }
+                          args: { symbol: formattedSymbol }
                         }
                       ]
                     },
@@ -818,7 +851,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-result',
                           toolName: 'showStockFinancials',
                           toolCallId,
-                          result: { symbol, caption }
+                          result: { symbol: formattedSymbol, caption }
                         }
                       ]
                     }
@@ -830,7 +863,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               return (
                 <BotCard>
-                  <NativeFinancialsCard symbol={symbol} />
+                  <NativeFinancialsCard symbol={formattedSymbol} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
@@ -847,31 +880,31 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(symbol)
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <NativeStockNewsCard symbol={formattedSymbol} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
               let liveContext = ''
               try {
-                liveContext = await fetchLiveStockContext(symbol)
+                liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
                 console.warn('[showStockNews] fetchLiveStockContext failed:', e)
               }
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  symbol,
-                  [],
-                  'showStockNews',
-                  aiState,
-                  liveContext
-                )
-              } catch (e) {
-                caption = `以上是 ${symbol} 的最新即時市場新聞與重大動態。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                formattedSymbol,
+                [],
+                'showStockNews',
+                aiState,
+                liveContext,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -888,7 +921,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-call',
                           toolName: 'showStockNews',
                           toolCallId,
-                          args: { symbol }
+                          args: { symbol: formattedSymbol }
                         }
                       ]
                     },
@@ -900,7 +933,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-result',
                           toolName: 'showStockNews',
                           toolCallId,
-                          result: { symbol, caption }
+                          result: { symbol: formattedSymbol, caption }
                         }
                       ]
                     }
@@ -912,7 +945,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               return (
                 <BotCard>
-                  <NativeStockNewsCard symbol={symbol} />
+                  <NativeStockNewsCard symbol={formattedSymbol} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
@@ -923,23 +956,23 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               'This tool shows a generic stock screener which can be used to find new stocks based on financial or technical parameters.',
             parameters: z.object({}),
             generate: async function* ({}) {
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <StockScreener />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  'Generic',
-                  [],
-                  'showStockScreener',
-                  aiState
-                )
-              } catch (e) {
-                caption = `以上是通用股票篩選器與技術指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                '全球精選股票',
+                [],
+                'showStockScreener',
+                aiState,
+                undefined,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -990,23 +1023,23 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows an overview of today's stock, futures, bond, and forex market performance including change values, Open, High, Low, and Close values.`,
             parameters: z.object({}),
             generate: async function* ({}) {
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <MarketOverview />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  'Generic',
-                  [],
-                  'showMarketOverview',
-                  aiState
-                )
-              } catch (e) {
-                caption = `以上是今日全球主要股匯債市總覽行情。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                '全球市場總覽',
+                [],
+                'showMarketOverview',
+                aiState,
+                undefined,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -1057,23 +1090,23 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows a heatmap of today's stock market performance across sectors (US / Taiwan / Taiwan 50 / Japan / Hong Kong / UK / Germany / France / Israel / Korea / China / Australia / India / Brazil / Canada). It is preferred over showMarketOverview if asked specifically about the stock market.`,
             parameters: z.object({}),
             generate: async function* ({}) {
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <MarketHeatmap />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  'Generic',
-                  [],
-                  'showMarketHeatmap',
-                  aiState
-                )
-              } catch (e) {
-                caption = `以上是全球股市板塊資金輪動熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                '全球股市熱力圖',
+                [],
+                'showMarketHeatmap',
+                aiState,
+                undefined,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -1124,23 +1157,23 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows a heatmap of today's ETF performance across sectors and asset classes. It is preferred over showMarketOverview if asked specifically about the ETF market.`,
             parameters: z.object({}),
             generate: async function* ({}) {
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <ETFHeatmap />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  'Generic',
-                  [],
-                  'showETFHeatmap',
-                  aiState
-                )
-              } catch (e) {
-                caption = `以上是全球 ETF 資產板塊與資金流向熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                '全球 ETF 熱力圖',
+                [],
+                'showETFHeatmap',
+                aiState,
+                undefined,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -1191,23 +1224,23 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows the daily top trending stocks including the top five gaining, losing, and most active stocks based on today's performance`,
             parameters: z.object({}),
             generate: async function* ({}) {
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <></>
+                  <MarketTrending />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  'Generic',
-                  [],
-                  'showTrendingStocks',
-                  aiState
-                )
-              } catch (e) {
-                caption = `以上是今日市場熱門成交量能與漲跌排行。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                '今日熱門股排行榜',
+                [],
+                'showTrendingStocks',
+                aiState,
+                undefined,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -1265,34 +1298,31 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(symbol)
+              const captionStream = createStreamableValue('')
+
               yield (
                 <BotCard>
-                  <div className="flex items-center space-x-2 p-4">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-                    <span>🏛️ 正在調度傳奇大師投資分析團隊研調 {symbol}...</span>
-                  </div>
+                  <StockAnalysis symbol={formattedSymbol} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
 
               let liveContext = ''
               try {
-                liveContext = await fetchLiveStockContext(symbol)
+                liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
                 console.warn('[analyzeStockWithAI] fetchLiveStockContext failed:', e)
               }
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  symbol,
-                  [],
-                  'analyzeStockWithAI',
-                  aiState,
-                  liveContext
-                )
-              } catch (e) {
-                caption = `以上是 ${symbol} 的 13 位傳奇大師多維投資研調報告。\n\n---SUGGESTIONS---\n- 📊 查看即時技術走勢圖與均線結構\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                formattedSymbol,
+                [],
+                'analyzeStockWithAI',
+                aiState,
+                liveContext,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -1309,7 +1339,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-call',
                           toolName: 'analyzeStockWithAI',
                           toolCallId,
-                          args: { symbol }
+                          args: { symbol: formattedSymbol }
                         }
                       ]
                     },
@@ -1321,7 +1351,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-result',
                           toolName: 'analyzeStockWithAI',
                           toolCallId,
-                          result: { symbol, caption }
+                          result: { symbol: formattedSymbol, caption }
                         }
                       ]
                     }
@@ -1333,7 +1363,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               return (
                 <BotCard>
-                  <StockAnalysis symbol={symbol} />
+                  <StockAnalysis symbol={formattedSymbol} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
@@ -1348,14 +1378,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 .describe('The search query for live 2MD web search.')
             }),
             generate: async function* ({ query }) {
-              yield (
-                <BotCard>
-                  <div className="flex items-center space-x-2 p-4">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-                    <span>🌐 正在透過 2MD 搜尋引擎檢索「{query}」...</span>
-                  </div>
-                </BotCard>
-              )
+              const captionStream = createStreamableValue('')
 
               let results: any[] = []
               try {
@@ -1364,6 +1387,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[searchFinancialWeb] Search failed:', e)
               }
 
+              yield (
+                <BotCard>
+                  <WebSearchResults query={query} results={results} />
+                  <BotCaption content={captionStream.value} />
+                </BotCard>
+              )
+
               const contextData = results
                 .map(
                   (r, idx) =>
@@ -1371,18 +1401,14 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
                 .join('\n')
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  query,
-                  [],
-                  'searchFinancialWeb',
-                  aiState,
-                  contextData
-                )
-              } catch (e) {
-                caption = `以上是關於「${query}」的最新市場檢索情報。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                query,
+                [],
+                'searchFinancialWeb',
+                aiState,
+                contextData,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -1440,14 +1466,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ url }) {
-              yield (
-                <BotCard>
-                  <div className="flex items-center space-x-2 p-4">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
-                    <span>📖 正在透過 2MD Web Reader 讀取網頁全文...</span>
-                  </div>
-                </BotCard>
-              )
+              const captionStream = createStreamableValue('')
 
               let text = ''
               try {
@@ -1456,20 +1475,30 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[readWebPage] readUrl2MD failed:', e)
               }
 
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-2 text-xs">
+                    <div className="font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                      <span>🌐 2MD Web Reader 網頁全文讀取完成</span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 font-mono truncate">
+                      {url}
+                    </p>
+                  </div>
+                  <BotCaption content={captionStream.value} />
+                </BotCard>
+              )
+
               const contextData = `【網頁全文擷取 (${url})】：\n${text ? text.slice(0, 2000) : '未獲取到內容'}`
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  url,
-                  [],
-                  'readWebPage',
-                  aiState,
-                  contextData
-                )
-              } catch (e) {
-                caption = `以上是從網址 ${url} 讀取整理的內容摘要。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                url,
+                [],
+                'readWebPage',
+                aiState,
+                contextData,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
@@ -1572,40 +1601,37 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              let result: Awaited<ReturnType<typeof publishToWiki>> = {
-                success: false,
-                error: ''
-              }
-              try {
+              const cleanSlug = (
+                slug ||
+                title
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-+|-+$/g, '') ||
+                `report-${Date.now()}`
+              ).slice(0, 60)
+
+              let result = await publishToWiki({
+                title,
+                slug: cleanSlug,
+                markdown: content,
+                theme
+              })
+
+              if (!result.success) {
+                const uniqueSlug = `${cleanSlug}-${nanoid()}`
                 result = await publishToWiki({
                   title,
-                  slug,
+                  slug: uniqueSlug,
                   markdown: content,
                   theme
                 })
-              } catch (e: any) {
-                console.warn('[publishToDavid888Wiki] publishToWiki failed:', e)
-                result = {
-                  success: false,
-                  error: e?.message || '發布失敗'
-                }
               }
 
-              const contextData = result.success
-                ? `【Wiki 發布成功】：標題: ${title} | 公開分享網址 (shareUrl): ${result.shareUrl} | 簡報網址: ${result.presentUrl} | 電子書網址: ${result.bookUrl}`
-                : `【Wiki 發布失敗】：${result.error}`
-
               let caption = ''
-              try {
-                caption = await generateCaption(
-                  title,
-                  [],
-                  'publishToDavid888Wiki',
-                  aiState,
-                  contextData
-                )
-              } catch (e) {
-                caption = `以上是已為您整理並發布至 Wiki 的研究報告「${title}」。\n\n---SUGGESTIONS---\n- 📊 查看即時技術走勢圖與均線結構\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響`
+              if (result.success) {
+                caption = `以上為您整理發布的深度報告《${title}》。已建立永久分享網址、互動簡報與電子書閱讀器。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              } else {
+                caption = `發布時遇到狀況：${result.error || '未知錯誤'}。請檢查內容或稍後重試。`
               }
 
               const toolCallId = nanoid()
@@ -1623,7 +1649,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-call',
                           toolName: 'publishToDavid888Wiki',
                           toolCallId,
-                          args: { title, slug, content, theme }
+                          args: { title, slug: cleanSlug, content, theme }
                         }
                       ]
                     },
@@ -1635,7 +1661,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           type: 'tool-result',
                           toolName: 'publishToDavid888Wiki',
                           toolCallId,
-                          result: { ...result, caption }
+                          result: {
+                            ...result,
+                            title,
+                            theme,
+                            caption
+                          }
                         }
                       ]
                     }
@@ -1681,14 +1712,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 .describe('The optional stock symbol or company name.')
             }),
             generate: async function* ({ url, symbol }) {
-              yield (
-                <BotCard>
-                  <div className="flex items-center space-x-2 p-4">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
-                    <span>📊 正在透過 2MD AnyDoc 引擎解析財報/年報 PDF 全文與財務數據...</span>
-                  </div>
-                </BotCard>
-              )
+              const captionStream = createStreamableValue('')
 
               let text = ''
               try {
@@ -1697,20 +1721,30 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[readFinancialReport] readUrl2MD failed:', e)
               }
 
+              yield (
+                <BotCard>
+                  <FinancialReportCard
+                    filename={url.split('/').pop() || '財報文件.pdf'}
+                    url={url}
+                    contentSnippet={
+                      text ? text.slice(0, 600) + '...' : '未能萃取出文字內容'
+                    }
+                    fullContent={text}
+                  />
+                  <BotCaption content={captionStream.value} />
+                </BotCard>
+              )
+
               const contextData = `【財報/年報/PDF 全文解析 (${url})】：\n${text ? text.slice(0, 4000) : '未獲取到內容'}`
 
-              let caption = ''
-              try {
-                caption = await generateCaption(
-                  symbol || url,
-                  [],
-                  'readFinancialReport',
-                  aiState,
-                  contextData
-                )
-              } catch (e) {
-                caption = `以上是從財報文件解析的主要財務數據與經營指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
-              }
+              const caption = await streamCaption(
+                symbol || url,
+                [],
+                'readFinancialReport',
+                aiState,
+                contextData,
+                captionStream
+              )
 
               const toolCallId = nanoid()
 
