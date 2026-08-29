@@ -325,8 +325,7 @@ export function ChatHistorySheet({
               <span className="text-3xl">📭</span>
               <p className="text-xs font-medium">目前尚無歷史紀錄</p>
               <p className="text-[11px] text-muted-foreground/80 max-w-[200px]">
-                開始向 888 StockBot 詢問股票、行情或 AI
-                分析，系統將自動保存於本機。
+                開始向 888 StockBot 詢問股票、行情或大師投資研調，系統將自動保存於本機。
               </p>
             </div>
           ) : filteredSessions.length === 0 ? (

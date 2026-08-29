@@ -40,9 +40,9 @@ const exampleMessagesZh: ExampleMessage[] = [
     message: '幫我顯示 GOOGL 的股票圖表'
   },
   {
-    heading: 'AI 投資多輪大師分析',
+    heading: '傳奇大師多維投資評估',
     subheading: '特斯拉 (TSLA) 現在值得買嗎？',
-    message: 'TSLA 值得買嗎？請用多位大師進行 AI 投資分析'
+    message: 'TSLA 值得買嗎？請用多位大師進行深度投資價值評估'
   },
   {
     heading: '微軟最新財務數據',
@@ -74,10 +74,10 @@ const exampleMessagesEn: ExampleMessage[] = [
     message: 'Show me a stock chart for $GOOGL'
   },
   {
-    heading: 'AI Investment Analysis',
+    heading: 'Legendary Master Valuation',
     subheading: 'Should I buy TSLA?',
     message:
-      'Should I buy TSLA? Please provide multi-analyst AI investment analysis'
+      'Should I buy TSLA? Please provide multi-analyst investment valuation'
   },
   {
     heading: `What are Microsoft's`,

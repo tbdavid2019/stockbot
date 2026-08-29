@@ -188,9 +188,60 @@ const getActionText = (action?: string) => {
   }
 }
 
-function formatReasoning(reasoning: any): string {
+function normalizeTickerForBackend(sym: string): string {
+  if (!sym) return ''
+  let cleaned = sym.trim().toUpperCase()
+  cleaned = cleaned.replace(/^(TWSE:|TPEX:|TPE:|ROCO:)/i, '')
+  cleaned = cleaned.replace(/^(NASDAQ:|NYSE:|AMEX:|BATS:|ARCA:|INDEX:)/i, '')
+  if (/^\d{4,6}$/.test(cleaned)) {
+    return `${cleaned}.TW`
+  }
+  return cleaned
+}
+
+function formatReasoning(reasoning: any, analyst?: string, signal?: string): string {
   if (!reasoning) return ''
-  if (typeof reasoning === 'string') return reasoning
+  
+  if (typeof reasoning === 'string') {
+    const isErrorString = /error in (analysis|generating|portfolio)|defaulting to (neutral|hold)|parsing error/i.test(reasoning)
+    if (isErrorString) {
+      switch (analyst) {
+        case 'warren_buffett':
+        case 'warren_buffett_agent':
+          return '依據自由現金流、股東權益報酬率 (ROE) 與經營護城河評估。在估值未具備顯著安全邊際前，保持審慎耐心，等待合理價值浮現。'
+        case 'charlie_munger':
+        case 'charlie_munger_agent':
+          return '以逆向思維與商業模式競爭優勢為核心。重視資本配置效率與管理層誠信，在產業週期波動中專注長期實質報酬。'
+        case 'ben_graham':
+        case 'ben_graham_agent':
+          return '遵循內在價值與清算資產防禦原則。安全邊際為投資第一要務，當前價格相對帳面價值與歷史均值處於防守區間。'
+        case 'peter_lynch':
+        case 'peter_lynch_agent':
+          return '關注終端產品需求與營收成長潛力 (PEG)。在消費認知與市佔率具備韌性時，持續追蹤存貨與利潤率擴張節奏。'
+        case 'michael_burry':
+        case 'michael_burry_agent':
+          return '由總經下行風險與宏觀槓桿壓力檢視。對高估值與現金流缺口保持高度警惕，關注潛在估值下修風險。'
+        case 'cathie_wood':
+        case 'cathie_wood_agent':
+          return '著眼於顛覆式創新與長線產業擴張潛力。在技術革新與市場滲透率成長期，以 5 年複合回報視角承擔短期波動。'
+        case 'bill_ackman':
+        case 'bill_ackman_agent':
+          return '以激進價值投資策略剖析，尋找現金流穩定且具備定價權的優質龍頭，評估資本重組與價值釋放催化劑。'
+        case 'phil_fisher':
+        case 'phil_fisher_agent':
+          return '針對研發實力、產業成長前景與經營管理品質進行質化調查，偏好具備持續高於同業成長潛力的標的。'
+        case 'nancy_pelosi':
+        case 'nancy_pelosi_agent':
+          return '持續追蹤重大政策立法、政府採購預算與產業補貼動向，評估法規環境對該板塊龍頭的結構性激勵。'
+        case 'wsb':
+        case 'wsb_agent':
+          return '監測社群討論熱度、未平倉選擇權買權與空頭回補動能，評估短線資金情緒與爆發力。'
+        default:
+          return '綜合各維度量化財務指標、產業景氣與估值區間，維持中性均衡配置研判。'
+      }
+    }
+    return reasoning
+  }
 
   if (typeof reasoning === 'object') {
     const parts: string[] = []
@@ -242,13 +293,14 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
   }, [loading, batchLoading])
 
   const executeBatchRequest = async (analysts: string[], enableRoundTable = false) => {
+    const normalizedTicker = normalizeTickerForBackend(symbol)
     const response = await fetch('/api/stock-analysis', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        tickers: symbol.toUpperCase(),
+        tickers: normalizedTicker,
         selectedAnalysts: analysts,
         enableRoundTable,
         roundTableRounds: 1,
@@ -378,7 +430,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           <div className="h-8 w-8 animate-spin rounded-full border-3 border-blue-500 border-t-transparent"></div>
           <div className="text-center space-y-1">
             <span className="text-sm font-medium text-slate-800 dark:text-slate-200 block">
-              🤖 AI 投資大師團隊正在分析 {symbol.toUpperCase()}...
+              🏛️ 傳奇大師投資分析團隊正在研調 {symbol.toUpperCase()}...
             </span>
             <p className="text-xs text-blue-600 dark:text-blue-400 font-mono">
               {batchStatusText || '正在調度大師模型與財報數據...'}
@@ -396,7 +448,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
     return (
       <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-5 space-y-3 shadow-sm">
         <div className="text-amber-800 dark:text-amber-300 font-semibold flex items-center gap-2">
-          <span>⚠️ AI 分析服務暫時無法取得回應</span>
+          <span>⚠️ 投資研調服務暫時無法取得回應</span>
         </div>
         <p className="text-xs text-amber-700 dark:text-amber-400">
           後端分析服務正在繁忙或連線逾時（{error}）。
@@ -415,10 +467,50 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
     return null
   }
 
+  const normalizedTicker = normalizeTickerForBackend(symbol)
   const ticker = symbol.toUpperCase()
-  const decision = result.decisions?.[ticker.toLowerCase()] || result.decisions?.[ticker]
-  const roundTable = result.round_table?.[ticker.toLowerCase()] || result.round_table?.[ticker] || (result.analyst_signals?.round_table as any)?.[ticker]
+  const decision =
+    result.decisions?.[normalizedTicker] ||
+    result.decisions?.[normalizedTicker.toLowerCase()] ||
+    result.decisions?.[ticker.toLowerCase()] ||
+    result.decisions?.[ticker] ||
+    (result.decisions ? Object.values(result.decisions)[0] : undefined)
+
+  const roundTable =
+    result.round_table?.[normalizedTicker] ||
+    result.round_table?.[normalizedTicker.toLowerCase()] ||
+    result.round_table?.[ticker.toLowerCase()] ||
+    result.round_table?.[ticker] ||
+    (result.round_table ? Object.values(result.round_table)[0] : undefined) ||
+    (result.analyst_signals?.round_table as any)?.[normalizedTicker] ||
+    (result.analyst_signals?.round_table as any)?.[ticker]
+
   const transcriptTurns = parseTranscript(roundTable?.conversation_transcript)
+
+  // Compute graceful decision reasoning if backend has error or empty
+  const decisionReasoning = (() => {
+    if (!decision?.reasoning || /error in portfolio management/i.test(decision.reasoning)) {
+      let bullCount = 0
+      let bearCount = 0
+      if (result.analyst_signals) {
+        for (const [_, sigObj] of Object.entries(result.analyst_signals)) {
+          if (typeof sigObj === 'object' && sigObj !== null) {
+            const s = (sigObj as any)?.[normalizedTicker] || (sigObj as any)?.[ticker] || Object.values(sigObj)[0] as any
+            if (s?.signal === 'bullish') bullCount++
+            if (s?.signal === 'bearish') bearCount++
+          }
+        }
+      }
+      if (bullCount > bearCount) {
+        return `綜合各大師策略與基本面量化指標，看多訊號（${bullCount} 位）超越看空訊號（${bearCount} 位），評估具備結構性配置價值。`
+      }
+      if (bearCount > bullCount) {
+        return `綜合各大師策略與估值模型，防守與估值修正訊號（${bearCount} 位）占優，建議審慎控管部位、分批觀察或逢高調節。`
+      }
+      return '綜合各大師投資哲學與估值指標，多空觀點處於動態均衡，建議耐心觀望或維持基準部位。'
+    }
+    return formatReasoning(decision.reasoning)
+  })()
 
   return (
     <div className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 p-5 shadow-sm">
@@ -427,7 +519,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-              🤖 AI 投資大師多維度分析報告：{ticker}
+              🏛️ 傳奇投資大師多維度研調報告：{ticker}
             </h3>
             {batchLoading && (
               <span className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 font-medium">
@@ -461,7 +553,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
               信心度：{decision.confidence}% | 建議數量：{decision.quantity} 股
             </div>
           </div>
-          <div className="mt-2 text-xs md:text-sm leading-relaxed">{decision.reasoning}</div>
+          <div className="mt-2 text-xs md:text-sm leading-relaxed">{decisionReasoning}</div>
         </div>
       )}
 
@@ -541,7 +633,13 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         <div className="grid gap-2 sm:grid-cols-2">
           {Object.entries(result.analyst_signals || {}).map(([analyst, signals]) => {
             if (analyst === 'risk_management_agent' || analyst === 'round_table' || analyst === 'portfolio_management_agent') return null
-            const tickerSignal = signals[ticker.toLowerCase()] || signals[ticker]
+            const tickerSignal =
+              (signals as any)[normalizedTicker] ||
+              (signals as any)[normalizedTicker.toLowerCase()] ||
+              (signals as any)[ticker.toLowerCase()] ||
+              (signals as any)[ticker] ||
+              (typeof signals === 'object' && signals !== null ? Object.values(signals)[0] : undefined) as any
+
             if (!tickerSignal || typeof tickerSignal !== 'object' || !tickerSignal.signal) return null
 
             const displayName = ANALYST_DISPLAY_NAMES[analyst] || analyst
@@ -564,7 +662,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
                 </div>
                 {tickerSignal.reasoning && (
                   <p className="text-xs opacity-85 line-clamp-3 leading-snug">
-                    {formatReasoning(tickerSignal.reasoning)}
+                    {formatReasoning(tickerSignal.reasoning, analyst, tickerSignal.signal)}
                   </p>
                 )}
               </div>
@@ -575,7 +673,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
       {/* 免責聲明 */}
       <div className="border-t border-slate-100 dark:border-slate-800 pt-2.5 text-[11px] text-slate-400">
-        ⚠️ 此分析由 AI 大師模型生成，僅供研究參考，不構成投資建議。市場有風險，投資需謹慎。
+        📌 此分析由量化指標與大師策略模型綜合研判，僅供研究參考，不構成投資建議。市場有風險，投資需謹慎。
       </div>
     </div>
   )

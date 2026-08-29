@@ -263,7 +263,7 @@ ${contextData ? `\n【最新即時檢索數據與情報】：\n${contextData}\n`
 ---SUGGESTIONS---
 - ⛓️ 查詢相關概念股與供應鏈上下游表現
 - 🏦 分析美債殖利率與聯準會降息對其估值影響
-- 🧠 啟動 13 位大師多維 AI 投資價值評估
+- 🧠 啟動 13 位傳奇大師多維投資價值評估
 - 📑 解讀最新季度財務報表、毛利率與自由現金流
 \`\`\`
 
@@ -323,8 +323,8 @@ Language: reply in the same language the user used most recently. If Chinese, re
   // Intelligent fallback caption if all external LLM text generation calls fail
   const isZh = /[\u4e00-\u9fa5]/.test(symbol) || true
   return isZh
-    ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游連動\n- 🏦 分析美債殖利率與聯準會利率政策影響\n- 📑 解讀最新季度財務報表與獲利能力`
-    : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor AI consensus analysis\n- ⛓️ Analyze related supply chain & peer stocks\n- 🏦 Impact of 10Y Treasury yield & Fed rate cuts\n- 📑 Breakdown latest quarterly financials & margins`
+    ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游連動\n- 🏦 分析美債殖利率與聯準會利率政策影響\n- 📑 解讀最新季度財務報表與獲利能力`
+    : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor consensus analysis\n- ⛓️ Analyze related supply chain & peer stocks\n- 🏦 Impact of 10Y Treasury yield & Fed rate cuts\n- 📑 Breakdown latest quarterly financials & margins`
 }
 
 async function submitUserMessage(content: string) {
@@ -449,17 +449,22 @@ DO NOT use the format "XXXX.TW" or "XXXX.TWO" in a tool call; normalize it to TW
 
 ### Company Name to Ticker Resolution
 Users may provide a Chinese name, English company name, brand name, or an incomplete ticker instead of a symbol.
-1. Never pass a company name directly to a chart, price, financials, news, or AI analysis tool.
-2. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
+1. Never pass a company name directly to a chart, price, financials, news, or analysis tool.
+2. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
 3. For any unknown, new, private, or ambiguous company name, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
 4. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
 
+### 🧠 多輪續問與標的繼承 (Multi-Turn Context & Symbol Resolution)
+1. 當使用者在多輪對話中進行追問（例如點擊或輸入「啟動 13 位傳奇大師多維投資價值評估」、「多位大師進行投資分析」、「查看走勢圖」、「財務狀況如何」、「相關概念股」、「該買嗎」），而當前提問未指明股票名稱/代碼時：
+   - 必須自主從上方對話歷史 (Conversation History) 中提取最新討論的標的代碼（例如上一輪若在詢問「統一 1216」，此處自動推導 symbol 為 "TWSE:1216"）。
+   - 絕不能調用失敗或返回未知，請精確繼承上下文標的並調用對應工具（如 analyzeStockWithAI、showStockChart、showStockFinancials、searchFinancialWeb 等）。
+
 ### 🔄 15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)
-你是一個具備強大自主推理 (ReAct) 能力的機構級 AI 投資分析大腦。你可以連續調用最多 15 輪工具鏈，完成深度複雜任務：
+你是一個具備強大自主推理 (ReAct) 能力的頂級機構級投資研調大腦。你可以連續調用最多 15 輪工具鏈，完成深度複雜任務：
 1. **🌐 2MD 全維度金融研調大腦 (Universal Macro & Financial Intelligence)**：
    - 2MD 是你的核心研調武器。你可以自主調用 searchFinancialWeb、readWebPage、readFinancialReport 檢索以下全維度情報：
      - **📈 個股即時行情與估值**：即時報價、歷史本益比、殖利率、營收動能。
-     - **⛓️ 相關概念股與產業鏈上下游**：CoWoS、AI 伺服器、散熱、ASIC、蘋概股等供應鏈族群與同業比較。
+     - **⛓️ 相關概念股與產業鏈上下游**：CoWoS、伺服器、散熱、ASIC、蘋概股等供應鏈族群與同業比較。
      - **🏦 美債殖利率、降息循環與央行政策**：美債 10 年期殖利率 (US10Y)、公債 ETF (TLT, 00679B)、Fed FOMC 利率決策、降息預期。
      - **🌐 宏觀總體經濟數據**：CPI、PPI、非農就業 (NFP)、GDP、景氣燈號、美元指數 (DXY)、台幣匯率 (TWD/USD)。
      - **📰 突發財經新聞與法人籌碼**：外資/投信三大法人買賣超、法說會指引、重大事件。
@@ -473,8 +478,8 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
    - 當使用者要求產出長篇研究報告、深度估值模型、投資備忘錄 (Investment Memo) 或多章節分析時，自動調用 publishToDavid888Wiki(title, content, theme) 發布至 David888 Wiki。
    - 👑 **排版鐵律 (Mandatory Structure)**：content 內容【第一行必須以 # Document Title 開頭】！嚴禁在前面加上任何對話性閒聊或開場白（例如嚴禁加上「好的，這是為您整理的...」）。[TOC] 與 > 執行摘要 必須緊隨在 # Document Title 之後！Mermaid 流程圖節點文字必須用雙引號包裹如 NODE["Label"]。
 
-### AI Investment Analysis
-When the user asks whether a stock is worth buying, whether to invest, wants professional analysis, or asks questions like "should I buy TSLA?", "is NVDA a good investment?", "分析一下特斯拉", "AAPL值得買嗎", you MUST use the analyzeStockWithAI tool to provide professional AI investment analysis from legendary investors.
+### Legendary Master & Multi-Analyst Valuation
+When the user asks whether a stock is worth buying, whether to invest, wants professional analysis, or asks questions like "should I buy TSLA?", "is NVDA a good investment?", "分析一下特斯拉", "AAPL值得買嗎", "多位大師進行投資分析", "啟動 13 位大師評估", you MUST use the analyzeStockWithAI tool to provide multi-master valuation and strategy analysis from legendary investors.
 
 ### Guidelines:
 
@@ -601,7 +606,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   liveContext
                 )
               } catch (e) {
-                caption = `以上是 ${symbol} 的最新即時走勢圖表與市場數據。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是 ${symbol} 的最新即時走勢圖表與市場數據。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -690,7 +695,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   liveContext
                 )
               } catch (e) {
-                caption = `以上是 ${symbol} 的最新即時報價與市場指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是 ${symbol} 的最新即時報價與市場指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -772,7 +777,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   liveContext
                 )
               } catch (e) {
-                caption = `以上是 ${symbol} 的財務報表數據與核心獲利指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是 ${symbol} 的財務報表數據與核心獲利指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -854,7 +859,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   liveContext
                 )
               } catch (e) {
-                caption = `以上是 ${symbol} 的最新即時市場新聞與重大動態。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是 ${symbol} 的最新即時市場新聞與重大動態。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -922,7 +927,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   aiState
                 )
               } catch (e) {
-                caption = `以上是通用股票篩選器與技術指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是通用股票篩選器與技術指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -989,7 +994,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   aiState
                 )
               } catch (e) {
-                caption = `以上是今日全球主要股匯債市總覽行情。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是今日全球主要股匯債市總覽行情。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -1056,7 +1061,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   aiState
                 )
               } catch (e) {
-                caption = `以上是全球股市板塊資金輪動熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是全球股市板塊資金輪動熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -1123,7 +1128,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   aiState
                 )
               } catch (e) {
-                caption = `以上是全球 ETF 資產板塊與資金流向熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是全球 ETF 資產板塊與資金流向熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -1190,7 +1195,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   aiState
                 )
               } catch (e) {
-                caption = `以上是今日市場熱門成交量能與漲跌排行。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是今日市場熱門成交量能與漲跌排行。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -1240,12 +1245,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           analyzeStockWithAI: {
             description:
-              'Provide professional AI investment analysis from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for professional analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議. Resolve company names to an exact ticker with searchFinancialWeb first.',
+              'Provide comprehensive legendary investor strategy evaluation and multi-master valuation from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for multi-master analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議, 大師分析, 13位大師, 評估. Resolve company names to an exact ticker with searchFinancialWeb first or inherit the active ticker from conversation history.',
             parameters: z.object({
               symbol: z
                 .string()
                 .describe(
-                  'The stock symbol to analyze. e.g. TSLA, AAPL, NVDA, GOOGL.'
+                  'The stock symbol to analyze. e.g. TSLA, AAPL, NVDA, GOOGL, TWSE:2330, TWSE:1216.'
                 )
             }),
             generate: async function* ({ symbol }) {
@@ -1253,7 +1258,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 <BotCard>
                   <div className="flex items-center space-x-2 p-4">
                     <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-                    <span>🤖 正在呼叫 AI 投資分析師團隊分析 {symbol}...</span>
+                    <span>🏛️ 正在調度傳奇大師投資分析團隊研調 {symbol}...</span>
                   </div>
                 </BotCard>
               )
@@ -1275,7 +1280,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   liveContext
                 )
               } catch (e) {
-                caption = `以上是 ${symbol} 的 13 位傳奇大師多維 AI 投資分析。\n\n---SUGGESTIONS---\n- 📊 查看即時技術走勢圖與均線結構\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是 ${symbol} 的 13 位傳奇大師多維投資研調報告。\n\n---SUGGESTIONS---\n- 📊 查看即時技術走勢圖與均線結構\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -1365,7 +1370,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   contextData
                 )
               } catch (e) {
-                caption = `以上是關於「${query}」的最新市場檢索情報。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是關於「${query}」的最新市場檢索情報。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -1452,7 +1457,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   contextData
                 )
               } catch (e) {
-                caption = `以上是從網址 ${url} 讀取整理的內容摘要。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是從網址 ${url} 讀取整理的內容摘要。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()
@@ -1693,7 +1698,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   contextData
                 )
               } catch (e) {
-                caption = `以上是從財報文件解析的主要財務數據與經營指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上是從財報文件解析的主要財務數據與經營指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
               }
 
               const toolCallId = nanoid()

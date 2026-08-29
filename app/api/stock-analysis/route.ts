@@ -134,6 +134,17 @@ export async function GET(request: NextRequest) {
   }
 }
 
+function normalizeTickerForBackend(sym: string): string {
+  if (!sym) return ''
+  let cleaned = sym.trim().toUpperCase()
+  cleaned = cleaned.replace(/^(TWSE:|TPEX:|TPE:|ROCO:)/i, '')
+  cleaned = cleaned.replace(/^(NASDAQ:|NYSE:|AMEX:|BATS:|ARCA:|INDEX:)/i, '')
+  if (/^\d{4,6}$/.test(cleaned)) {
+    return `${cleaned}.TW`
+  }
+  return cleaned
+}
+
 // 執行分析 (支援同步與異步任務模式)
 export async function POST(request: NextRequest) {
   try {
@@ -154,13 +165,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const normalizedTicker = normalizeTickerForBackend(tickers)
+
     // 如果沒有選擇分析師，使用預設精選列表
     const analysts = (selectedAnalysts && selectedAnalysts.length > 0) 
       ? selectedAnalysts 
       : DEFAULT_ANALYSTS
 
     const requestPayload: any = {
-      tickers: tickers.toUpperCase(),
+      tickers: normalizedTicker,
       selectedAnalysts: analysts,
       enableRoundTable,
       roundTableRounds,
