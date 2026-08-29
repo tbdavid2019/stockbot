@@ -33,11 +33,8 @@ export function StockNews({ props: symbol }: { props: string }) {
     container.current.appendChild(script)
 
     return () => {
-      if (container.current) {
-        const scriptElement = container.current.querySelector('script')
-        if (scriptElement) {
-          container.current.removeChild(scriptElement)
-        }
+      if (container.current && script.parentNode === container.current) {
+        container.current.removeChild(script)
       }
     }
   }, [symbol, resolvedTheme])

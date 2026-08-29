@@ -3,6 +3,7 @@ import { UIState } from '@/lib/chat/actions'
 import { Session } from '@/lib/types'
 import Link from 'next/link'
 import { ExclamationTriangleIcon } from '@radix-ui/react-icons'
+import { SafeCardErrorBoundary } from '@/components/error-boundary'
 
 export interface ChatList {
   messages: UIState
@@ -27,7 +28,9 @@ export function ChatList({
     >
       {messages.map((message, index) => (
         <div key={message.id}>
-          {message.display}
+          <SafeCardErrorBoundary>
+            {message.display}
+          </SafeCardErrorBoundary>
           {index < messages.length - 1 && <Separator className="my-4" />}
         </div>
       ))}

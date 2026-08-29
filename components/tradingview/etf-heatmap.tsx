@@ -35,7 +35,7 @@ export function ETFHeatmap({}) {
     container.current.appendChild(script)
 
     return () => {
-      if (container.current) {
+      if (container.current && script.parentNode === container.current) {
         container.current.removeChild(script)
       }
     }
