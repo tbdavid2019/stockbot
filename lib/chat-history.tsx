@@ -13,6 +13,8 @@ import { MarketHeatmap } from '@/components/tradingview/market-heatmap'
 import { MarketTrending } from '@/components/tradingview/market-trending'
 import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
+import { NativeFinancialsCard } from '@/components/stocks/native-financials-card'
+import { NativeStockNewsCard } from '@/components/stocks/native-news-card'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
@@ -221,11 +223,11 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                 break
 
               case 'showStockFinancials':
-                cardContent = <StockFinancials props={args.symbol || result?.symbol || 'AAPL'} />
+                cardContent = <NativeFinancialsCard symbol={args.symbol || result?.symbol || 'AAPL'} />
                 break
 
               case 'showStockNews':
-                cardContent = <StockNews props={args.symbol || result?.symbol || 'AAPL'} />
+                cardContent = <NativeStockNewsCard symbol={args.symbol || result?.symbol || 'AAPL'} />
                 break
 
               case 'showStockScreener':

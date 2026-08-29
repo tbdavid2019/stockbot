@@ -25,6 +25,8 @@ import { MarketHeatmap } from '@/components/tradingview/market-heatmap'
 import { MarketTrending } from '@/components/tradingview/market-trending'
 import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
+import { NativeFinancialsCard } from '@/components/stocks/native-financials-card'
+import { NativeStockNewsCard } from '@/components/stocks/native-news-card'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
@@ -828,7 +830,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               return (
                 <BotCard>
-                  <StockFinancials props={symbol} />
+                  <NativeFinancialsCard symbol={symbol} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
@@ -910,7 +912,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               return (
                 <BotCard>
-                  <StockNews props={symbol} />
+                  <NativeStockNewsCard symbol={symbol} />
                   <BotCaption content={caption} />
                 </BotCard>
               )

@@ -83,6 +83,13 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - AI 解說在結尾以 `---SUGGESTIONS---` 產生 3 ~ 4 個跨維度（概念股供應鏈、總經美債、季報解讀、大師分析）量身定制的自主續問建議。
   - 前端組件 [`components/stocks/followup-prompts.tsx`](components/stocks/followup-prompts.tsx) 自動將其渲染為高質感互動按鈕，使用者點擊即可觸發無縫追問。
 
+### 8. 🛡️ 去 TradingView 依賴與原生財務/新聞卡片架構 (Native Financials & Resilient Cards)
+- 鑑於 TradingView 免費 Widget 對非美股（如台股 2330/1216、港股 1810/700 等）支援有限，常發生「不支援此標的」或空白問題。
+- 系統已全面升級為原生 React 金融情報卡片：
+  - **`showStockFinancials` ➔ `<NativeFinancialsCard />`**：直接串接量化分析 API 與 2MD 即時指標（P/E, P/B, P/S, ROE, 淨利率, 營業利益率, 流動比, 負債比, 營收年增率, DCF 內在價值），100% 支援台股、港股、美股與全球標的。
+  - **`showStockNews` ➔ `<NativeStockNewsCard />`**：由 2MD 全網情報大腦即時檢索最新重大快訊、法說會動態與新聞外鏈，無任何交易所限制。
+  - **全局錯誤邊界 (`SafeCardErrorBoundary`)**：所有訊息與卡片均包裹安全邊界，單一異常絕不拖垮整場對話。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)
