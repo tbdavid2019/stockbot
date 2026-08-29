@@ -607,20 +607,26 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           }
 
           if (done) {
-            textStream.done()
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content
-                }
-              ]
-            })
+            try {
+              textStream.done()
+            } catch (e) {}
+            try {
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content
+                  }
+                ]
+              })
+            } catch (e) {}
           } else {
-            textStream.update(delta)
+            try {
+              textStream.update(delta)
+            } catch (e) {}
           }
 
           return textNode
