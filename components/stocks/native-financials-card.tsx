@@ -34,7 +34,8 @@ function normalizeTickerForBackend(sym: string): string {
   cleaned = cleaned.replace(/^(NASDAQ:|NYSE:|AMEX:|BATS:|ARCA:|INDEX:)/i, '')
 
   if (/^(HKEX|HKG|HK|HKE):/i.test(cleaned)) {
-    const code = cleaned.replace(/^(HKEX|HKG|HK|HKE):/i, '').replace(/^0+/, '') || '700'
+    const code =
+      cleaned.replace(/^(HKEX|HKG|HK|HKE):/i, '').replace(/^0+/, '') || '700'
     return `${code.padStart(4, '0')}.HK`
   }
   const hkMatch = cleaned.match(/^0*(\d{1,5})\.HK$/i)
@@ -82,18 +83,30 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
 
         const fundamentals =
           data.analyst_signals?.fundamentals_agent?.[backendTicker] ||
-          data.analyst_signals?.fundamentals_agent?.[backendTicker.toLowerCase()] ||
-          (data.analyst_signals?.fundamentals_agent ? Object.values(data.analyst_signals.fundamentals_agent)[0] : null)
+          data.analyst_signals?.fundamentals_agent?.[
+            backendTicker.toLowerCase()
+          ] ||
+          (data.analyst_signals?.fundamentals_agent
+            ? Object.values(data.analyst_signals.fundamentals_agent)[0]
+            : null)
 
         const valuation =
           data.analyst_signals?.valuation_agent?.[backendTicker] ||
-          data.analyst_signals?.valuation_agent?.[backendTicker.toLowerCase()] ||
-          (data.analyst_signals?.valuation_agent ? Object.values(data.analyst_signals.valuation_agent)[0] : null)
+          data.analyst_signals?.valuation_agent?.[
+            backendTicker.toLowerCase()
+          ] ||
+          (data.analyst_signals?.valuation_agent
+            ? Object.values(data.analyst_signals.valuation_agent)[0]
+            : null)
 
         const risk =
           data.analyst_signals?.risk_management_agent?.[backendTicker] ||
-          data.analyst_signals?.risk_management_agent?.[backendTicker.toLowerCase()] ||
-          (data.analyst_signals?.risk_management_agent ? Object.values(data.analyst_signals.risk_management_agent)[0] : null)
+          data.analyst_signals?.risk_management_agent?.[
+            backendTicker.toLowerCase()
+          ] ||
+          (data.analyst_signals?.risk_management_agent
+            ? Object.values(data.analyst_signals.risk_management_agent)[0]
+            : null)
 
         const extracted: FinancialMetrics = {}
 
@@ -144,7 +157,9 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
         if (valuation?.reasoning?.dcf_analysis) {
           const dcf = valuation.reasoning.dcf_analysis
           if (dcf.details) {
-            const valMatch = dcf.details.match(/Intrinsic Value:\s*([$0-9,.]+)/i)
+            const valMatch = dcf.details.match(
+              /Intrinsic Value:\s*([$0-9,.]+)/i
+            )
             const gapMatch = dcf.details.match(/Gap:\s*([0-9.-]+%)/i)
             if (valMatch) extracted.dcfValue = valMatch[1]
             if (gapMatch) extracted.dcfGap = gapMatch[1]
@@ -183,7 +198,7 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
     }
     return (
       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-        ⚪ 中性穩定
+        ⚪ 資料不足
       </span>
     )
   }
@@ -213,7 +228,9 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
 
         {metrics?.price && (
           <div className="text-right hidden sm:block">
-            <span className="text-xs text-muted-foreground block">參考市價</span>
+            <span className="text-xs text-muted-foreground block">
+              參考市價
+            </span>
             <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm">
               ${Number(metrics.price).toFixed(2)}
             </span>
@@ -224,7 +241,9 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-10 space-y-2.5">
           <div className="size-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-          <span className="text-xs text-muted-foreground">正在檢索財報與財務指標...</span>
+          <span className="text-xs text-muted-foreground">
+            正在檢索財報與財務指標...
+          </span>
         </div>
       ) : error ? (
         <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
@@ -245,15 +264,25 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">本益比 (P/E):</span>
-                  <span className="font-mono font-semibold">{metrics?.pe || '18.5x'}</span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.pe ?? '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">股價淨值比 (P/B):</span>
-                  <span className="font-mono font-semibold">{metrics?.pb || '3.2x'}</span>
+                  <span className="text-muted-foreground">
+                    股價淨值比 (P/B):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.pb ?? '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">股價營收比 (P/S):</span>
-                  <span className="font-mono font-semibold">{metrics?.ps || '2.1x'}</span>
+                  <span className="text-muted-foreground">
+                    股價營收比 (P/S):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.ps ?? '—'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -268,18 +297,28 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
               </div>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">股東權益報酬率 (ROE):</span>
+                  <span className="text-muted-foreground">
+                    股東權益報酬率 (ROE):
+                  </span>
                   <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                    {metrics?.roe || '24.8%'}
+                    {metrics?.roe ?? '—'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">稅後淨利率 (Net Margin):</span>
-                  <span className="font-mono font-semibold">{metrics?.netMargin || '21.5%'}</span>
+                  <span className="text-muted-foreground">
+                    稅後淨利率 (Net Margin):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.netMargin ?? '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">營業利益率 (Op Margin):</span>
-                  <span className="font-mono font-semibold">{metrics?.opMargin || '28.3%'}</span>
+                  <span className="text-muted-foreground">
+                    營業利益率 (Op Margin):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.opMargin ?? '—'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -294,16 +333,30 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
               </div>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">流動比率 (Current Ratio):</span>
-                  <span className="font-mono font-semibold">{metrics?.currentRatio || '1.85'}</span>
+                  <span className="text-muted-foreground">
+                    流動比率 (Current Ratio):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.currentRatio ?? '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">負債權益比 (D/E):</span>
-                  <span className="font-mono font-semibold">{metrics?.deRatio || '0.62'}</span>
+                  <span className="text-muted-foreground">
+                    負債權益比 (D/E):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.deRatio ?? '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">資本結構安全度:</span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">穩健良好</span>
+                  <span className="font-semibold text-slate-600 dark:text-slate-300">
+                    {metrics?.healthSignal === 'bullish'
+                      ? '相對穩健'
+                      : metrics?.healthSignal === 'bearish'
+                        ? '需留意風險'
+                        : '待確認'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -318,16 +371,30 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
               </div>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">營收年增率 (YoY):</span>
-                  <span className="font-mono font-semibold">{metrics?.revenueGrowth || '+16.8%'}</span>
+                  <span className="text-muted-foreground">
+                    營收年增率 (YoY):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.revenueGrowth ?? '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">獲利年增率 (YoY):</span>
-                  <span className="font-mono font-semibold">{metrics?.earningsGrowth || '+19.4%'}</span>
+                  <span className="text-muted-foreground">
+                    獲利年增率 (YoY):
+                  </span>
+                  <span className="font-mono font-semibold">
+                    {metrics?.earningsGrowth ?? '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">產業成長週期:</span>
-                  <span className="font-semibold text-blue-600 dark:text-blue-400">擴張期</span>
+                  <span className="font-semibold text-slate-600 dark:text-slate-300">
+                    {metrics?.growthSignal === 'bullish'
+                      ? '成長偏強'
+                      : metrics?.growthSignal === 'bearish'
+                        ? '成長承壓'
+                        : '待確認'}
+                  </span>
                 </div>
               </div>
             </div>

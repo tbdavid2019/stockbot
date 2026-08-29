@@ -1,6 +1,7 @@
 export type DeterministicToolName =
   | 'showStockChart'
   | 'showStockPrice'
+  | 'answerFinancialMetric'
   | 'showStockFinancials'
   | 'showStockNews'
   | 'showStockScreener'
@@ -12,16 +13,29 @@ export type DeterministicToolName =
 
 const NON_TICKER_WORDS = new Set([
   'AI',
+  'CAGR',
   'CEO',
   'CFO',
+  'DCF',
+  'EBIT',
+  'EBITDA',
+  'EPS',
   'ETF',
+  'FCF',
   'FED',
   'GDP',
+  'GAAP',
   'IPO',
+  'LTM',
   'LLM',
+  'NTM',
   'PDF',
+  'QOQ',
   'ROE',
+  'ROIC',
   'SEC',
+  'TTM',
+  'YOY',
   'USD'
 ])
 
@@ -114,6 +128,13 @@ export function inferDeterministicTool(
     )
   ) {
     return 'showStockChart'
+  }
+  if (
+    /\b(?:EBITDA|EBIT|EPS|FCF|ROE|ROIC|P\/?E|P\/?B|P\/?S|PEG|DCF|CAGR|YOY|QOQ|TTM|LTM|NTM|EV(?:\s*\/\s*[A-Z]+)?|[A-Z]+\s+(?:margin|ratio|yield|growth|turnover)|revenue|gross profit|operating income|net income|free cash flow|capex|working capital|receivables?|inventory|debt|cash and equivalents|book value|dividend)\b|(?:率|比率|倍數|週轉率|年增|季增|成長|衰退|財報科目|營運指標|估值指標|營收|毛利|營業利益|稅後淨利|現金流|資本支出|營運資金|應收帳款|存貨|負債|現金|股利)|自由現金流|每股盈餘|本益比|股價淨值比|股價營收比|企業價值|營業利益率|淨利率|毛利率|負債權益比|流動比率|速動比率|殖利率/i.test(
+      content
+    )
+  ) {
+    return 'answerFinancialMetric'
   }
   if (
     /最新財務|財務數據|財務狀況|財報|營收|獲利|毛利|現金流|資產負債|financials|earnings|balance sheet|cash flow/i.test(

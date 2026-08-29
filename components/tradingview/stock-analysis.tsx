@@ -1,6 +1,9 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import remarkGfm from 'remark-gfm'
+
+import { MemoizedReactMarkdown } from '@/components/markdown'
 
 interface AnalystSignal {
   signal: 'bullish' | 'bearish' | 'neutral'
@@ -92,12 +95,12 @@ const SPEAKER_ICONS: { [key: string]: string } = {
   'Charlie Munger': '🧠 查理·蒙格',
   'Technical Analyst': '📊 技術分析師',
   'Valuation Analyst': '💰 估值分析師',
-  'Valuation': '💰 估值分析師',
+  Valuation: '💰 估值分析師',
   'Sentiment Analyst': '💭 情緒分析師',
-  'Sentiment': '💭 情緒分析師',
+  Sentiment: '💭 情緒分析師',
   'Fundamentals Analyst': '📋 基本面分析師',
-  'Fundamentals': '📋 基本面分析師',
-  'WSB': '🎰 WSB 散戶',
+  Fundamentals: '📋 基本面分析師',
+  WSB: '🎰 WSB 散戶',
   'Bill Ackman': '💼 比爾·艾克曼',
   'Peter Lynch': '📈 彼得·林區',
   'Ben Graham': '📚 班傑明·葛拉漢',
@@ -112,7 +115,9 @@ function parseTranscript(raw: string | undefined): TranscriptTurn[] {
     try {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed)) {
-        return parsed.map((item: string) => parseSpeakerLine(item)).filter(Boolean) as TranscriptTurn[]
+        return parsed
+          .map((item: string) => parseSpeakerLine(item))
+          .filter(Boolean) as TranscriptTurn[]
       }
     } catch {
       // ignore
@@ -196,7 +201,8 @@ function normalizeTickerForBackend(sym: string): string {
 
   // Hong Kong stock normalization
   if (/^(HKEX|HKG|HK|HKE):/i.test(cleaned)) {
-    const code = cleaned.replace(/^(HKEX|HKG|HK|HKE):/i, '').replace(/^0+/, '') || '700'
+    const code =
+      cleaned.replace(/^(HKEX|HKG|HK|HKE):/i, '').replace(/^0+/, '') || '700'
     return `${code.padStart(4, '0')}.HK`
   }
   const hkMatch = cleaned.match(/^0*(\d{1,5})\.HK$/i)
@@ -211,11 +217,18 @@ function normalizeTickerForBackend(sym: string): string {
   return cleaned
 }
 
-function formatReasoning(reasoning: any, analyst?: string, signal?: string): string {
+function formatReasoning(
+  reasoning: any,
+  analyst?: string,
+  signal?: string
+): string {
   if (!reasoning) return ''
-  
+
   if (typeof reasoning === 'string') {
-    const isErrorString = /error in (analysis|generating|portfolio)|defaulting to (neutral|hold)|parsing error/i.test(reasoning)
+    const isErrorString =
+      /error in (analysis|generating|portfolio)|defaulting to (neutral|hold)|parsing error/i.test(
+        reasoning
+      )
     if (isErrorString) {
       switch (analyst) {
         case 'warren_buffett':
@@ -285,6 +298,10 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [showTranscript, setShowTranscript] = useState(true)
   const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [executiveSummary, setExecutiveSummary] = useState('')
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState('')
+  const summaryRequestRef = useRef('')
 
   // 3 批次漸進式加載狀態
   const [batchStage, setBatchStage] = useState<number>(0) // 1: 核心5位, 2: 輿論3位, 3: 價值成長5位, 4: 全部完成
@@ -296,7 +313,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
     let timer: any
     if (loading || batchLoading) {
       timer = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1)
+        setElapsedSeconds(prev => prev + 1)
       }, 1000)
     }
     return () => {
@@ -304,7 +321,10 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
     }
   }, [loading, batchLoading])
 
-  const executeBatchRequest = async (analysts: string[], enableRoundTable = false) => {
+  const executeBatchRequest = async (
+    analysts: string[],
+    enableRoundTable = false
+  ) => {
     const normalizedTicker = normalizeTickerForBackend(symbol)
     const response = await fetch('/api/stock-analysis', {
       method: 'POST',
@@ -338,8 +358,13 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
     setLoading(true)
     setError(null)
     setElapsedSeconds(0)
+    setExecutiveSummary('')
+    setSummaryError('')
+    summaryRequestRef.current = ''
     setBatchStage(1)
-    setBatchStatusText('正在分析第 1 批核心大師（巴菲特、伍德、貝瑞、技術、估值）...')
+    setBatchStatusText(
+      '正在分析第 1 批核心大師（巴菲特、伍德、貝瑞、技術、估值）...'
+    )
 
     try {
       // -------------------------------------------------------------
@@ -371,7 +396,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         const data2 = await executeBatchRequest(batch2Analysts, false)
 
         if (data2?.analyst_signals) {
-          setResult((prev) => {
+          setResult(prev => {
             if (!prev) return data2
             return {
               ...prev,
@@ -404,7 +429,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         const data3 = await executeBatchRequest(batch3Analysts, false)
 
         if (data3) {
-          setResult((prev) => {
+          setResult(prev => {
             if (!prev) return data3
             return {
               ...prev,
@@ -423,7 +448,6 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       setBatchStage(4)
       setBatchLoading(false)
       setBatchStatusText('13 位大師全維度分析已完成')
-
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析失敗，請稍後再試')
       setLoading(false)
@@ -434,6 +458,50 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
   useEffect(() => {
     fetchAnalysis()
   }, [symbol])
+
+  useEffect(() => {
+    if (batchStage !== 4 || !result) return
+
+    const analystKeys = Object.keys(result.analyst_signals || {})
+      .sort()
+      .join(',')
+    const requestKey = `${symbol}:${analystKeys}`
+    if (summaryRequestRef.current === requestKey) return
+    summaryRequestRef.current = requestKey
+
+    const controller = new AbortController()
+    setSummaryLoading(true)
+    setSummaryError('')
+
+    fetch('/api/analysis-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        symbol: normalizeTickerForBackend(symbol),
+        analysis: result,
+        locale: document.documentElement.lang || 'zh-TW'
+      }),
+      signal: controller.signal
+    })
+      .then(async response => {
+        const data = await response.json()
+        if (!response.ok)
+          throw new Error(data?.error || `HTTP ${response.status}`)
+        setExecutiveSummary(String(data?.summary || '').trim())
+      })
+      .catch(error => {
+        if (error?.name !== 'AbortError') {
+          setSummaryError(error?.message || '綜合判讀暫時無法載入')
+        }
+      })
+      .finally(() => {
+        if (summaryRequestRef.current === requestKey) {
+          setSummaryLoading(false)
+        }
+      })
+
+    return () => controller.abort()
+  }, [batchStage, result, symbol])
 
   if (loading) {
     return (
@@ -449,7 +517,8 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
             </p>
           </div>
           <span className="text-[11px] text-slate-400">
-            （第 1/3 批核心大師研判中，已執行 {elapsedSeconds} 秒，即將呈現首屏）
+            （第 1/3 批核心大師研判中，已執行 {elapsedSeconds}{' '}
+            秒，即將呈現首屏）
           </span>
         </div>
       </div>
@@ -501,13 +570,19 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
   // Compute graceful decision reasoning if backend has error or empty
   const decisionReasoning = (() => {
-    if (!decision?.reasoning || /error in portfolio management/i.test(decision.reasoning)) {
+    if (
+      !decision?.reasoning ||
+      /error in portfolio management/i.test(decision.reasoning)
+    ) {
       let bullCount = 0
       let bearCount = 0
       if (result.analyst_signals) {
         for (const [_, sigObj] of Object.entries(result.analyst_signals)) {
           if (typeof sigObj === 'object' && sigObj !== null) {
-            const s = (sigObj as any)?.[normalizedTicker] || (sigObj as any)?.[ticker] || Object.values(sigObj)[0] as any
+            const s =
+              (sigObj as any)?.[normalizedTicker] ||
+              (sigObj as any)?.[ticker] ||
+              (Object.values(sigObj)[0] as any)
             if (s?.signal === 'bullish') bullCount++
             if (s?.signal === 'bearish') bearCount++
           }
@@ -550,22 +625,55 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           </p>
         </div>
         {roundTable?.signal && (
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getSignalColor(roundTable.signal)}`}>
+          <span
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getSignalColor(roundTable.signal)}`}
+          >
             {getSignalEmoji(roundTable.signal)} ({roundTable.confidence ?? 0}%)
           </span>
         )}
       </div>
 
+      {/* LLM 讀取三批大師實際結果後產生的投資委員會摘要 */}
+      <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+        <h4 className="mb-2 text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+          🧠 投資委員會綜合判讀
+        </h4>
+        {summaryLoading && (
+          <p className="text-xs text-indigo-600 dark:text-indigo-400">
+            正在交叉比對 13 位大師的共識、分歧與關鍵數字…
+          </p>
+        )}
+        {summaryError && (
+          <p className="text-xs text-amber-700 dark:text-amber-400">
+            綜合判讀暫時無法載入：{summaryError}
+          </p>
+        )}
+        {executiveSummary && (
+          <MemoizedReactMarkdown
+            className="prose prose-sm max-w-none break-words text-sm leading-relaxed dark:prose-invert prose-headings:mb-2 prose-headings:mt-3 prose-p:my-2 prose-li:my-0.5"
+            remarkPlugins={[remarkGfm]}
+          >
+            {executiveSummary}
+          </MemoizedReactMarkdown>
+        )}
+      </div>
+
       {/* 最終決策 */}
       {decision && (
-        <div className={`rounded-xl border-2 p-4 ${getActionColor(decision.action)}`}>
+        <div
+          className={`rounded-xl border-2 p-4 ${getActionColor(decision.action)}`}
+        >
           <div className="flex items-center justify-between">
-            <div className="text-xl font-bold">{getActionText(decision.action)}</div>
+            <div className="text-xl font-bold">
+              {getActionText(decision.action)}
+            </div>
             <div className="text-xs font-medium opacity-90">
               信心度：{decision.confidence}% | 建議數量：{decision.quantity} 股
             </div>
           </div>
-          <div className="mt-2 text-xs md:text-sm leading-relaxed">{decisionReasoning}</div>
+          <div className="mt-2 text-xs md:text-sm leading-relaxed">
+            {decisionReasoning}
+          </div>
         </div>
       )}
 
@@ -589,21 +697,27 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
           {roundTable.consensus_view && (
             <div className="text-xs text-slate-700 dark:text-slate-300">
-              <span className="font-semibold text-blue-800 dark:text-blue-300">🎯 核心共識：</span>
+              <span className="font-semibold text-blue-800 dark:text-blue-300">
+                🎯 核心共識：
+              </span>
               {roundTable.consensus_view}
             </div>
           )}
 
           {roundTable.discussion_summary && (
             <div className="text-xs text-slate-700 dark:text-slate-300">
-              <span className="font-semibold text-blue-800 dark:text-blue-300">💬 辯論焦點：</span>
+              <span className="font-semibold text-blue-800 dark:text-blue-300">
+                💬 辯論焦點：
+              </span>
               {roundTable.discussion_summary}
             </div>
           )}
 
           {roundTable.dissenting_opinions && (
             <div className="text-xs text-slate-700 dark:text-slate-300">
-              <span className="font-semibold text-amber-800 dark:text-amber-400">⚡ 分歧觀點：</span>
+              <span className="font-semibold text-amber-800 dark:text-amber-400">
+                ⚡ 分歧觀點：
+              </span>
               {roundTable.dissenting_opinions}
             </div>
           )}
@@ -616,7 +730,8 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
               </div>
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {transcriptTurns.map((turn, idx) => {
-                  const speakerLabel = SPEAKER_ICONS[turn.speaker] || turn.speaker
+                  const speakerLabel =
+                    SPEAKER_ICONS[turn.speaker] || turn.speaker
                   return (
                     <div
                       key={idx}
@@ -643,49 +758,70 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           📊 各大師與專業分析師信號
         </h4>
         <div className="grid gap-2 sm:grid-cols-2">
-          {Object.entries(result.analyst_signals || {}).map(([analyst, signals]) => {
-            if (analyst === 'risk_management_agent' || analyst === 'round_table' || analyst === 'portfolio_management_agent') return null
-            const tickerSignal =
-              (signals as any)[normalizedTicker] ||
-              (signals as any)[normalizedTicker.toLowerCase()] ||
-              (signals as any)[ticker.toLowerCase()] ||
-              (signals as any)[ticker] ||
-              (typeof signals === 'object' && signals !== null ? Object.values(signals)[0] : undefined) as any
+          {Object.entries(result.analyst_signals || {}).map(
+            ([analyst, signals]) => {
+              if (
+                analyst === 'risk_management_agent' ||
+                analyst === 'round_table' ||
+                analyst === 'portfolio_management_agent'
+              )
+                return null
+              const tickerSignal =
+                (signals as any)[normalizedTicker] ||
+                (signals as any)[normalizedTicker.toLowerCase()] ||
+                (signals as any)[ticker.toLowerCase()] ||
+                (signals as any)[ticker] ||
+                ((typeof signals === 'object' && signals !== null
+                  ? Object.values(signals)[0]
+                  : undefined) as any)
 
-            if (!tickerSignal || typeof tickerSignal !== 'object' || !tickerSignal.signal) return null
+              if (
+                !tickerSignal ||
+                typeof tickerSignal !== 'object' ||
+                !tickerSignal.signal
+              )
+                return null
 
-            const displayName = ANALYST_DISPLAY_NAMES[analyst] || analyst
+              const displayName = ANALYST_DISPLAY_NAMES[analyst] || analyst
 
-            return (
-              <div
-                key={analyst}
-                className={`rounded-lg border p-3 ${getSignalColor(tickerSignal.signal)}`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-xs text-slate-800 dark:text-slate-200">
-                    {displayName}
-                  </span>
-                  <div className="flex items-center space-x-1.5">
-                    <span className="text-xs font-semibold">{getSignalEmoji(tickerSignal.signal)}</span>
-                    <span className="text-xs opacity-75 font-mono">
-                      {tickerSignal.confidence}%
+              return (
+                <div
+                  key={analyst}
+                  className={`rounded-lg border p-3 ${getSignalColor(tickerSignal.signal)}`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium text-xs text-slate-800 dark:text-slate-200">
+                      {displayName}
                     </span>
+                    <div className="flex items-center space-x-1.5">
+                      <span className="text-xs font-semibold">
+                        {getSignalEmoji(tickerSignal.signal)}
+                      </span>
+                      <span className="text-xs opacity-75 font-mono">
+                        {tickerSignal.confidence}%
+                      </span>
+                    </div>
                   </div>
+                  {tickerSignal.reasoning && (
+                    <p className="text-xs opacity-85 line-clamp-3 leading-snug">
+                      {formatReasoning(
+                        tickerSignal.reasoning,
+                        analyst,
+                        tickerSignal.signal
+                      )}
+                    </p>
+                  )}
                 </div>
-                {tickerSignal.reasoning && (
-                  <p className="text-xs opacity-85 line-clamp-3 leading-snug">
-                    {formatReasoning(tickerSignal.reasoning, analyst, tickerSignal.signal)}
-                  </p>
-                )}
-              </div>
-            )
-          })}
+              )
+            }
+          )}
         </div>
       </div>
 
       {/* 免責聲明 */}
       <div className="border-t border-slate-100 dark:border-slate-800 pt-2.5 text-[11px] text-slate-400">
-        📌 此分析由量化指標與大師策略模型綜合研判，僅供研究參考，不構成投資建議。市場有風險，投資需謹慎。
+        📌
+        此分析由量化指標與大師策略模型綜合研判，僅供研究參考，不構成投資建議。市場有風險，投資需謹慎。
       </div>
     </div>
   )

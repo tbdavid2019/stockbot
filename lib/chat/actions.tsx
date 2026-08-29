@@ -26,6 +26,7 @@ import { MarketTrending } from '@/components/tradingview/market-trending'
 import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { NativeFinancialsCard } from '@/components/stocks/native-financials-card'
+import { FinancialMetricCard } from '@/components/stocks/financial-metric-card'
 import { NativeStockNewsCard } from '@/components/stocks/native-news-card'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
@@ -260,7 +261,42 @@ async function generateCaptionWithProvider(
       ? symbol
       : [symbol, ...comparisonSymbols.map(obj => obj.symbol)].join(', ')
 
-  const captionSystemMessage = `\
+  const researchTools = new Set([
+    'searchFinancialWeb',
+    'readWebPage',
+    'readFinancialReport',
+    'answerFinancialMetric'
+  ])
+  const isResearchSynthesis = researchTools.has(toolName)
+  const isFocusedMetric = toolName === 'answerFinancialMetric'
+  const latestUserQuestion = [...(aiState.get().messages || [])]
+    .reverse()
+    .find(
+      message =>
+        message.role === 'user' &&
+        typeof message.content === 'string' &&
+        message.content.trim()
+    )?.content as string | undefined
+
+  const researchSystemMessage = `\
+You are the synthesis stage of a live financial research agent.
+
+Live 2MD evidence is supplied below. The UI may show either source links or a source card ABOVE your answer. Your job is to answer the user's actual question from that evidence, not to describe the search operation.
+
+Rules:
+- Start with a direct answer. Never repeat the search query as if it were an answer.
+- Never output generic filler such as "以上是 ... 的最新即時市場情報與動態數據分析".
+- For a company-business question, explain what the company does, its core products/services, customers or distribution model, and how it makes money when the evidence supports those points.
+- For one requested financial metric, state the value first, then its reporting period, currency, and whether it is reported, adjusted, or an estimate. Do not confuse EBITDA with operating income or net income. Cite the source title inline. If the exact metric cannot be verified from the supplied evidence, say so plainly and identify the closest verified figure without presenting it as EBITDA.
+- Distinguish verified facts from inference. If the provided evidence is insufficient, state the missing point precisely instead of inventing it.
+- Refer to the evidence as "上方搜尋結果" or "上方資料" because the source card is above the answer.
+- Answer in the same language as the user's latest question. Chinese must use Traditional Chinese.
+- Keep the main answer focused and useful.${isFocusedMetric ? ' Return plain text only; do not add markdown headings or follow-up suggestions.' : ' End with 2 concrete follow-up questions under a standalone ---SUGGESTIONS--- marker.'}
+`
+
+  const captionSystemMessage = isResearchSynthesis
+    ? researchSystemMessage
+    : `\
 You are an elite Wall Street Managing Director, Senior Technical Market Strategist, and Global Investment Intelligence Mentor.
 
 ### 🖼️ UI 介面與卡片情境 (MANDATORY CONTEXT)
@@ -336,22 +372,36 @@ Language: reply in the same language the user used most recently. If Chinese, re
   const messagesToModel: {
     role: 'system' | 'user' | 'assistant'
     content: string
-  }[] = [
-    {
-      role: 'system',
-      content: captionSystemMessage
-    },
-    ...conversationHistory.slice(-4),
-    {
-      role: 'user',
-      content: `請依據上述對話脈絡與最新即時情報，針對「${symbol}」提供深入的機構級專業研調剖析，並於結尾以 ---SUGGESTIONS--- 附上 3 ~ 4 個針對「${symbol}」量身定制、具體且非通用的深度續問建議。`
-    }
-  ]
+  }[] = isResearchSynthesis
+    ? [
+        {
+          role: 'system',
+          content: captionSystemMessage
+        },
+        {
+          role: 'user',
+          content: `使用者原始問題：${latestUserQuestion || symbol}\n\n檢索查詢：${symbol}\n\n可用即時來源：\n${contextData || '沒有取得可用來源'}\n\n請直接回答原始問題。`
+        }
+      ]
+    : [
+        {
+          role: 'system',
+          content: captionSystemMessage
+        },
+        ...conversationHistory.slice(-4),
+        {
+          role: 'user',
+          content: `請依據上述對話脈絡與最新即時情報，針對「${symbol}」提供深入的機構級專業研調剖析，並於結尾以 ---SUGGESTIONS--- 附上 3 ~ 4 個針對「${symbol}」量身定制、具體且非通用的深度續問建議。`
+        }
+      ]
 
-  // Captions are secondary UI copy. Keep them bounded so a slow provider can
-  // never hold the primary financial card open long enough to break the RSC
-  // connection. Live data is loaded by the card itself.
-  const candidates = getProviderCandidates().slice(0, 1)
+  // Ordinary card captions remain a single-provider, 1.5-second best-effort
+  // path. Evidence synthesis is a separate answer task and gets a bounded
+  // second provider without nesting another RSC stream.
+  const candidates = getProviderCandidates().slice(
+    0,
+    isResearchSynthesis ? 2 : 1
+  )
 
   for (const candidate of candidates) {
     try {
@@ -361,7 +411,9 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const result = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(1500),
+        abortSignal: AbortSignal.timeout(isResearchSynthesis ? 7000 : 1500),
+        maxTokens: isResearchSynthesis ? 700 : undefined,
+        temperature: isResearchSynthesis ? 0.2 : undefined,
         messages: messagesToModel
       })
 
@@ -376,8 +428,36 @@ Language: reply in the same language the user used most recently. If Chinese, re
     }
   }
 
-  // Fallback
+  if (isResearchSynthesis) {
+    return getResearchFallbackCaption(
+      latestUserQuestion || symbol,
+      contextData,
+      toolName
+    )
+  }
+
   return getSmartFallbackCaption(symbol)
+}
+
+function getResearchFallbackCaption(
+  question: string,
+  contextData?: string,
+  toolName?: string
+): string {
+  if (toolName === 'answerFinancialMetric') {
+    return `目前無法從即時來源可靠核實「${question}」的精確數值與財報期間；為避免把其他科目誤當成答案，本次不提供推估值。請使用卡片中的來源連結核對公司最新財報。`
+  }
+  const evidence = (contextData || '')
+    .split('\n')
+    .map(line => line.replace(/\s*\|\s*網址:.+$/i, '').trim())
+    .filter(Boolean)
+    .slice(0, 3)
+
+  if (evidence.length === 0) {
+    return `即時檢索目前沒有取得足以回答「${question}」的可靠資料，暫時無法據此下結論。`
+  }
+
+  return `根據即時檢索資料，目前可確認的重點是：\n\n${evidence.map(item => `- ${item}`).join('\n')}\n\n---SUGGESTIONS---\n- 🏢 進一步拆解這家公司的主要產品、客戶與營收來源\n- 📑 查找最新年報或法說會，確認各業務部門的營收占比`
 }
 
 function getSmartFallbackCaption(symbol: string): string {
@@ -407,6 +487,27 @@ async function safeGenerateCaption(
       `[safeGenerateCaption] Error in ${toolName} for ${symbol}:`,
       err?.message || err
     )
+    const researchTools = new Set([
+      'searchFinancialWeb',
+      'readWebPage',
+      'readFinancialReport',
+      'answerFinancialMetric'
+    ])
+    if (researchTools.has(toolName)) {
+      const latestUserQuestion = [...(aiState.get().messages || [])]
+        .reverse()
+        .find(
+          message =>
+            message.role === 'user' &&
+            typeof message.content === 'string' &&
+            message.content.trim()
+        )?.content as string | undefined
+      return getResearchFallbackCaption(
+        latestUserQuestion || symbol,
+        contextData,
+        toolName
+      )
+    }
     return getSmartFallbackCaption(symbol)
   }
 }
@@ -580,6 +681,7 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
 3. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 小米 -> HKEX:1810, 騰訊 -> HKEX:700, 阿里 -> HKEX:9988, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
 4. Only for an unknown, new, private, or ambiguous company name with no explicit ticker, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
 5. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
+6. If an explicit ticker is present and the user asks about any financial-statement line item, ratio, growth comparison, valuation multiple, or accounting term (including unfamiliar ones), call answerFinancialMetric. Do not expose a raw search-results card for a focused metric question.
 
 ### 🧠 多輪續問與標的繼承 (Multi-Turn Context & Symbol Resolution)
 1. 當使用者在多輪對話中進行追問（例如點擊或輸入「啟動 13 位傳奇大師多維投資價值評估」、「多位大師進行投資分析」、「查看走勢圖」、「財務狀況如何」、「相關概念股」、「該買嗎」），而當前提問未指明股票名稱/代碼時：
@@ -696,7 +798,9 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             }),
 
             generate: async function* ({ symbol, comparisonSymbols }) {
-              const formattedSymbol = formatStockSymbol(symbol)
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
               const normalizedComparison = Array.isArray(comparisonSymbols)
                 ? (comparisonSymbols
                     .map((item: any) => {
@@ -806,7 +910,9 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
-              const formattedSymbol = formatStockSymbol(symbol)
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
               let caption = ''
 
               yield (
@@ -868,6 +974,113 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               )
             }
           },
+          answerFinancialMetric: {
+            description:
+              'Answer one explicitly requested financial metric such as EBITDA, EBIT, EPS, FCF, ROE, ROIC, margins, valuation multiples, leverage ratios, or dividend yield. Search live evidence privately and return a concise synthesized answer instead of a raw search-results list.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .describe('The explicit stock ticker supplied by the user.')
+            }),
+            generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              const question = content.trim()
+              let caption = ''
+
+              yield (
+                <BotCard>
+                  <FinancialMetricCard
+                    symbol={formattedSymbol}
+                    question={question}
+                    loading
+                  />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+
+              let results: any[] = []
+              try {
+                results = await searchWeb2MD(
+                  `${formattedSymbol} ${question} latest annual quarterly report filing investor relations`,
+                  5
+                )
+              } catch (error) {
+                console.warn('[answerFinancialMetric] Search failed:', error)
+              }
+
+              const contextData = results
+                .map(
+                  (result, index) =>
+                    `[來源 ${index + 1}] 標題: ${result.title} | 摘要: ${result.description} | 網址: ${result.url}`
+                )
+                .join('\n')
+
+              caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'answerFinancialMetric',
+                aiState,
+                contextData
+              )
+              const toolCallId = nanoid()
+
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'answerFinancialMetric',
+                          toolCallId,
+                          args: { symbol: formattedSymbol, question }
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'answerFinancialMetric',
+                          toolCallId,
+                          result: {
+                            symbol: formattedSymbol,
+                            question,
+                            caption,
+                            sources: results.slice(0, 3)
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (error) {
+                console.warn(
+                  '[answerFinancialMetric] aiState.done failed:',
+                  error
+                )
+              }
+
+              return (
+                <BotCard>
+                  <FinancialMetricCard
+                    symbol={formattedSymbol}
+                    question={question}
+                    sources={results}
+                  />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
           showStockFinancials: {
             description:
               'Show the financial statements and metrics of a stock. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
@@ -879,7 +1092,9 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
-              const formattedSymbol = formatStockSymbol(symbol)
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
               let caption = ''
 
               yield (
@@ -952,7 +1167,9 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
-              const formattedSymbol = formatStockSymbol(symbol)
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
               let caption = ''
 
               yield (
@@ -1356,7 +1573,9 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ symbol }) {
-              const formattedSymbol = formatStockSymbol(symbol)
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
               let caption = ''
 
               yield (
@@ -1364,13 +1583,6 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   <StockAnalysis symbol={formattedSymbol} />
                   <BotCaption content={caption} />
                 </BotCard>
-              )
-
-              caption = await generateCaption(
-                formattedSymbol,
-                [],
-                'analyzeStockWithAI',
-                aiState
               )
 
               const toolCallId = nanoid()
@@ -1420,7 +1632,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           searchFinancialWeb: {
             description:
-              'Search live financial intelligence across all asset classes and macro dimensions via 2MD: (1) Stock quotes & valuation metrics, (2) Related peers, supply chains & concept stocks (概念股/供應鏈), (3) Bonds, US Treasuries & Fed interest rate expectations (美債殖利率/降息), (4) Macroeconomics & indicators (CPI/GDP/景氣燈號/匯率), (5) Institutional flows & breaking market news (法人買賣超/法說會), (6) Commodities & Crypto (黃金/原油/比特幣). Freely call this tool multiple times to gather multi-angle intelligence!',
+              'Search live financial intelligence via 2MD and synthesize a direct answer to the user from the returned evidence. Use for company profiles and business models, unknown ticker/listing verification, live news, supply chains, macro data, institutional flows, commodities, and crypto. The tool result must answer the question; a raw search-results list is not a substitute for an answer.',
             parameters: z.object({
               query: z
                 .string()

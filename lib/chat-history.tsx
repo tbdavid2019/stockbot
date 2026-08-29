@@ -14,6 +14,7 @@ import { MarketTrending } from '@/components/tradingview/market-trending'
 import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { NativeFinancialsCard } from '@/components/stocks/native-financials-card'
+import { FinancialMetricCard } from '@/components/stocks/financial-metric-card'
 import { NativeStockNewsCard } from '@/components/stocks/native-news-card'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
@@ -62,7 +63,9 @@ export function getChatSession(id: string): ChatSession | null {
 /**
  * Save or update a chat session in localStorage
  */
-export function saveChatSession(session: Omit<ChatSession, 'updatedAt'> & { updatedAt?: number }): void {
+export function saveChatSession(
+  session: Omit<ChatSession, 'updatedAt'> & { updatedAt?: number }
+): void {
   if (typeof window === 'undefined' || !session.id) return
   try {
     const sessions = getChatSessions()
@@ -78,14 +81,17 @@ export function saveChatSession(session: Omit<ChatSession, 'updatedAt'> & { upda
     }
 
     if (existingIndex >= 0) {
-      updatedSession.createdAt = sessions[existingIndex].createdAt || updatedSession.createdAt
+      updatedSession.createdAt =
+        sessions[existingIndex].createdAt || updatedSession.createdAt
       sessions[existingIndex] = updatedSession
     } else {
       sessions.unshift(updatedSession)
     }
 
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(sessions))
-    window.dispatchEvent(new CustomEvent(CHAT_HISTORY_EVENT, { detail: { sessions } }))
+    window.dispatchEvent(
+      new CustomEvent(CHAT_HISTORY_EVENT, { detail: { sessions } })
+    )
   } catch (error) {
     console.error('Failed to save chat session:', error)
   }
@@ -99,7 +105,11 @@ export function deleteChatSession(id: string): void {
   try {
     const sessions = getChatSessions().filter(s => s.id !== id)
     localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(sessions))
-    window.dispatchEvent(new CustomEvent(CHAT_HISTORY_EVENT, { detail: { sessions, deletedId: id } }))
+    window.dispatchEvent(
+      new CustomEvent(CHAT_HISTORY_EVENT, {
+        detail: { sessions, deletedId: id }
+      })
+    )
   } catch (error) {
     console.error('Failed to delete chat session:', error)
   }
@@ -112,7 +122,9 @@ export function clearAllChatSessions(): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.removeItem(CHAT_STORAGE_KEY)
-    window.dispatchEvent(new CustomEvent(CHAT_HISTORY_EVENT, { detail: { sessions: [] } }))
+    window.dispatchEvent(
+      new CustomEvent(CHAT_HISTORY_EVENT, { detail: { sessions: [] } })
+    )
   } catch (error) {
     console.error('Failed to clear chat sessions:', error)
   }
@@ -130,7 +142,9 @@ export function updateChatTitle(id: string, newTitle: string): void {
       target.title = newTitle.trim()
       target.updatedAt = Date.now()
       localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(sessions))
-      window.dispatchEvent(new CustomEvent(CHAT_HISTORY_EVENT, { detail: { sessions } }))
+      window.dispatchEvent(
+        new CustomEvent(CHAT_HISTORY_EVENT, { detail: { sessions } })
+      )
     }
   } catch (error) {
     console.error('Failed to update chat title:', error)
@@ -144,11 +158,12 @@ export function deriveChatTitle(messages: any[]): string {
   if (!messages || messages.length === 0) return '新對話'
   const firstUserMsg = messages.find(m => m.role === 'user')
   if (!firstUserMsg) return '新對話'
-  
-  const content = typeof firstUserMsg.content === 'string'
-    ? firstUserMsg.content
-    : JSON.stringify(firstUserMsg.content)
-  
+
+  const content =
+    typeof firstUserMsg.content === 'string'
+      ? firstUserMsg.content
+      : JSON.stringify(firstUserMsg.content)
+
   const clean = content.trim().replace(/^["']|["']$/g, '')
   if (!clean) return '新對話'
   return clean.length > 36 ? `${clean.slice(0, 36)}...` : clean
@@ -179,7 +194,10 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
 
     // 1. User Message
     if (msg.role === 'user') {
-      const userText = typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)
+      const userText =
+        typeof msg.content === 'string'
+          ? msg.content
+          : JSON.stringify(msg.content)
       uiState.push({
         id: msg.id || `user-${i}`,
         display: <UserMessage>{userText}</UserMessage>
@@ -213,21 +231,43 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                 cardContent = (
                   <StockChart
                     symbol={args.symbol || result?.symbol || 'AAPL'}
-                    comparisonSymbols={args.comparisonSymbols || result?.comparisonSymbols || []}
+                    comparisonSymbols={
+                      args.comparisonSymbols || result?.comparisonSymbols || []
+                    }
                   />
                 )
                 break
 
               case 'showStockPrice':
-                cardContent = <StockPrice props={args.symbol || result?.symbol || 'AAPL'} />
+                cardContent = (
+                  <StockPrice props={args.symbol || result?.symbol || 'AAPL'} />
+                )
                 break
 
               case 'showStockFinancials':
-                cardContent = <NativeFinancialsCard symbol={args.symbol || result?.symbol || 'AAPL'} />
+                cardContent = (
+                  <NativeFinancialsCard
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                  />
+                )
+                break
+
+              case 'answerFinancialMetric':
+                cardContent = (
+                  <FinancialMetricCard
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                    question={args.question || result?.question || ''}
+                    sources={result?.sources || []}
+                  />
+                )
                 break
 
               case 'showStockNews':
-                cardContent = <NativeStockNewsCard symbol={args.symbol || result?.symbol || 'AAPL'} />
+                cardContent = (
+                  <NativeStockNewsCard
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                  />
+                )
                 break
 
               case 'showStockScreener':
@@ -251,7 +291,11 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                 break
 
               case 'analyzeStockWithAI':
-                cardContent = <StockAnalysis symbol={args.symbol || result?.symbol || 'AAPL'} />
+                cardContent = (
+                  <StockAnalysis
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                  />
+                )
                 break
 
               case 'searchFinancialWeb':
@@ -279,9 +323,17 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
               case 'readFinancialReport':
                 cardContent = (
                   <FinancialReportCard
-                    filename={args.url?.split('/').pop() || result?.filename || '財報/年報解析.pdf'}
+                    filename={
+                      args.url?.split('/').pop() ||
+                      result?.filename ||
+                      '財報/年報解析.pdf'
+                    }
                     url={args.url || result?.url}
-                    contentSnippet={result?.content ? result.content.slice(0, 600) + '...' : ''}
+                    contentSnippet={
+                      result?.content
+                        ? result.content.slice(0, 600) + '...'
+                        : ''
+                    }
                     fullContent={result?.content}
                   />
                 )
