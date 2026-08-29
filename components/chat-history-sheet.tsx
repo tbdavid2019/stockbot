@@ -29,7 +29,8 @@ import {
   IconTrash,
   IconEdit,
   IconCheck,
-  IconClose
+  IconClose,
+  IconCopy
 } from '@/components/ui/icons'
 import {
   ChatSession,
@@ -196,6 +197,40 @@ export function ChatHistorySheet({
   const handleCancelEdit = (e: React.MouseEvent) => {
     e.stopPropagation()
     setEditingId(null)
+  }
+
+  const handleCopySession = (e: React.MouseEvent, session: ChatSession) => {
+    e.stopPropagation()
+    const lines: string[] = []
+    lines.push(`# ${session.title || 'StockBot 對話紀錄'}`)
+    lines.push(
+      `時間: ${new Date(session.updatedAt || session.createdAt).toLocaleString('zh-TW')}\n`
+    )
+    if (session.messages && Array.isArray(session.messages)) {
+      for (const msg of session.messages) {
+        if (msg.role === 'user') {
+          lines.push(
+            `### 👤 使用者:\n${typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)}\n`
+          )
+        } else if (
+          msg.role === 'assistant' &&
+          typeof msg.content === 'string' &&
+          msg.content
+        ) {
+          lines.push(`### 🤖 888 StockBot:\n${msg.content}\n`)
+        } else if (msg.role === 'tool' && Array.isArray(msg.content)) {
+          for (const item of msg.content) {
+            if (item?.result?.caption) {
+              lines.push(`### 🤖 888 StockBot 分析:\n${item.result.caption}\n`)
+            }
+          }
+        }
+      }
+    }
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(lines.join('\n'))
+      toast.success('已複製整段對話至剪貼簿！')
+    }
   }
 
   const handleClearAll = () => {
@@ -424,6 +459,14 @@ export function ChatHistorySheet({
 
                       {/* Action buttons on hover */}
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          title="複製整段對話"
+                          onClick={e => handleCopySession(e, session)}
+                        >
+                          <IconCopy className="size-3" />
+                        </button>
                         <button
                           type="button"
                           className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
