@@ -42,6 +42,14 @@ import {
   inferDeterministicTool,
   resolveTickerFromMessages
 } from '@/lib/chat/routing'
+import {
+  SUGGESTIONS_MARKER,
+  buildFollowupContext,
+  contextDerivedFallback,
+  normalizeFollowups,
+  parseFollowupResponse,
+  serializeFollowups
+} from '@/lib/chat/followup-context'
 
 export type AIState = {
   chatId: string
@@ -271,7 +279,6 @@ async function generateCaptionWithProvider(
     'answerFinancialMetric'
   ])
   const isResearchSynthesis = researchTools.has(toolName)
-  const isFocusedMetric = toolName === 'answerFinancialMetric'
   const latestUserQuestion = [...(aiState.get().messages || [])]
     .reverse()
     .find(
@@ -295,8 +302,7 @@ Rules:
 - Distinguish verified facts from inference. If the provided evidence is insufficient, state the missing point precisely instead of inventing it.
 - Refer to the evidence as "上方搜尋結果" or "上方資料" because the source card is above the answer.
 - Answer in the same language as the user's latest question. Chinese must use Traditional Chinese.
-- Keep the main answer focused and useful.${isFocusedMetric ? ' Return plain text only; do not add markdown headings or follow-up suggestions.' : ' End with 2 concrete follow-up questions under a standalone ---SUGGESTIONS--- marker.'}
-- Follow-up suggestions must be executable research questions. Never ask whether the user is interested, whether they want to learn more, or whether they would like to continue.
+- Keep the main answer focused and useful. Return the answer only; a separate follow-up pass handles next questions.
 `
 
   const captionSystemMessage = isResearchSynthesis
@@ -307,7 +313,7 @@ You are an elite Wall Street Managing Director, Senior Technical Market Strategi
 ### 🖼️ UI 介面與卡片情境 (MANDATORY CONTEXT)
 - **使用者畫面上方 (ABOVE) 已經成功即時渲染了「${stockString}」的互動圖表與卡片。**
 - **嚴禁道歉！嚴禁回答「抱歉，我無法直接載入...」、「無法取得走勢圖」或「無法提供資料」！圖表已完整呈現在使用者眼前！**
-- 你的任務：為上方已呈現的圖表與數據，提供權威、精準、條理清晰的機構級專業解說與自主續問建議。
+- 你的任務：為上方已呈現的圖表與數據，提供權威、精準、條理清晰的機構級專業解說。
 
 ### 📐 介面卡片相對位置鐵律 (CARD POSITIONING DIRECTIVE)
 - 所有圖表、走勢圖、分析報告在 UI 介面上皆一律渲染於此文字訊息的「上方 (ABOVE)」。
@@ -324,55 +330,16 @@ You are an elite Wall Street Managing Director, Senior Technical Market Strategi
 
 ${contextData ? `\n【最新即時檢索數據與情報】：\n${contextData}\n` : ''}
 
-### 💡 深度上下文動態續問建議 (DYNAMIC CONTEXTUAL FOLLOW-UPS)
-在解說結尾，**必須根據本次對話的標的（「${stockString}」）、最新檢索情報與討論焦點，量身生成 3 ~ 4 個具備實質深度、具體點名公司/供應鏈/產品線/財務指標/總經情境的追問建議**！
-
-🚨 **嚴禁輸出千篇一律的通用模板套話！**
-- ❌ 嚴禁輸出通用套話（如禁止直接寫「查詢相關概念股與供應鏈上下游表現」或「啟動 13 位傳奇大師多維投資價值評估」）！
-- ✅ **每一條續問建議必須具體包含**：
-  1. 該標的具體關鍵字/代號（如台積電、蘋果、統一、特斯拉、小米等）
-  2. 具體的業務亮點、供應鏈公司、競爭對手、產品製程、或總經/法說會核心事件
-  - 例如若分析台積電 (2330)：
-    - ⛓️ 檢視台積電 CoWoS 先進封裝擴產對弘塑、辛耘等設備供應鏈之帶動
-    - 🏦 分析美債 10 年期殖利率與外資淨買賣超對台積電本益比的評價空間
-    - 🧠 啟動巴菲特與葛拉漢等大師評估台積電的先進製程定價權與護城河
-    - 📑 解讀台積電最新季度毛利率、3nm/2nm 資本支出與先進製程營收比重
-  - 例如若分析統一 (1216)：
-    - ⛓️ 統一超（7-ELEVEN）與家樂福併購綜效對統一整體營業利益的貢獻
-    - 🧠 啟動彼得林區等大師分析統一民生消費抗通膨特性與股息發放穩定度
-    - 📑 解析統一最新合併營收結構、原物料成本走勢與自由現金流表現
-    - 🏦 比較統一與食品/通路同業（如全家、聯華食）之評價與股息殖利率
-  - 例如若分析蘋果 (AAPL)：
-    - ⛓️ 檢視 iPhone 換機潮與台系蘋概供應鏈（鴻海、大立光、玉晶光）動態
-    - 🧠 啟動巴菲特等 13 位大師對蘋果服務業務與自由現金流評估
-    - 📑 分析蘋果各產品線營收結構與大中華區銷售表現
-    - 🏦 分析美債殖利率與科技巨頭股票回購對蘋果估值的支撐力道
-
-- 結尾嚴格以 \`---SUGGESTIONS---\` 作為單獨一行分隔：
-\`\`\`markdown
----SUGGESTIONS---
-- [emoji] [針對當前標的量身定制的具體問題 1]
-- [emoji] [針對當前標的量身定制的具體問題 2]
-- [emoji] [針對當前標的量身定制的具體問題 3]
-- [emoji] [針對當前標的量身定制的具體問題 4]
-\`\`\`
-
-Language: reply in the same language the user used most recently. If Chinese, reply in Traditional Chinese (繁體中文). If English, reply in English.
+Language: reply in the same language the user used most recently. If Chinese, reply in Traditional Chinese (繁體中文). If English, reply in English. Return only the answer body. A separate server-side follow-up pass appends suggestions.
 `
 
   const rawMessages = aiState.get().messages || []
-  const conversationHistory: { role: 'user' | 'assistant'; content: string }[] =
-    []
-  for (const msg of rawMessages) {
-    if (typeof msg.content === 'string' && msg.content.trim().length > 0) {
-      if (msg.role === 'user' || msg.role === 'assistant') {
-        conversationHistory.push({
-          role: msg.role as 'user' | 'assistant',
-          content: msg.content
-        })
-      }
-    }
-  }
+  const followupContext = buildFollowupContext(rawMessages, {
+    symbol: stockString,
+    toolName,
+    question: latestUserQuestion || symbol,
+    resultContext: contextData
+  })
 
   const messagesToModel: {
     role: 'system' | 'user' | 'assistant'
@@ -385,7 +352,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
         },
         {
           role: 'user',
-          content: `使用者原始問題：${latestUserQuestion || symbol}\n\n檢索查詢：${symbol}\n\n可用即時來源：\n${contextData || '沒有取得可用來源'}\n\n請直接回答原始問題。`
+          content: `使用者原始問題：${latestUserQuestion || symbol}\n\n最近對話與工具紀錄：\n${followupContext.transcript || '無'}\n\n檢索查詢：${symbol}\n\n可用即時來源：\n${contextData || '沒有取得可用來源'}\n\n請只回答原始問題，不要輸出續問標記。`
         }
       ]
     : [
@@ -393,10 +360,13 @@ Language: reply in the same language the user used most recently. If Chinese, re
           role: 'system',
           content: captionSystemMessage
         },
-        ...conversationHistory.slice(-4),
         {
           role: 'user',
-          content: `請依據上述對話脈絡與最新即時情報，針對「${symbol}」提供深入的機構級專業研調剖析，並於結尾以 ---SUGGESTIONS--- 附上 3 ~ 4 個針對「${symbol}」量身定制、具體且非通用的深度續問建議。`
+          content: `最近對話與工具紀錄：\n${followupContext.transcript || '無'}`
+        },
+        {
+          role: 'user',
+          content: `請依據上述對話脈絡與最新即時情報，針對「${symbol}」提供深入且可核實的解說。只輸出回答正文，不要輸出續問標記。`
         }
       ]
 
@@ -423,7 +393,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
 
       if (result.text && result.text.trim().length > 0) {
-        return result.text
+        return result.text.trim()
       }
     } catch (err: any) {
       console.warn(
@@ -441,7 +411,12 @@ Language: reply in the same language the user used most recently. If Chinese, re
     )
   }
 
-  return getSmartFallbackCaption(symbol)
+  return getSmartFallbackCaption(
+    symbol,
+    toolName,
+    latestUserQuestion,
+    contextData
+  )
 }
 
 function getResearchFallbackCaption(
@@ -450,7 +425,7 @@ function getResearchFallbackCaption(
   toolName?: string
 ): string {
   if (toolName === 'answerFinancialMetric') {
-    return `目前無法從即時來源可靠核實「${question}」的精確數值與財報期間；為避免把其他科目誤當成答案，本次不提供推估值。請使用卡片中的來源連結核對公司最新財報。`
+    return `目前無法從上方即時來源可靠核實「${question}」的精確數值與財報期間；為避免把其他科目誤當成答案，本次不提供推估值。`
   }
   const evidence = (contextData || '')
     .split('\n')
@@ -462,14 +437,19 @@ function getResearchFallbackCaption(
     return `即時檢索目前沒有取得足以回答「${question}」的可靠資料，暫時無法據此下結論。`
   }
 
-  return `根據即時檢索資料，目前可確認的重點是：\n\n${evidence.map(item => `- ${item}`).join('\n')}\n\n---SUGGESTIONS---\n- 🏢 進一步拆解這家公司的主要產品、客戶與營收來源\n- 📑 查找最新年報或法說會，確認各業務部門的營收占比`
+  return `根據上方即時檢索資料，目前可確認的重點是：\n\n${evidence.map(item => `- ${item}`).join('\n')}`
 }
 
-function getSmartFallbackCaption(symbol: string): string {
-  const isZh = /[\u4e00-\u9fa5]/.test(symbol) || true
-  return isZh
-    ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師對 ${symbol} 的定價權與長期護城河評估\n- ⛓️ 查詢 ${symbol} 相關核心供應鏈與上下游概念股連動表現\n- 🏦 分析美債 10 年期殖利率與央行利率政策對 ${symbol} 估值評價影響\n- 📑 解讀 ${symbol} 最新季度財務報表、毛利率趨勢與自由現金流動態`
-    : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor valuation and moat analysis on ${symbol}\n- ⛓️ Analyze ${symbol} key supply chain partners and industry peers\n- 🏦 Assess impact of 10Y Treasury yields and interest rate cycle on ${symbol}\n- 📑 Breakdown ${symbol} latest quarterly financials, margins and cash flow`
+function getSmartFallbackCaption(
+  symbol: string,
+  toolName = 'card',
+  question?: string,
+  contextData?: string
+): string {
+  if (contextData) {
+    return `根據上方資料，目前可確認的重點已整理在卡片中；未提供的數值不做推估。`
+  }
+  return `如上方卡片所示，${symbol} 的資料已呈現；目前先回答${question ? `「${question}」` : '本次問題'}。`
 }
 
 async function safeGenerateCaption(
@@ -524,13 +504,107 @@ async function generateCaption(
   aiState: MutableAIState,
   contextData?: string
 ): Promise<string> {
-  return safeGenerateCaption(
+  const answer = await safeGenerateCaption(
     symbol,
     comparisonSymbols,
     toolName,
     aiState,
     contextData
   )
+  return appendContextualFollowups(
+    answer,
+    {
+      symbol,
+      toolName,
+      question: getLatestUserQuestion(aiState) || symbol,
+      resultContext: contextData
+    },
+    aiState
+  )
+}
+
+function getLatestUserQuestion(aiState: MutableAIState): string {
+  return (
+    ([...(aiState.get().messages || [])]
+      .reverse()
+      .find(
+        message =>
+          message.role === 'user' &&
+          typeof message.content === 'string' &&
+          message.content.trim()
+      )?.content as string | undefined) || ''
+  )
+}
+
+async function generateContextualFollowups(
+  aiState: MutableAIState,
+  input: {
+    symbol: string
+    toolName: string
+    question: string
+    resultContext?: string
+    company?: string
+  }
+): Promise<string[]> {
+  const context = buildFollowupContext(aiState.get().messages || [], input)
+  let partialSuggestions: string[] = []
+  const instruction = `
+You generate only actionable follow-up questions for a live financial research chat.
+Return ONLY a JSON array of 2 to 4 strings. No markdown, explanation, invitation, or code fence.
+Each string must be a complete question in ${context.language === 'zh-TW' ? 'Traditional Chinese' : 'English'}.
+Continue the user's current topic. Use the actual symbol/company from context. Ask about a concrete next fact, comparison, period, metric, event, or missing evidence.
+Do not repeat the current question, recent questions, or previous suggestions. Do not invent a company, ticker, price, date, or financial value.
+
+Current symbol/company: ${context.company || context.symbol}
+Tool intent: ${context.toolName}
+Current question: ${context.question}
+Current result/evidence: ${context.resultContext || 'none'}
+Recent conversation and tool records:
+${context.transcript || 'none'}
+`
+
+  for (const candidate of getProviderCandidates().slice(0, 1)) {
+    try {
+      const client = createOpenAI({
+        baseURL: candidate.baseURL,
+        apiKey: candidate.apiKey
+      })
+      const result = await generateText({
+        model: client(candidate.model),
+        abortSignal: AbortSignal.timeout(2500),
+        maxTokens: 260,
+        temperature: 0.35,
+        messages: [{ role: 'system', content: instruction }]
+      })
+      const suggestions = normalizeFollowups(
+        parseFollowupResponse(result.text),
+        context
+      )
+      if (suggestions.length >= 2) return suggestions
+      partialSuggestions = suggestions
+    } catch (error: any) {
+      console.warn('[Followup] provider failed:', error?.message || error)
+    }
+  }
+  return normalizeFollowups(
+    [...partialSuggestions, ...contextDerivedFallback(context)],
+    context
+  )
+}
+
+async function appendContextualFollowups(
+  answer: string,
+  input: {
+    symbol: string
+    toolName: string
+    question: string
+    resultContext?: string
+    company?: string
+  },
+  aiState: MutableAIState
+): Promise<string> {
+  const suggestions = await generateContextualFollowups(aiState, input)
+  return serializeFollowups(answer, suggestions)
 }
 
 async function submitUserMessage(content: string, userApiKey?: string) {
@@ -719,6 +793,7 @@ If that request already includes a ticker, call analyzeStockWithAI immediately. 
 ### Guidelines:
 
 Never provide empty results to the user. Provide the relevant tool if it matches the user's request. Otherwise, respond as the stock bot.
+When you answer directly without calling a tool, end the answer with a standalone ${SUGGESTIONS_MARKER} marker followed by 2 to 4 concise, actionable follow-up questions. Derive them from the latest user question and recent conversation. Reuse the active company or ticker when one exists. Do not use generic invitations, do not repeat a previous question, and do not invent facts or values.
 Example:
 
 User: What is the price of AAPL?
@@ -740,14 +815,36 @@ User: 請幫我為 TSMC 寫一份深度的 Q3 投資研究報告並發布到 Wik
 Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "publishToDavid888Wiki" }, "parameters": { "title": "TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告", "slug": "tsmc-2026-q3-report", "content": "# TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告\n\n> 執行摘要：台積電在全球先進製程保持領先地位...\n\n[TOC]\n\n## 1. 核心競爭優勢與製程進展\n...", "theme": "claude-canvas" } } }
     `,
         messages: sanitizedMessages,
-        text: ({ content, done, delta }) => {
+        text: ({ content: responseContent, done, delta }) => {
           if (!textStream) {
             textStream = createStreamableValue('')
             textNode = <BotMessage content={textStream.value} />
           }
 
           if (done) {
+            const directContext = buildFollowupContext(
+              aiState.get().messages || [],
+              {
+                symbol: resolvedTicker || currentExplicitTicker || '目前主題',
+                toolName: 'directResponse',
+                question: content,
+                resultContext: responseContent
+              }
+            )
+            const hasSuggestions = responseContent.includes(SUGGESTIONS_MARKER)
+            const fallbackSuggestions = hasSuggestions
+              ? []
+              : contextDerivedFallback(directContext)
+            const finalContent = hasSuggestions
+              ? responseContent
+              : serializeFollowups(responseContent, fallbackSuggestions)
+            const suffix = fallbackSuggestions.length
+              ? `\n\n${SUGGESTIONS_MARKER}\n${fallbackSuggestions
+                  .map(item => `- ${item}`)
+                  .join('\n')}`
+              : ''
             try {
+              if (suffix) textStream.update(suffix)
               textStream.done()
             } catch (e) {}
             try {
@@ -758,7 +855,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   {
                     id: nanoid(),
                     role: 'assistant',
-                    content
+                    content: finalContent
                   }
                 ]
               })
@@ -1057,15 +1154,24 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 .filter(Boolean)
                 .join('\n\n')
 
-              caption =
-                directAnswer ||
-                (await generateCaption(
-                  formattedSymbol,
-                  [],
-                  'answerFinancialMetric',
-                  aiState,
-                  contextData
-                ))
+              caption = directAnswer
+                ? await appendContextualFollowups(
+                    directAnswer,
+                    {
+                      symbol: formattedSymbol,
+                      toolName: 'answerFinancialMetric',
+                      question,
+                      resultContext: contextData
+                    },
+                    aiState
+                  )
+                : await generateCaption(
+                    formattedSymbol,
+                    [],
+                    'answerFinancialMetric',
+                    aiState,
+                    contextData
+                  )
               const toolCallId = nanoid()
 
               try {
@@ -1627,6 +1733,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
+              caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'analyzeStockWithAI',
+                aiState
+              )
+
               const toolCallId = nanoid()
 
               try {
@@ -1936,7 +2049,16 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               let caption = ''
               if (result.success) {
-                caption = `以上為您整理發布的深度報告《${title}》。已建立永久分享網址、互動簡報與電子書閱讀器。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師對《${title}》核心標的之價值評估\n- ⛓️ 查詢《${title}》相關概念股與供應鏈產業鏈連動\n- 🏦 分析總體經濟、降息預期與公債殖利率對其估值影響\n- 📑 解讀《${title}》最新財務報表指標與營運成長動能`
+                caption = await appendContextualFollowups(
+                  `以上為您整理發布的深度報告《${title}》。已建立永久分享網址、互動簡報與電子書閱讀器。`,
+                  {
+                    symbol: title,
+                    toolName: 'publishToDavid888Wiki',
+                    question: content.trim().slice(0, 700),
+                    resultContext: `報告已發布：${result.shareUrl || ''}`
+                  },
+                  aiState
+                )
               } else {
                 caption = `發布時遇到狀況：${result.error || '未知錯誤'}。請檢查內容或稍後重試。`
               }

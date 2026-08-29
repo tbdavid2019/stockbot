@@ -6,6 +6,7 @@ import { UserMessage } from './message'
 import { nanoid } from 'nanoid'
 import { type AI } from '@/lib/chat/actions'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
+import { normalizeFollowupText } from '@/lib/followup-suggestions'
 
 interface FollowupPromptsProps {
   prompts: string[]
@@ -20,8 +21,7 @@ export function FollowupPrompts({ prompts }: FollowupPromptsProps) {
   if (!prompts || prompts.length === 0) return null
 
   const handlePromptClick = async (promptText: string) => {
-    // Clean prompt text (remove leading bullet or emoji if desired, or keep as is)
-    const cleanText = promptText.replace(/^[•\-\*]\s*/, '').trim()
+    const cleanText = normalizeFollowupText(promptText)
     if (!cleanText) return
 
     // Optimistically add user message
@@ -42,28 +42,28 @@ export function FollowupPrompts({ prompts }: FollowupPromptsProps) {
   }
 
   return (
-    <div className="mt-3.5 pt-3 border-t border-border/40 flex flex-col space-y-2">
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold">
-        <span className="text-sm">💡</span>
-        <span>
-          {lang === 'en'
-            ? 'Suggested follow-ups (Click to ask):'
-            : '您可以接著問（點擊快速追問）：'}
+    <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1.5 text-xs text-muted-foreground">
+      <div className="inline-flex shrink-0 items-center gap-1.5">
+        <span aria-hidden="true" className="text-[11px]">
+          ↳
         </span>
+        <span>{lang === 'en' ? 'Next' : '接著問'}</span>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {prompts.map((p, idx) => {
-          const displayText = p.replace(/^[•\-\*]\s*/, '').trim()
+      <div className="flex min-w-0 flex-1 flex-wrap gap-x-3 gap-y-1">
+        {prompts.map(p => {
+          const displayText = normalizeFollowupText(p)
+          const key = displayText.toLocaleLowerCase().replace(/\s+/g, ' ')
           return (
             <button
-              key={idx}
+              key={key}
               type="button"
               onClick={() => handlePromptClick(displayText)}
-              className="group text-left text-xs px-3 py-1.5 rounded-full border border-indigo-200/70 dark:border-indigo-800/60 bg-indigo-50/40 dark:bg-indigo-950/30 hover:bg-indigo-100/70 dark:hover:bg-indigo-900/50 hover:border-indigo-400 text-slate-800 dark:text-slate-200 transition-all duration-150 shadow-xs hover:shadow-sm active:scale-95 cursor-pointer flex items-center gap-1.5"
+              aria-label={`${lang === 'en' ? 'Ask: ' : '追問：'}${displayText}`}
+              className="group inline-flex max-w-full items-center gap-1 rounded-sm p-0.5 text-left text-xs leading-5 text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:opacity-70"
             >
               <span>{displayText}</span>
-              <span className="text-indigo-500 dark:text-indigo-400 text-[10px] group-hover:translate-x-0.5 transition-transform">
-                ↳
+              <span aria-hidden="true" className="text-[10px] opacity-60">
+                →
               </span>
             </button>
           )

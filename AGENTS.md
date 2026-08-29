@@ -101,8 +101,11 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 各金融工具與走勢圖調用時，自動並發檢索：(1) 即時成交價與估值指標、(2) 相關概念股與供應鏈上下游、(3) 美債 10 年殖利率/降息循環/總經環境、(4) 最新突發新聞與三大法人買賣超籌碼。
   - 徹底解決單一標的資訊受限或過往空泛回覆，提供機構級全維度研調視野。
 - **自主續問提示組件 (`FollowupPrompts` & `BotCaption`)**：
-  - AI 解說在結尾以 `---SUGGESTIONS---` 產生 3 ~ 4 個跨維度（概念股供應鏈、總經美債、季報解讀、大師分析）量身定制的自主續問建議。
-  - 前端組件 [`components/stocks/followup-prompts.tsx`](components/stocks/followup-prompts.tsx) 自動將其渲染為高質感互動按鈕，使用者點擊即可觸發無縫追問。
+  - 回答正文與續問生成必須解耦。正文完成後，由 [`lib/chat/followup-context.ts`](lib/chat/followup-context.ts) 讀取最近使用者問題、純文字回答、工具呼叫參數、工具結果與保存的 caption，再生成 2 ~ 4 個承接當前標的與資料缺口的續問。
+  - `answerFinancialMetric` 的結構化 direct answer、研究工具、一般金融卡與不呼叫工具的純文字回答都必須保留續問；不得依輪數停用，也不得只處理前兩輪。
+  - `---SUGGESTIONS---` 僅作為歷史紀錄與 UI 的序列化邊界。解析、清理、去重與邀請句過濾集中於 [`lib/followup-suggestions.ts`](lib/followup-suggestions.ts)，禁止在多個 React 組件各自複製 parser。
+  - 禁止在 prompt 或 fallback 寫死台積電、統一、Apple 等公司範例。Provider 失敗時，只能使用本輪實際 symbol/company、問題、工具意圖與已取得資料衍生續問；上下文不足時寧可少而準。
+  - 前端組件 [`components/stocks/followup-prompts.tsx`](components/stocks/followup-prompts.tsx) 使用低干擾文字連結呈現；點擊後仍走正常 `submitUserMessage`，支援連續多輪追問。
 
 ### 8. 🛡️ 去 TradingView 依賴與原生財務/新聞卡片架構 (Native Financials & Resilient Cards)
 

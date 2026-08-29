@@ -7,7 +7,7 @@ import { MemoizedReactMarkdown } from '@/components/markdown'
 import { CodeBlock } from '@/components/ui/codeblock'
 import { FollowupPrompts } from './followup-prompts'
 import { CopyButton } from '@/components/copy-button'
-import { isActionableFollowup } from '@/lib/followup-suggestions'
+import { parseCaptionWithFollowups } from '@/lib/followup-suggestions'
 
 interface BotCaptionProps {
   content: string
@@ -16,21 +16,7 @@ interface BotCaptionProps {
 export function BotCaption({ content }: BotCaptionProps) {
   if (!content) return null
 
-  // Check if caption contains suggested follow-ups delimiter
-  const parts = content.split(
-    /---SUGGESTIONS---|===SUGGESTIONS===|【自主續問建議】|【續問建議】/i
-  )
-
-  const mainText = parts[0]?.trim() || ''
-  const suggestionsText = parts[1]?.trim() || ''
-
-  let suggestions: string[] = []
-  if (suggestionsText) {
-    suggestions = suggestionsText
-      .split('\n')
-      .map(line => line.replace(/^[0-9]+[\.\)]\s*|^[•\-\*]\s*/, '').trim())
-      .filter(line => !line.startsWith('#') && isActionableFollowup(line))
-  }
+  const { mainText, suggestions } = parseCaptionWithFollowups(content)
 
   return (
     <div className="mt-4 space-y-3 border-t border-border/40 pt-3 text-sm leading-relaxed text-foreground">

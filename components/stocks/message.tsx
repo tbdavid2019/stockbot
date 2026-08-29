@@ -10,7 +10,7 @@ import remarkMath from 'remark-math'
 import { StreamableValue } from 'ai/rsc'
 import { useStreamableText } from '@/lib/hooks/use-streamable-text'
 import { FollowupPrompts } from './followup-prompts'
-import { isActionableFollowup } from '@/lib/followup-suggestions'
+import { parseCaptionWithFollowups } from '@/lib/followup-suggestions'
 import { CopyButton } from '@/components/copy-button'
 
 // Different types of message bubbles.
@@ -47,19 +47,7 @@ export function BotMessage({
 }) {
   const text = useStreamableText(content)
 
-  const parts = text.split(
-    /---SUGGESTIONS---|===SUGGESTIONS===|【自主續問建議】|【續問建議】/i
-  )
-  const mainText = parts[0]?.trim() || ''
-  const suggestionsText = parts[1]?.trim() || ''
-
-  let suggestions: string[] = []
-  if (suggestionsText) {
-    suggestions = suggestionsText
-      .split('\n')
-      .map(line => line.replace(/^[0-9]+[\.\)]\s*|^[•\-\*]\s*/, '').trim())
-      .filter(line => !line.startsWith('#') && isActionableFollowup(line))
-  }
+  const { mainText, suggestions } = parseCaptionWithFollowups(text)
 
   const displayText = mainText || text
 
