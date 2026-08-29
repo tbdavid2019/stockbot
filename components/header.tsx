@@ -46,7 +46,7 @@ export function Header() {
           onClick={handleNewChat}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'flex items-center gap-1 text-[11px] font-semibold sm:text-xs'
+            'flex items-center gap-1 text-sm font-semibold'
           )}
           style={{ borderRadius: 6, color: '#F55036', padding: '4px 8px' }}
         >
@@ -61,8 +61,8 @@ export function Header() {
         <ChatHistorySheet />
       </div>
 
-      <div className="flex min-w-0 shrink items-center gap-1.5 text-right text-xs sm:gap-2">
-        <div className="hidden text-[11px] leading-snug text-orange-600 sm:block sm:text-xs">
+      <div className="flex min-w-0 shrink items-center gap-1.5 text-sm sm:gap-2">
+        <div className="hidden text-sm leading-snug text-orange-600 sm:block">
           本機器人沒有提供投資建議，若需要投資建議請用{' '}
           <a
             href="https://t.me/oli_billion_bot"
@@ -84,7 +84,7 @@ export function Header() {
             Telegram
           </a>
         </div>
-        <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-[10px] shadow-sm sm:text-[11px]">
+        <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-xs shadow-sm">
           <button
             type="button"
             className={`rounded px-1.5 py-1 font-medium transition-all sm:px-2 ${
@@ -112,7 +112,7 @@ export function Header() {
         </div>
         <button
           type="button"
-          className="flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs"
+          className="flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2"
           aria-pressed={layoutMode === 'wide'}
           title={layoutMode === 'wide' ? '切換窄版' : '切換寬版'}
           onClick={() => {

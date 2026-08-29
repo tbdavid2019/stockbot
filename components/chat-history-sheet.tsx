@@ -61,7 +61,12 @@ function formatSessionTime(timestamp: number): string {
   if (diffDays === 1 || (diffDays === 0 && date.getDate() !== now.getDate())) {
     return `昨天 ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
   }
-  return date.toLocaleDateString([], { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleDateString([], {
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 interface ChatHistorySheetProps {
@@ -111,7 +116,8 @@ export function ChatHistorySheet({
     const q = searchQuery.toLowerCase()
     const matchTitle = session.title?.toLowerCase().includes(q)
     const matchMessages = session.messages?.some((m: any) => {
-      const content = typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
+      const content =
+        typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
       return content.toLowerCase().includes(q)
     })
     return matchTitle || matchMessages
@@ -119,26 +125,40 @@ export function ChatHistorySheet({
 
   // Group filtered sessions by date
   const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const todayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime()
   const yesterdayStart = todayStart - 86400000
   const last7DaysStart = todayStart - 7 * 86400000
 
   const groups = {
-    today: filteredSessions.filter(s => (s.updatedAt || s.createdAt || 0) >= todayStart),
+    today: filteredSessions.filter(
+      s => (s.updatedAt || s.createdAt || 0) >= todayStart
+    ),
     yesterday: filteredSessions.filter(
-      s => (s.updatedAt || s.createdAt || 0) >= yesterdayStart && (s.updatedAt || s.createdAt || 0) < todayStart
+      s =>
+        (s.updatedAt || s.createdAt || 0) >= yesterdayStart &&
+        (s.updatedAt || s.createdAt || 0) < todayStart
     ),
     last7Days: filteredSessions.filter(
-      s => (s.updatedAt || s.createdAt || 0) >= last7DaysStart && (s.updatedAt || s.createdAt || 0) < yesterdayStart
+      s =>
+        (s.updatedAt || s.createdAt || 0) >= last7DaysStart &&
+        (s.updatedAt || s.createdAt || 0) < yesterdayStart
     ),
-    older: filteredSessions.filter(s => (s.updatedAt || s.createdAt || 0) < last7DaysStart)
+    older: filteredSessions.filter(
+      s => (s.updatedAt || s.createdAt || 0) < last7DaysStart
+    )
   }
 
   const handleSelect = (id: string) => {
     if (onSelectChat) {
       onSelectChat(id)
     } else {
-      window.dispatchEvent(new CustomEvent(CHAT_SELECT_EVENT, { detail: { id } }))
+      window.dispatchEvent(
+        new CustomEvent(CHAT_SELECT_EVENT, { detail: { id } })
+      )
     }
     setIsOpen(false)
   }
@@ -190,7 +210,7 @@ export function ChatHistorySheet({
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
             title="查看對話歷史紀錄 (Chat History)"
           >
             <span className="text-base">📜</span>
@@ -204,13 +224,18 @@ export function ChatHistorySheet({
         )}
       </SheetTrigger>
 
-      <SheetContent side="left" className="flex w-[88vw] max-w-sm flex-col p-0 sm:max-w-md">
+      <SheetContent
+        side="left"
+        className="flex w-[88vw] max-w-sm flex-col p-0 sm:max-w-md"
+      >
         {/* Header */}
         <SheetHeader className="border-b px-4 py-3 text-left">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xl">📈</span>
-              <SheetTitle className="text-base font-bold">對話歷史紀錄</SheetTitle>
+              <SheetTitle className="text-base font-bold">
+                對話歷史紀錄
+              </SheetTitle>
               {sessions.length > 0 && (
                 <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
                   {sessions.length} 筆對話
@@ -265,7 +290,8 @@ export function ChatHistorySheet({
               <span className="text-3xl">📭</span>
               <p className="text-xs font-medium">目前尚無歷史紀錄</p>
               <p className="text-[11px] text-muted-foreground/80 max-w-[200px]">
-                開始向 888 StockBot 詢問股票、行情或 AI 分析，系統將自動保存於本機。
+                開始向 888 StockBot 詢問股票、行情或 AI
+                分析，系統將自動保存於本機。
               </p>
             </div>
           ) : filteredSessions.length === 0 ? (
@@ -303,7 +329,9 @@ export function ChatHistorySheet({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>確定要清除所有對話紀錄嗎？</AlertDialogTitle>
+                    <AlertDialogTitle>
+                      確定要清除所有對話紀錄嗎？
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
                       此操作將永久刪除儲存在本機瀏覽器中的所有對話紀錄，無法復原。
                     </AlertDialogDescription>
@@ -351,7 +379,10 @@ export function ChatHistorySheet({
                 )}
               >
                 {isEditing ? (
-                  <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                  <div
+                    className="flex items-center gap-1"
+                    onClick={e => e.stopPropagation()}
+                  >
                     <Input
                       type="text"
                       value={editTitle}
@@ -359,7 +390,8 @@ export function ChatHistorySheet({
                       className="h-7 text-xs"
                       autoFocus
                       onKeyDown={e => {
-                        if (e.key === 'Enter') handleSaveEdit(e as any, session.id)
+                        if (e.key === 'Enter')
+                          handleSaveEdit(e as any, session.id)
                         if (e.key === 'Escape') handleCancelEdit(e as any)
                       }}
                     />
@@ -412,9 +444,20 @@ export function ChatHistorySheet({
                     </div>
 
                     <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>{formatSessionTime(session.updatedAt || session.createdAt)}</span>
+                      <span>
+                        {formatSessionTime(
+                          session.updatedAt || session.createdAt
+                        )}
+                      </span>
                       {session.messages && session.messages.length > 0 && (
-                        <span>{session.messages.filter((m: any) => m.role === 'user').length} 輪對話</span>
+                        <span>
+                          {
+                            session.messages.filter(
+                              (m: any) => m.role === 'user'
+                            ).length
+                          }{' '}
+                          輪對話
+                        </span>
                       )}
                     </div>
                   </>

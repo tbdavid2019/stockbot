@@ -198,7 +198,7 @@ export function ChatPanel({
           <div className="mb-4 px-3 sm:px-0">
             <div className="mb-2 flex items-center">
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">
+                <span className="text-sm font-medium text-muted-foreground">
                   {lang === 'zh'
                     ? '💡 建議提示語（點擊直接發問）：'
                     : '💡 Starter Prompts (Click to ask):'}
@@ -231,10 +231,10 @@ export function ChatPanel({
                     ])
                   }}
                 >
-                  <div className="line-clamp-2 text-xs font-semibold text-slate-800 dark:text-slate-100 sm:text-sm">
+                  <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base">
                     {example.heading}
                   </div>
-                  <div className="mt-0.5 line-clamp-2 text-[11px] text-zinc-600 dark:text-zinc-400 sm:text-xs">
+                  <div className="mt-0.5 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
                     {example.subheading}
                   </div>
                 </div>

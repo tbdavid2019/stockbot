@@ -288,7 +288,7 @@ export function PromptForm({
                 ? '輸入訊息或點擊 📎 上傳財報/PDF 解讀...（例如：台積電股價、TSLA 值得買嗎）'
                 : 'Send a message or click 📎 to upload financial report/PDF... (e.g. Apple stock price, Should I buy TSLA?)'
           }
-          className="min-h-[60px] w-full resize-none bg-transparent px-0 py-[1.3rem] focus-within:outline-none sm:text-sm"
+          className="min-h-[60px] w-full resize-none bg-transparent px-0 py-[1.3rem] text-base focus-within:outline-none"
           autoFocus
           spellCheck={false}
           autoComplete="off"
