@@ -308,6 +308,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const response = await generateText({
         model: client(candidate.model),
+        abortSignal: AbortSignal.timeout(5000),
         messages: [
           {
             role: 'system',
@@ -482,12 +483,20 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
                 ),
               comparisonSymbols: z
-                .array(
-                  z.object({
-                    symbol: z.string(),
-                    position: z.literal('SameScale')
-                  })
-                )
+                .union([
+                  z.array(
+                    z.union([
+                      z.string(),
+                      z.object({
+                        symbol: z.string(),
+                        position: z.string().optional()
+                      })
+                    ])
+                  ),
+                  z.null(),
+                  z.undefined()
+                ])
+                .optional()
                 .default([])
                 .describe(
                   'Optional list of symbols to compare. e.g. ["MSFT", "GOOGL"]'
@@ -501,10 +510,31 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
+              const normalizedComparison = Array.isArray(comparisonSymbols)
+                ? (comparisonSymbols
+                    .map((item: any) => {
+                      if (!item) return null
+                      if (typeof item === 'string') {
+                        return { symbol: item, position: 'SameScale' as const }
+                      }
+                      if (typeof item === 'object' && item.symbol) {
+                        return {
+                          symbol: String(item.symbol),
+                          position: 'SameScale' as const
+                        }
+                      }
+                      return null
+                    })
+                    .filter(Boolean) as {
+                    symbol: string
+                    position: 'SameScale'
+                  }[])
+                : []
+
               const liveContext = await fetchLiveStockContext(symbol)
               const caption = await generateCaption(
                 symbol,
-                comparisonSymbols,
+                normalizedComparison,
                 'showStockChart',
                 aiState,
                 liveContext
@@ -524,7 +554,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                         type: 'tool-call',
                         toolName: 'showStockChart',
                         toolCallId,
-                        args: { symbol, comparisonSymbols }
+                        args: { symbol, comparisonSymbols: normalizedComparison }
                       }
                     ]
                   },
@@ -536,7 +566,11 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                         type: 'tool-result',
                         toolName: 'showStockChart',
                         toolCallId,
-                        result: { symbol, comparisonSymbols, caption }
+                        result: {
+                          symbol,
+                          comparisonSymbols: normalizedComparison,
+                          caption
+                        }
                       }
                     ]
                   }
@@ -547,7 +581,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 <BotCard>
                   <StockChart
                     symbol={symbol}
-                    comparisonSymbols={comparisonSymbols}
+                    comparisonSymbols={normalizedComparison}
                   />
                   <BotCaption content={caption} />
                 </BotCard>

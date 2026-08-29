@@ -32,43 +32,70 @@ export async function searchWeb2MD(
   query: string,
   limit = 5
 ): Promise<TwoMDResultItem[]> {
+  if (!query || !query.trim()) return []
+
   for (const baseUrl of ENDPOINTS) {
     try {
-      const searchUrl = `${baseUrl.replace(/\/+$/, '')}/search?q=${encodeURIComponent(query)}`
+      const searchUrl = `${baseUrl.replace(/\/+$/, '')}/search?q=${encodeURIComponent(query.trim())}`
       const res = await fetch(searchUrl, {
         headers: {
-          Accept: 'application/json',
+          Accept: 'application/json, text/plain, */*',
           'User-Agent': 'stockbot/2.0'
         },
+        signal: AbortSignal.timeout(3000),
         next: { revalidate: 60 }
       })
 
       if (res.ok) {
-        const data = await res.json()
-        const items = data?.data
-        if (Array.isArray(items) && items.length > 0) {
-          const results: TwoMDResultItem[] = []
-          for (const it of items) {
-            const title = String(it.title || '').trim()
-            const url = String(it.url || '').trim()
-            const description = String(it.description || '').trim()
-            if (title && url && title.length > 3) {
+        const text = await res.text()
+        if (text && text.trim().length > 0) {
+          // Attempt 1: Parse JSON
+          try {
+            const data = JSON.parse(text)
+            const items = data?.data
+            if (Array.isArray(items) && items.length > 0) {
+              const results: TwoMDResultItem[] = []
+              for (const it of items) {
+                const title = String(it.title || '').trim()
+                const url = String(it.url || '').trim()
+                const description = String(it.description || '').trim()
+                if (title && url && title.length > 2) {
+                  results.push({
+                    title,
+                    url,
+                    description,
+                    publisher: '2MD Live Search'
+                  })
+                }
+                if (results.length >= limit) break
+              }
+              if (results.length > 0) {
+                return results
+              }
+            }
+          } catch {
+            // Attempt 2: Parse plain text format "[1] Title: ... \n[1] URL Source: ... \n[1] Description: ..."
+            const regex =
+              /\[\d+\]\s*Title:\s*([^\n]+)\s*\n\[\d+\]\s*URL Source:\s*([^\n]+)\s*\n\[\d+\]\s*Description:\s*([^\n]+)/g
+            const results: TwoMDResultItem[] = []
+            let match: RegExpExecArray | null
+            while ((match = regex.exec(text)) !== null) {
               results.push({
-                title,
-                url,
-                description,
+                title: match[1].trim(),
+                url: match[2].trim(),
+                description: match[3].trim(),
                 publisher: '2MD Live Search'
               })
+              if (results.length >= limit) break
             }
-            if (results.length >= limit) break
-          }
-          if (results.length > 0) {
-            return results
+            if (results.length > 0) {
+              return results
+            }
           }
         }
       }
-    } catch (err) {
-      console.warn(`[2MD Search] Failed on ${baseUrl}:`, err)
+    } catch (err: any) {
+      console.warn(`[2MD Search] Failed on ${baseUrl}:`, err?.message || err)
       continue
     }
   }
@@ -80,7 +107,8 @@ export async function searchWeb2MD(
  * Read any web page, online financial article, or remote PDF URL and convert to Markdown.
  */
 export async function readUrl2MD(targetUrl: string): Promise<string> {
-  const cleanTarget = targetUrl.replace(/^https?:\/\//, '')
+  if (!targetUrl || !targetUrl.trim()) return ''
+  const cleanTarget = targetUrl.replace(/^https?:\/\//, '').trim()
   for (const baseUrl of ENDPOINTS) {
     try {
       const endpoint = `${baseUrl.replace(/\/+$/, '')}/${cleanTarget}`
@@ -89,6 +117,7 @@ export async function readUrl2MD(targetUrl: string): Promise<string> {
           Accept: 'text/markdown, text/plain, */*',
           'User-Agent': 'stockbot/2.0'
         },
+        signal: AbortSignal.timeout(4500),
         next: { revalidate: 300 }
       })
 
@@ -98,8 +127,8 @@ export async function readUrl2MD(targetUrl: string): Promise<string> {
           return text
         }
       }
-    } catch (err) {
-      console.warn(`[2MD ReadUrl] Failed on ${baseUrl}:`, err)
+    } catch (err: any) {
+      console.warn(`[2MD ReadUrl] Failed on ${baseUrl}:`, err?.message || err)
       continue
     }
   }
@@ -219,12 +248,18 @@ export async function fetchLiveFinancialIntelligence(
     includeNews?: boolean
   }
 ): Promise<string> {
-  if (!query) return ''
-  try {
-    const cleanQuery = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
-    const isChinese =
-      options?.lang === 'zh' ||
-      (/[\u4e00-\u9fa5]/.test(query) && options?.lang !== 'en')
+  if (!query || !query.trim()) return ''
+
+  const timeoutPromise = new Promise<string>(resolve =>
+    setTimeout(() => resolve(''), 2500)
+  )
+
+  const executionPromise = (async (): Promise<string> => {
+    try {
+      const cleanQuery = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
+      const isChinese =
+        options?.lang === 'zh' ||
+        (/[\u4e00-\u9fa5]/.test(query) && options?.lang !== 'en')
 
     // Prepare bilingual search queries
     const quoteSearchQuery = isChinese
@@ -307,11 +342,14 @@ export async function fetchLiveFinancialIntelligence(
     if (sections.length > 0) {
       return sections.join('\n\n')
     }
+    return ''
   } catch (err) {
     console.warn('[fetchLiveFinancialIntelligence] Failed:', err)
+    return ''
   }
+})()
 
-  return ''
+return Promise.race([executionPromise, timeoutPromise])
 }
 
 // Backward-compatible alias for existing callers
