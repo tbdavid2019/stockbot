@@ -299,7 +299,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const response = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(8000),
+        abortSignal: AbortSignal.timeout(4500),
         messages: messagesToModel
       })
       if (response.text && response.text.trim().length > 0) {
@@ -516,51 +516,66 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   }[])
                 : []
 
-              const liveContext = await fetchLiveStockContext(symbol)
-              const caption = await generateCaption(
-                symbol,
-                normalizedComparison,
-                'showStockChart',
-                aiState,
-                liveContext
-              )
+              let liveContext = ''
+              try {
+                liveContext = await fetchLiveStockContext(symbol)
+              } catch (e) {
+                console.warn('[showStockChart] fetchLiveStockContext failed:', e)
+              }
+
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  symbol,
+                  normalizedComparison,
+                  'showStockChart',
+                  aiState,
+                  liveContext
+                )
+              } catch (e) {
+                caption = `以上是 ${symbol} 的最新即時走勢圖表與市場數據。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showStockChart',
-                        toolCallId,
-                        args: { symbol, comparisonSymbols: normalizedComparison }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showStockChart',
-                        toolCallId,
-                        result: {
-                          symbol,
-                          comparisonSymbols: normalizedComparison,
-                          caption
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showStockChart',
+                          toolCallId,
+                          args: { symbol, comparisonSymbols: normalizedComparison }
                         }
-                      }
-                    ]
-                  }
-                ]
-              })
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showStockChart',
+                          toolCallId,
+                          result: {
+                            symbol,
+                            comparisonSymbols: normalizedComparison,
+                            caption
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showStockChart] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -590,47 +605,62 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const liveContext = await fetchLiveStockContext(symbol)
-              const caption = await generateCaption(
-                symbol,
-                [],
-                'showStockPrice',
-                aiState,
-                liveContext
-              )
+              let liveContext = ''
+              try {
+                liveContext = await fetchLiveStockContext(symbol)
+              } catch (e) {
+                console.warn('[showStockPrice] fetchLiveStockContext failed:', e)
+              }
+
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  symbol,
+                  [],
+                  'showStockPrice',
+                  aiState,
+                  liveContext
+                )
+              } catch (e) {
+                caption = `以上是 ${symbol} 的最新即時報價與市場指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showStockPrice',
-                        toolCallId,
-                        args: { symbol }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showStockPrice',
-                        toolCallId,
-                        result: { symbol, caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showStockPrice',
+                          toolCallId,
+                          args: { symbol }
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showStockPrice',
+                          toolCallId,
+                          result: { symbol, caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showStockPrice] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -724,47 +754,62 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const liveContext = await fetchLiveStockContext(symbol)
-              const caption = await generateCaption(
-                symbol,
-                [],
-                'showStockNews',
-                aiState,
-                liveContext
-              )
+              let liveContext = ''
+              try {
+                liveContext = await fetchLiveStockContext(symbol)
+              } catch (e) {
+                console.warn('[showStockNews] fetchLiveStockContext failed:', e)
+              }
+
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  symbol,
+                  [],
+                  'showStockNews',
+                  aiState,
+                  liveContext
+                )
+              } catch (e) {
+                caption = `以上是 ${symbol} 的最新即時市場新聞與重大動態。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showStockNews',
-                        toolCallId,
-                        args: { symbol }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showStockNews',
-                        toolCallId,
-                        result: { symbol, caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showStockNews',
+                          toolCallId,
+                          args: { symbol }
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showStockNews',
+                          toolCallId,
+                          result: { symbol, caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showStockNews] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1153,8 +1198,21 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              let results = await searchWeb2MD(query, 5)
-              const liveIntel = await fetchLiveFinancialIntelligence(query)
+              let results: any[] = []
+              let liveIntel = ''
+
+              try {
+                const [resultsRes, liveIntelRes] = await Promise.allSettled([
+                  searchWeb2MD(query, 5),
+                  fetchLiveFinancialIntelligence(query)
+                ])
+                results =
+                  resultsRes.status === 'fulfilled' ? resultsRes.value : []
+                liveIntel =
+                  liveIntelRes.status === 'fulfilled' ? liveIntelRes.value : ''
+              } catch (e) {
+                console.warn('[searchFinancialWeb] Search failed:', e)
+              }
 
               let contextData = results
                 .map(
@@ -1169,46 +1227,55 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   : liveIntel
               }
 
-              const caption = await generateCaption(
-                query,
-                [],
-                'searchFinancialWeb',
-                aiState,
-                contextData
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  query,
+                  [],
+                  'searchFinancialWeb',
+                  aiState,
+                  contextData
+                )
+              } catch (e) {
+                caption = `以上是關於「${query}」的最新市場檢索情報。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'searchFinancialWeb',
-                        toolCallId,
-                        args: { query }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'searchFinancialWeb',
-                        toolCallId,
-                        result: { query, results, caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'searchFinancialWeb',
+                          toolCallId,
+                          args: { query }
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'searchFinancialWeb',
+                          toolCallId,
+                          result: { query, results, caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[searchFinancialWeb] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>

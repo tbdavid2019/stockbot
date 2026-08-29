@@ -42,7 +42,7 @@ export async function searchWeb2MD(
           Accept: 'application/json, text/plain, */*',
           'User-Agent': 'stockbot/2.0'
         },
-        signal: AbortSignal.timeout(3000),
+        signal: AbortSignal.timeout(2000),
         next: { revalidate: 60 }
       })
 
@@ -271,7 +271,7 @@ export async function fetchLiveFinancialIntelligence(
   if (!query || !query.trim()) return ''
 
   const timeoutPromise = new Promise<string>(resolve =>
-    setTimeout(() => resolve(''), 2500)
+    setTimeout(() => resolve(''), 2000)
   )
 
   const executionPromise = (async (): Promise<string> => {
