@@ -260,11 +260,6 @@ async function generateCaptionWithProvider(
       ? symbol
       : [symbol, ...comparisonSymbols.map(obj => obj.symbol)].join(', ')
 
-  aiState.update({
-    ...aiState.get(),
-    messages: [...aiState.get().messages]
-  })
-
   const captionSystemMessage = `\
 You are an elite Wall Street Managing Director, Senior Technical Market Strategist, and Global Investment Intelligence Mentor.
 
@@ -366,7 +361,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const result = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(3000),
+        abortSignal: AbortSignal.timeout(1500),
         messages: messagesToModel
       })
 
@@ -527,7 +522,9 @@ async function submitUserMessage(content: string, userApiKey?: string) {
     }
   }
 
-  const candidates = getProviderCandidates(userApiKey)
+  // Bound routing failover. Unbounded provider loops can exceed the Server
+  // Action lifetime even when each individual provider eventually times out.
+  const candidates = getProviderCandidates(userApiKey).slice(0, 2)
   let lastError: any = null
 
   for (const candidate of candidates) {
@@ -541,6 +538,7 @@ async function submitUserMessage(content: string, userApiKey?: string) {
         model: client(candidate.toolModel),
         initial: <SpinnerMessage />,
         maxRetries: 0,
+        abortSignal: AbortSignal.timeout(3000),
         toolChoice: deterministicTool
           ? ({ type: 'tool', toolName: deterministicTool } as any)
           : 'auto',

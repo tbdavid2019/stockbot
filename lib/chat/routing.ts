@@ -102,7 +102,7 @@ export function inferDeterministicTool(
   if (!resolvedTicker) return undefined
 
   if (
-    /多位.*大師|投資大師|大師分析|大師觀點|13\s*位|值得買|該買嗎|投資價值|投資評估|multi[- ]analyst|investor view|should i buy|worth buying/i.test(
+    /多位.*大師|投資大師|大師分析|大師觀點|13\s*位|值得買|該買嗎|值得投資|適合投資|投資價值|投資評估|multi[- ]analyst|investor view|should i buy|worth buying/i.test(
       content
     )
   ) {

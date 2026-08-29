@@ -67,7 +67,8 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 將序列化對話與工具呼叫結果還原為原生 React Financial Cards，並保留 AI 對話上下文。
   - 13 個工具調用均在 `aiState.done` 前生成純文字 `caption` 並保存至 `result.caption`；卡片不再嵌套第二層 RSC stream，避免 Vercel `Connection closed.`。
   - `app/(chat)/page.tsx` 與 `app/(chat)/chat/[id]/page.tsx` 必須各自匯出 `maxDuration = 60`；只在 layout 宣告不會套用到 Vercel Server Action。
-  - 金融卡的即時資料由卡片/API 自行載入；Server Action 內禁止先用 2MD 預抓同一份資料。Caption 僅允許單一 provider、3 秒上限，失敗即使用本機 fallback。
+  - 金融卡的即時資料由卡片/API 自行載入；Server Action 內禁止先用 2MD 預抓同一份資料。Caption 僅允許單一 provider、1.5 秒上限，失敗即使用本機 fallback。
+  - `streamUI` 工具路由每個 provider 必須有明確 abort timeout，且每輪最多嘗試兩個 provider，禁止無上限串行重試。
 - **事件驅動架構 (Event-Driven Architecture)**：
   - `stockbot-chat-history-updated`：跨組件同步歷史紀錄更新。
   - `stockbot-select-chat`：即時切換指定歷史對話。

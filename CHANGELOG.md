@@ -12,7 +12,9 @@
 - 修正「要求多位大師分析卻只顯示 2MD 搜尋結果」的工具優先序錯誤；2MD 僅在沒有可解析 ticker 時負責查證。
 - 移除金融卡 caption 的巢狀 RSC token stream，改成卡片先呈現、caption 完成後以純文字更新，避免 Vercel `Connection closed.`。
 - 在首頁與歷史對話 page entry 明確設定 `maxDuration = 60`；僅放在 layout 不會套用至 Vercel Server Action。
-- 卡片 caption 不再同步等待 2MD 預抓資料，且僅嘗試一個 provider、最多 3 秒；即時資料由卡片自身 API 載入，避免拖垮 RSC 連線。
+- 卡片 caption 不再同步等待 2MD 預抓資料，且僅嘗試一個 provider、最多 1.5 秒；即時資料由卡片自身 API 載入，避免拖垮 RSC 連線。
+- 工具路由模型最多嘗試兩個 provider，單次 3 秒即中止（最壞 6 秒）；移除 caption 期間多餘的 `aiState.update()`，降低狀態競爭。
+- 補齊「值得投資／適合投資」等多輪追問語意，能繼承上一輪 ticker 並直接開啟大師分析卡。
 - 修正首頁動態提示卡提交時漏傳使用者 API key 的問題。
 
 ---
