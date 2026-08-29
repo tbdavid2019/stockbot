@@ -199,7 +199,17 @@ function getProviderCandidates(): ProviderCandidate[] {
     })
   }
 
-  return candidates
+  const uniqueCandidates: ProviderCandidate[] = []
+  const seen = new Set<string>()
+  for (const c of candidates) {
+    const key = `${c.baseURL}::${c.apiKey}::${c.model}`
+    if (!seen.has(key)) {
+      seen.add(key)
+      uniqueCandidates.push(c)
+    }
+  }
+
+  return uniqueCandidates
 }
 
 type ComparisonSymbolObject = {
@@ -289,7 +299,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
     }
   ]
 
-  const candidates = getProviderCandidates()
+  const candidates = getProviderCandidates().slice(0, 2)
 
   for (const candidate of candidates) {
     try {
@@ -299,7 +309,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const response = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(4500),
+        abortSignal: AbortSignal.timeout(2500),
         messages: messagesToModel
       })
       if (response.text && response.text.trim().length > 0) {

@@ -42,7 +42,7 @@ export async function searchWeb2MD(
           Accept: 'application/json, text/plain, */*',
           'User-Agent': 'stockbot/2.0'
         },
-        signal: AbortSignal.timeout(2000),
+        signal: AbortSignal.timeout(1500),
         next: { revalidate: 60 }
       })
 
