@@ -745,47 +745,62 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const liveContext = await fetchLiveStockContext(symbol)
-              const caption = await generateCaption(
-                symbol,
-                [],
-                'StockFinancials',
-                aiState,
-                liveContext
-              )
+              let liveContext = ''
+              try {
+                liveContext = await fetchLiveStockContext(symbol)
+              } catch (e) {
+                console.warn('[showStockFinancials] fetchLiveStockContext failed:', e)
+              }
+
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  symbol,
+                  [],
+                  'StockFinancials',
+                  aiState,
+                  liveContext
+                )
+              } catch (e) {
+                caption = `以上是 ${symbol} 的財務報表數據與核心獲利指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showStockFinancials',
-                        toolCallId,
-                        args: { symbol }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showStockFinancials',
-                        toolCallId,
-                        result: { symbol, caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showStockFinancials',
+                          toolCallId,
+                          args: { symbol }
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showStockFinancials',
+                          toolCallId,
+                          result: { symbol, caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showStockFinancials] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -888,45 +903,54 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await generateCaption(
-                'Generic',
-                [],
-                'showStockScreener',
-                aiState
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  'Generic',
+                  [],
+                  'showStockScreener',
+                  aiState
+                )
+              } catch (e) {
+                caption = `以上是通用股票篩選器與技術指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showStockScreener',
-                        toolCallId,
-                        args: {}
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showStockScreener',
-                        toolCallId,
-                        result: { caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showStockScreener',
+                          toolCallId,
+                          args: {}
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showStockScreener',
+                          toolCallId,
+                          result: { caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showStockScreener] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -946,45 +970,54 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await generateCaption(
-                'Generic',
-                [],
-                'showMarketOverview',
-                aiState
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  'Generic',
+                  [],
+                  'showMarketOverview',
+                  aiState
+                )
+              } catch (e) {
+                caption = `以上是今日全球主要股匯債市總覽行情。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showMarketOverview',
-                        toolCallId,
-                        args: {}
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showMarketOverview',
-                        toolCallId,
-                        result: { caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showMarketOverview',
+                          toolCallId,
+                          args: {}
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showMarketOverview',
+                          toolCallId,
+                          result: { caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showMarketOverview] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1004,45 +1037,54 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await generateCaption(
-                'Generic',
-                [],
-                'showMarketHeatmap',
-                aiState
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  'Generic',
+                  [],
+                  'showMarketHeatmap',
+                  aiState
+                )
+              } catch (e) {
+                caption = `以上是全球股市板塊資金輪動熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showMarketHeatmap',
-                        toolCallId,
-                        args: {}
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showMarketHeatmap',
-                        toolCallId,
-                        result: { caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showMarketHeatmap',
+                          toolCallId,
+                          args: {}
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showMarketHeatmap',
+                          toolCallId,
+                          result: { caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showMarketHeatmap] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1062,45 +1104,54 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await generateCaption(
-                'Generic',
-                [],
-                'showETFHeatmap',
-                aiState
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  'Generic',
+                  [],
+                  'showETFHeatmap',
+                  aiState
+                )
+              } catch (e) {
+                caption = `以上是全球 ETF 資產板塊與資金流向熱力圖。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showETFHeatmap',
-                        toolCallId,
-                        args: {}
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showETFHeatmap',
-                        toolCallId,
-                        result: { caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showETFHeatmap',
+                          toolCallId,
+                          args: {}
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showETFHeatmap',
+                          toolCallId,
+                          result: { caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showETFHeatmap] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1120,45 +1171,54 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await generateCaption(
-                'Generic',
-                [],
-                'showTrendingStocks',
-                aiState
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  'Generic',
+                  [],
+                  'showTrendingStocks',
+                  aiState
+                )
+              } catch (e) {
+                caption = `以上是今日市場熱門成交量能與漲跌排行。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'showTrendingStocks',
-                        toolCallId,
-                        args: {}
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'showTrendingStocks',
-                        toolCallId,
-                        result: { caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'showTrendingStocks',
+                          toolCallId,
+                          args: {}
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'showTrendingStocks',
+                          toolCallId,
+                          result: { caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[showTrendingStocks] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1188,47 +1248,62 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const liveContext = await fetchLiveStockContext(symbol)
-              const caption = await generateCaption(
-                symbol,
-                [],
-                'analyzeStockWithAI',
-                aiState,
-                liveContext
-              )
+              let liveContext = ''
+              try {
+                liveContext = await fetchLiveStockContext(symbol)
+              } catch (e) {
+                console.warn('[analyzeStockWithAI] fetchLiveStockContext failed:', e)
+              }
+
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  symbol,
+                  [],
+                  'analyzeStockWithAI',
+                  aiState,
+                  liveContext
+                )
+              } catch (e) {
+                caption = `以上是 ${symbol} 的 13 位傳奇大師多維 AI 投資分析。\n\n---SUGGESTIONS---\n- 📊 查看即時技術走勢圖與均線結構\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'analyzeStockWithAI',
-                        toolCallId,
-                        args: { symbol }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'analyzeStockWithAI',
-                        toolCallId,
-                        result: { symbol, caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'analyzeStockWithAI',
+                          toolCallId,
+                          args: { symbol }
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'analyzeStockWithAI',
+                          toolCallId,
+                          result: { symbol, caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[analyzeStockWithAI] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1348,55 +1423,70 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const text = await readUrl2MD(url)
+              let text = ''
+              try {
+                text = await readUrl2MD(url)
+              } catch (e) {
+                console.warn('[readWebPage] readUrl2MD failed:', e)
+              }
+
               const contextData = `【網頁全文擷取 (${url})】：\n${text ? text.slice(0, 2000) : '未獲取到內容'}`
 
-              const caption = await generateCaption(
-                url,
-                [],
-                'readWebPage',
-                aiState,
-                contextData
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  url,
+                  [],
+                  'readWebPage',
+                  aiState,
+                  contextData
+                )
+              } catch (e) {
+                caption = `以上是從網址 ${url} 讀取整理的內容摘要。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'readWebPage',
-                        toolCallId,
-                        args: { url }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'readWebPage',
-                        toolCallId,
-                        result: {
-                          url,
-                          content: text
-                            ? text.slice(0, 3000)
-                            : '無法讀取網頁內容',
-                          caption
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'readWebPage',
+                          toolCallId,
+                          args: { url }
                         }
-                      }
-                    ]
-                  }
-                ]
-              })
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'readWebPage',
+                          toolCallId,
+                          result: {
+                            url,
+                            content: text
+                              ? text.slice(0, 3000)
+                              : '無法讀取網頁內容',
+                            caption
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[readWebPage] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1456,57 +1546,78 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const result = await publishToWiki({
-                title,
-                slug,
-                markdown: content,
-                theme
-              })
+              let result: Awaited<ReturnType<typeof publishToWiki>> = {
+                success: false,
+                error: ''
+              }
+              try {
+                result = await publishToWiki({
+                  title,
+                  slug,
+                  markdown: content,
+                  theme
+                })
+              } catch (e: any) {
+                console.warn('[publishToDavid888Wiki] publishToWiki failed:', e)
+                result = {
+                  success: false,
+                  error: e?.message || '發布失敗'
+                }
+              }
 
               const contextData = result.success
                 ? `【Wiki 發布成功】：標題: ${title} | 公開分享網址 (shareUrl): ${result.shareUrl} | 簡報網址: ${result.presentUrl} | 電子書網址: ${result.bookUrl}`
                 : `【Wiki 發布失敗】：${result.error}`
 
-              const caption = await generateCaption(
-                title,
-                [],
-                'publishToDavid888Wiki',
-                aiState,
-                contextData
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  title,
+                  [],
+                  'publishToDavid888Wiki',
+                  aiState,
+                  contextData
+                )
+              } catch (e) {
+                caption = `以上是已為您整理並發布至 Wiki 的研究報告「${title}」。\n\n---SUGGESTIONS---\n- 📊 查看即時技術走勢圖與均線結構\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'publishToDavid888Wiki',
-                        toolCallId,
-                        args: { title, slug, content, theme }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'publishToDavid888Wiki',
-                        toolCallId,
-                        result: { ...result, caption }
-                      }
-                    ]
-                  }
-                ]
-              })
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'publishToDavid888Wiki',
+                          toolCallId,
+                          args: { title, slug, content, theme }
+                        }
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'publishToDavid888Wiki',
+                          toolCallId,
+                          result: { ...result, caption }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[publishToDavid888Wiki] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
@@ -1553,54 +1664,69 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const text = await readUrl2MD(url)
+              let text = ''
+              try {
+                text = await readUrl2MD(url)
+              } catch (e) {
+                console.warn('[readFinancialReport] readUrl2MD failed:', e)
+              }
+
               const contextData = `【財報/年報/PDF 全文解析 (${url})】：\n${text ? text.slice(0, 4000) : '未獲取到內容'}`
 
-              const caption = await generateCaption(
-                symbol || url,
-                [],
-                'readFinancialReport',
-                aiState,
-                contextData
-              )
+              let caption = ''
+              try {
+                caption = await generateCaption(
+                  symbol || url,
+                  [],
+                  'readFinancialReport',
+                  aiState,
+                  contextData
+                )
+              } catch (e) {
+                caption = `以上是從財報文件解析的主要財務數據與經營指標。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+              }
 
               const toolCallId = nanoid()
 
-              aiState.done({
-                ...aiState.get(),
-                messages: [
-                  ...aiState.get().messages,
-                  {
-                    id: nanoid(),
-                    role: 'assistant',
-                    content: [
-                      {
-                        type: 'tool-call',
-                        toolName: 'readFinancialReport',
-                        toolCallId,
-                        args: { url, symbol }
-                      }
-                    ]
-                  },
-                  {
-                    id: nanoid(),
-                    role: 'tool',
-                    content: [
-                      {
-                        type: 'tool-result',
-                        toolName: 'readFinancialReport',
-                        toolCallId,
-                        result: {
-                          url,
-                          symbol,
-                          content: text ? text.slice(0, 5000) : '無法讀取財報內容',
-                          caption
+              try {
+                aiState.done({
+                  ...aiState.get(),
+                  messages: [
+                    ...aiState.get().messages,
+                    {
+                      id: nanoid(),
+                      role: 'assistant',
+                      content: [
+                        {
+                          type: 'tool-call',
+                          toolName: 'readFinancialReport',
+                          toolCallId,
+                          args: { url, symbol }
                         }
-                      }
-                    ]
-                  }
-                ]
-              })
+                      ]
+                    },
+                    {
+                      id: nanoid(),
+                      role: 'tool',
+                      content: [
+                        {
+                          type: 'tool-result',
+                          toolName: 'readFinancialReport',
+                          toolCallId,
+                          result: {
+                            url,
+                            symbol,
+                            content: text ? text.slice(0, 5000) : '無法讀取財報內容',
+                            caption
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                })
+              } catch (e) {
+                console.warn('[readFinancialReport] aiState.done failed:', e)
+              }
 
               return (
                 <BotCard>
