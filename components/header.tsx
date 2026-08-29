@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 
 export function Header() {
   const router = useRouter()
+  const [lang, setLang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const [layoutMode, setLayoutMode] = useLocalStorage<'narrow' | 'wide'>(
     'stockbot_layout_mode',
     'narrow'
@@ -82,6 +83,32 @@ export function Header() {
           >
             Telegram
           </a>
+        </div>
+        <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-[11px] shadow-sm">
+          <button
+            type="button"
+            className={`rounded px-1.5 py-1 font-medium transition-all sm:px-2 ${
+              lang === 'zh'
+                ? 'bg-background font-semibold text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setLang('zh')}
+            aria-pressed={lang === 'zh'}
+          >
+            繁中
+          </button>
+          <button
+            type="button"
+            className={`rounded px-1.5 py-1 font-medium transition-all sm:px-2 ${
+              lang === 'en'
+                ? 'bg-background font-semibold text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => setLang('en')}
+            aria-pressed={lang === 'en'}
+          >
+            EN
+          </button>
         </div>
         <button
           type="button"

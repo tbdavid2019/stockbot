@@ -160,7 +160,7 @@ export function ChatPanel({
       >
         {messages.length === 0 && (
           <div className="mb-4 px-3 sm:px-0">
-            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-2 flex items-center">
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span className="text-xs font-medium text-muted-foreground">
                   {lang === 'zh'
@@ -170,30 +170,6 @@ export function ChatPanel({
                 <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:text-orange-300">
                   🔥 {lang === 'zh' ? '今日動態標的' : 'Daily Picks'}
                 </span>
-              </div>
-              <div className="inline-flex self-end rounded-lg border bg-muted/60 p-0.5 text-xs shadow-sm sm:self-auto">
-                <button
-                  type="button"
-                  className={`rounded-md px-1.5 py-1 text-xs font-medium transition-all sm:px-2.5 ${
-                    lang === 'zh'
-                      ? 'bg-background text-foreground shadow-sm font-semibold'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  onClick={() => setLang('zh')}
-                >
-                  🇹🇼 繁體中文
-                </button>
-                <button
-                  type="button"
-                  className={`rounded-md px-1.5 py-1 text-xs font-medium transition-all sm:px-2.5 ${
-                    lang === 'en'
-                      ? 'bg-background text-foreground shadow-sm font-semibold'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                  onClick={() => setLang('en')}
-                >
-                  🇺🇸 English
-                </button>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">

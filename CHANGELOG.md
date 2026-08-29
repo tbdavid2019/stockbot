@@ -4,16 +4,22 @@
 
 ---
 
-## [2026-08-29] - 深度財經洞察強化、2MD 即時行情自動注入與互動式自主續問提示鏈
+## [2026-08-29] - 2MD 全維度金融研調大腦（總經、美債、產業鏈概念股、法人籌碼）與自主續問機制
 
 ### ✨ 新增 (Added)
+- **2MD 全維度金融情報並發檢索大腦 (`fetchLiveFinancialIntelligence`)**：
+  - 徹底擺脫單一代號搜尋限制，於 [`lib/2md.ts`](lib/2md.ts) 實作多維度並發檢索引擎：
+    - 📊 **個股即時行情與估值**：即時報價、歷史本益比、殖利率、營收成長率。
+    - ⛓️ **相關個股與產業鏈供應鏈**：概念股族群、上中下游供應鏈（CoWoS、AI 伺服器、散熱、ASIC、蘋概股）、同業市佔率與估值對比。
+    - 🏦 **債券、利率與央行政策**：美債 10 年期殖利率 (US10Y)、2 年期殖利率、公債 ETF (TLT, 00679B)、Fed FOMC 利率決策、降息循環利差。
+    - 🌐 **總體經濟指標**：CPI、PPI 通膨、非農就業 (NFP)、GDP、景氣對策信號、美元指數 (DXY)、台幣匯率 (TWD/USD)。
+    - 📰 **突發財經新聞與法人籌碼**：外資與投信買賣超、融資融券、法說會指引、重大政經事件。
+    - 🪙 **大宗商品與數位資產**：原油 (WTI/Brent)、黃金 (XAU)、比特幣 (BTC)。
 - **互動式自主續問提示機制 (Suggested Follow-up Prompts)**：
   - 新增 [`components/stocks/followup-prompts.tsx`](components/stocks/followup-prompts.tsx) 與 [`components/stocks/bot-caption.tsx`](components/stocks/bot-caption.tsx)。
-  - 在每次 AI 回應與金融圖表下方，自動動態生成 3 ~ 4 個量身定制的自主續問按鈕（例如大師 AI 分析、配息殖利率、最新季報解讀、技術走勢圖等），使用者可一鍵點擊快速追問，免手動重複輸入。
-- **2MD 即時行情與公司數據自動注入 (`fetchLiveStockContext`)**：
-  - 於 [`lib/2md.ts`](lib/2md.ts) 實作 `fetchLiveStockContext`，在調用股票圖表、即時報價、財務報表與大師分析時，自動在背景檢索即時股價、漲跌動能、本益比、殖利率與營運亮點。
-- **LLM 財經深度解讀大幅強化**：
-  - 重構 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 的 `generateCaption` 與 System Prompt，徹底解決過往僅回覆單句客套空話的問題，改為提供包含最新盤勢、產業地位、財務指標與催化劑的機構級專業解說。
+  - 在每次 AI 回應與金融圖表下方，自動動態生成 3 ~ 4 個跨維度（概念股供應鏈、總經債券、季報大師解讀）的自主續問按鈕，使用者可一鍵點擊快速追問，免手動重複輸入。
+- **LLM 機構級財經深度解讀全面強化**：
+  - 重構 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 的 `generateCaption` 與 System Prompt，徹底解決過往僅回覆單句客套空話的問題，改為提供包含宏觀利率、產業鏈、財務指標與催化劑的機構級全方位專業解說。
 
 ---
 

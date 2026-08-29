@@ -207,24 +207,78 @@ export async function batchReadUrls2MD(urls: string[]): Promise<{ url: string; c
 }
 
 /**
- * Fetch live stock quotes, market summary, and company performance from 2MD search.
+ * Multi-dimensional Live Financial Intelligence Search (Macro, Bonds, Peers, Breaking News & Quotes)
  */
-export async function fetchLiveStockContext(query: string): Promise<string> {
+export async function fetchLiveFinancialIntelligence(
+  query: string,
+  options?: {
+    includePeers?: boolean
+    includeMacro?: boolean
+    includeNews?: boolean
+  }
+): Promise<string> {
   if (!query) return ''
   try {
     const cleanQuery = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
-    const searchTerms = `${cleanQuery} 股票 股價 即時行情 營收 殖利率`
-    const results = await searchWeb2MD(searchTerms, 4)
-    if (results.length > 0) {
-      return results
-        .map(
-          (r, i) =>
-            `[即時行情與財經摘要 ${i + 1}] ${r.title}：${r.description}`
-        )
-        .join('\n')
+
+    // Dispatch concurrent multi-dimensional intelligence searches via 2MD
+    const searches = [
+      // 1. Core Quotes & Financial Metrics
+      searchWeb2MD(`${cleanQuery} 即時股價 漲跌 營收 本益比 殖利率`, 3),
+      // 2. Related Peers & Supply Chain
+      options?.includePeers !== false
+        ? searchWeb2MD(`${cleanQuery} 相關概念股 供應鏈 同業比較`, 3)
+        : Promise.resolve([]),
+      // 3. Macro, Bonds & Interest Rates
+      options?.includeMacro !== false
+        ? searchWeb2MD(`${cleanQuery} 總體經濟 聯準會 美債殖利率 降息 產業趨勢`, 3)
+        : Promise.resolve([]),
+      // 4. Breaking Financial News & Institutional Flows
+      options?.includeNews !== false
+        ? searchWeb2MD(`${cleanQuery} 最新財經新聞 法人外資買賣超 法說會`, 3)
+        : Promise.resolve([])
+    ]
+
+    const [quotes, peers, macro, news] = await Promise.all(searches)
+    const sections: string[] = []
+
+    if (quotes && quotes.length > 0) {
+      sections.push(
+        `【📊 即時行情與核心財務指標】:\n` +
+          quotes.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
+      )
+    }
+
+    if (peers && peers.length > 0) {
+      sections.push(
+        `【⛓️ 相關個股、供應鏈與同業】:\n` +
+          peers.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
+      )
+    }
+
+    if (macro && macro.length > 0) {
+      sections.push(
+        `【🏦 總體經濟、美債利率與產業環境】:\n` +
+          macro.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
+      )
+    }
+
+    if (news && news.length > 0) {
+      sections.push(
+        `【📰 最新新聞、法人籌碼與重大事件】:\n` +
+          news.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
+      )
+    }
+
+    if (sections.length > 0) {
+      return sections.join('\n\n')
     }
   } catch (err) {
-    console.warn('[fetchLiveStockContext] Failed:', err)
+    console.warn('[fetchLiveFinancialIntelligence] Failed:', err)
   }
+
   return ''
 }
+
+// Backward-compatible alias for existing callers
+export const fetchLiveStockContext = fetchLiveFinancialIntelligence
