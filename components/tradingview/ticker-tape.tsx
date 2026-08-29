@@ -30,7 +30,7 @@ export function TickerTape() {
       symbols: INDEX_SYMBOLS,
       showSymbolLogo: true,
       isTransparent: true,
-      displayMode: 'adaptive',
+      displayMode: 'compact',
       colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
       locale: 'zh_TW'
     })
@@ -42,10 +42,10 @@ export function TickerTape() {
   }, [resolvedTheme])
 
   return (
-    <div className="min-h-14 w-full min-w-0 max-w-full overflow-hidden border-b border-border bg-background">
+    <div className="w-full min-w-0 max-w-full overflow-hidden border-b border-border bg-background">
       <div
         ref={tradingViewContainer}
-        className="h-14 min-w-0 overflow-hidden bg-background"
+        className="min-h-12 min-w-0 overflow-hidden bg-background"
       />
     </div>
   )
