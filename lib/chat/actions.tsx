@@ -705,7 +705,7 @@ async function submitUserMessage(content: string, userApiKey?: string) {
 
   // Bound routing failover. Unbounded provider loops can exceed the Server
   // Action lifetime even when each individual provider eventually times out.
-  const candidates = getProviderCandidates(userApiKey).slice(0, 1)
+  const candidates = getProviderCandidates(userApiKey).slice(0, 2)
   let lastError: any = null
 
   for (const candidate of candidates) {
