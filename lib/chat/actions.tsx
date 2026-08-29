@@ -337,6 +337,70 @@ async function submitUserMessage(content: string) {
   let textStream: undefined | ReturnType<typeof createStreamableValue<string>>
   let textNode: undefined | React.ReactNode
 
+  const rawAiMessages = aiState.get().messages || []
+  const sanitizedMessages: { role: 'user' | 'assistant'; content: string }[] = []
+
+  for (const message of rawAiMessages) {
+    if (message.role === 'user') {
+      const contentStr =
+        typeof message.content === 'string'
+          ? message.content
+          : JSON.stringify(message.content)
+      if (contentStr && contentStr.trim()) {
+        sanitizedMessages.push({
+          role: 'user',
+          content: contentStr
+        })
+      }
+    } else if (message.role === 'assistant') {
+      if (typeof message.content === 'string' && message.content.trim()) {
+        sanitizedMessages.push({
+          role: 'assistant',
+          content: message.content
+        })
+      } else if (Array.isArray(message.content)) {
+        const textParts = message.content
+          .map((c: any) => {
+            if (c.type === 'tool-call') {
+              return `[已調用金融工具 ${c.toolName}，參數: ${JSON.stringify(c.args || {})}]`
+            }
+            if (typeof c === 'string') return c
+            return ''
+          })
+          .filter(Boolean)
+          .join('\n')
+        if (textParts) {
+          sanitizedMessages.push({
+            role: 'assistant',
+            content: textParts
+          })
+        }
+      }
+    } else if (message.role === 'tool') {
+      if (Array.isArray(message.content)) {
+        const textParts = message.content
+          .map((c: any) => {
+            if (c.type === 'tool-result') {
+              const cap = c.result?.caption || ''
+              return cap
+                ? `[工具分析與即時數據結果]: ${cap}`
+                : `[工具 ${c.toolName} 已成功呈現]`
+            }
+            if (typeof c === 'string') return c
+            return ''
+          })
+          .filter(Boolean)
+          .join('\n')
+        if (textParts) {
+          sanitizedMessages.push({
+            role: 'assistant',
+            content: textParts
+          })
+        }
+      }
+    }
+  }
+
   const candidates = getProviderCandidates()
   let lastError: any = null
 
@@ -425,13 +489,7 @@ Example 4 (Wiki Publishing):
 User: 請幫我為 TSMC 寫一份深度的 Q3 投資研究報告並發布到 Wiki
 Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "publishToDavid888Wiki" }, "parameters": { "title": "TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告", "slug": "tsmc-2026-q3-report", "content": "# TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告\n\n> 執行摘要：台積電在全球先進製程保持領先地位...\n\n[TOC]\n\n## 1. 核心競爭優勢與製程進展\n...", "theme": "claude-canvas" } } }
     `,
-        messages: [
-          ...aiState.get().messages.map((message: any) => ({
-            role: message.role,
-            content: message.content,
-            name: message.name
-          }))
-        ],
+        messages: sanitizedMessages,
         text: ({ content, done, delta }) => {
           if (!textStream) {
             textStream = createStreamableValue('')
