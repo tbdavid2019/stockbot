@@ -29,7 +29,12 @@ import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 import { BotCaption } from '@/components/stocks/bot-caption'
-import { searchWeb2MD, readUrl2MD, fetchLiveStockContext } from '@/lib/2md'
+import {
+  searchWeb2MD,
+  readUrl2MD,
+  fetchLiveStockContext,
+  fetchLiveFinancialIntelligence
+} from '@/lib/2md'
 import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
 
@@ -298,6 +303,35 @@ ${contextData ? `\n【最新即時檢索數據與行情資訊】：\n${contextDa
 Language: reply in the same language the user used most recently. If Chinese, reply in Traditional Chinese (繁體中文). If English, reply in English.
     `
 
+  const rawMessages = aiState.get().messages || []
+  const conversationHistory: { role: 'user' | 'assistant'; content: string }[] =
+    []
+  for (const msg of rawMessages) {
+    if (typeof msg.content === 'string' && msg.content.trim().length > 0) {
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        conversationHistory.push({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content
+        })
+      }
+    }
+  }
+
+  const messagesToModel: {
+    role: 'system' | 'user' | 'assistant'
+    content: string
+  }[] = [
+    {
+      role: 'system',
+      content: captionSystemMessage
+    },
+    ...conversationHistory.slice(-4),
+    {
+      role: 'user',
+      content: `請依據上述對話脈絡與最新檢索資訊，針對「${symbol}」提供深入的機構級財經、新聞、產業鏈與估值洞察分析，並於結尾附上 ---SUGGESTIONS--- 自主續問建議。`
+    }
+  ]
+
   const candidates = getProviderCandidates()
 
   for (const candidate of candidates) {
@@ -308,29 +342,22 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const response = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(5000),
-        messages: [
-          {
-            role: 'system',
-            content: captionSystemMessage
-          },
-          ...aiState.get().messages.map((message: any) => ({
-            role: message.role,
-            content:
-              typeof message.content === 'string'
-                ? message.content
-                : JSON.stringify(message.content),
-            name: message.name
-          }))
-        ]
+        abortSignal: AbortSignal.timeout(8000),
+        messages: messagesToModel
       })
-      if (response.text) return response.text
+      if (response.text && response.text.trim().length > 0) {
+        return response.text
+      }
     } catch (err: any) {
       console.warn(`[Caption Fallback] ${candidate.name} failed:`, err?.message)
     }
   }
 
-  return '' // Send tool use without caption if all fallbacks fail.
+  // Intelligent fallback caption if all external LLM text generation calls fail
+  const isZh = /[\u4e00-\u9fa5]/.test(symbol) || true
+  return isZh
+    ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位大師 AI 投資多維分析\n- ⛓️ 查詢相關概念股與供應鏈上下游連動\n- 🏦 分析美債殖利率與聯準會利率政策影響\n- 📑 解讀最新季度財務報表與獲利能力`
+    : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor AI consensus analysis\n- ⛓️ Analyze related supply chain & peer stocks\n- 🏦 Impact of 10Y Treasury yield & Fed rate cuts\n- 📑 Breakdown latest quarterly financials & margins`
 }
 
 async function submitUserMessage(content: string) {
@@ -368,7 +395,8 @@ async function submitUserMessage(content: string) {
         initial: <SpinnerMessage />,
         maxRetries: 0,
         system: `\
-You are a stock market conversation bot. You can provide the user information about stocks include prices and charts in the UI. You do not have access to any information and should only provide information by calling functions.
+You are an elite, institutional-grade AI Financial Analyst, Macro Strategist, and Global Investment Intelligence Mentor.
+You provide deep, data-grounded, and high-conviction financial analysis across stocks, macroeconomics, interest rates, supply chains, and industry news.
 
 Language: reply in the same language the user used most recently. If the latest user message contains Chinese characters, reply in Traditional Chinese. If it is English, reply in English. Do not switch languages unless the user does so.
 
@@ -1168,13 +1196,21 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const results = await searchWeb2MD(query, 5)
-              const contextData = results
+              let results = await searchWeb2MD(query, 5)
+              const liveIntel = await fetchLiveFinancialIntelligence(query)
+
+              let contextData = results
                 .map(
                   (r, idx) =>
                     `[結果 ${idx + 1}] 標題: ${r.title} | 摘要: ${r.description} | 網址: ${r.url}`
                 )
                 .join('\n')
+
+              if (liveIntel) {
+                contextData = contextData
+                  ? `${contextData}\n\n【2MD 全維度金融研調情報】:\n${liveIntel}`
+                  : liveIntel
+              }
 
               const caption = await generateCaption(
                 query,
