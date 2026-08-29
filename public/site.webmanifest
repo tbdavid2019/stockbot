@@ -1,7 +1,7 @@
 {
-  "name": "888 StockBot - 即時 AI 股票圖表與大師投資分析",
+  "name": "888 StockBot - Live Stock Charts & Market Analysis",
   "short_name": "888 StockBot",
-  "description": "極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。",
+  "description": "TradingView interactive charts, Taiwan and US market quotes, multi-turn market analysis, and live web search.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

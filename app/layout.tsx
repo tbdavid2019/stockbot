@@ -6,17 +6,18 @@ import { cn } from '@/lib/utils'
 import { Providers } from '@/components/providers'
 import { Header } from '@/components/header'
 import { Toaster } from '@/components/ui/sonner'
+import { DocumentLocale } from '@/components/document-locale'
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bot.david888.com'
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: '888 StockBot - 即時 AI 股票圖表與大師投資分析',
+    default: '888 StockBot - 即時股票圖表與市場分析',
     template: `%s | 888 StockBot`
   },
   description:
-    '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+    '提供 TradingView 互動式走勢圖、台美股即時報價、多輪市場分析與 2MD 即時連網搜尋。',
   keywords: [
     '888 StockBot',
     'StockBot',
@@ -35,9 +36,9 @@ export const metadata = {
     canonical: 'https://bot.david888.com'
   },
   openGraph: {
-    title: '888 StockBot - 即時 AI 股票圖表與大師投資分析',
+    title: '888 StockBot - 即時股票圖表與市場分析',
     description:
-      '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+      '提供 TradingView 互動式走勢圖、台美股即時報價、多輪市場分析與 2MD 即時連網搜尋。',
     url: 'https://bot.david888.com',
     siteName: '888 StockBot',
     locale: 'zh_TW',
@@ -47,15 +48,15 @@ export const metadata = {
         url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: '888 StockBot - 即時 AI 股票圖表與大師投資分析'
+        alt: '888 StockBot - 即時股票圖表與市場分析'
       }
     ]
   },
   twitter: {
     card: 'summary_large_image',
-    title: '888 StockBot - 即時 AI 股票圖表與大師投資分析',
+    title: '888 StockBot - 即時股票圖表與市場分析',
     description:
-      '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+      '提供 TradingView 互動式走勢圖、台美股即時報價、多輪市場分析與 2MD 即時連網搜尋。',
     site: '@david888',
     creator: '@david888',
     images: ['/twitter-image.png']
@@ -102,7 +103,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
     name: '888 StockBot',
     url: 'https://bot.david888.com',
     description:
-      '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+      '提供 TradingView 互動式走勢圖、台美股即時報價、多輪市場分析與 2MD 即時連網搜尋。',
     applicationCategory: 'FinanceApplication',
     operatingSystem: 'All',
     offers: {
@@ -134,6 +135,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           enableSystem
           disableTransitionOnChange
         >
+          <DocumentLocale />
           <div className="flex flex-col min-h-screen">
             <Header />
             <main className="flex flex-col flex-1 bg-muted/50">{children}</main>
