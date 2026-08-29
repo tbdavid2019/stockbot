@@ -4,9 +4,20 @@
 
 ---
 
+## [2026-08-29] - Header 主題切換與跑馬燈恢復
+
+### 🐛 修復 (Fixed)
+
+- **主題切換按鈕位置**：移除固定在左下角的定位，改放在 Header 右側工具區，避免遮住歷史紀錄與頁面內容。
+- **跑馬燈動畫與預設市場**：恢復自動橫向循環，補回 S&P 500、Nasdaq 100、Bitcoin 等預設項目；台股／美股 API 報價仍會每 5 分鐘更新。
+- **深色模式樣式**：報價列同步使用背景、文字與分隔線的 dark mode 顏色。
+
+---
+
 ## [2026-08-29] - 2MD AnyDoc 財報與年報深度解讀、PDF/文件上傳與分析工具鏈
 
 ### ✨ 新增 (Added)
+
 - **2MD AnyDoc 財報與年報多模態解讀引擎 (`lib/2md.ts`)**：
   - 於 [`lib/2md.ts`](lib/2md.ts) 實作 `parseDocument2MD` 與 `batchReadUrls2MD`，支援將 PDF、Word (.docx)、Excel (.xlsx/.csv)、PPT、TXT 轉換為結構化乾淨 Markdown。
   - 支援遠端財報/年報/SEC 10-K/10-Q 網址直讀 (`readUrl2MD`) 與本機文件 Multipart Form-Data 上傳解析。
@@ -24,6 +35,7 @@
 ## [2026-08-29] - 對話歷史紀錄抽屜 (Chat History Drawer)、本機 LocalStorage 持久化與無縫回顧切換
 
 ### ✨ 新增 (Added)
+
 - **對話歷史紀錄抽屜 (Chat History Drawer)**：
   - 新增 [`components/chat-history-sheet.tsx`](components/chat-history-sheet.tsx)，於頂部導覽列左側提供「📜 歷史紀錄」按鈕與動態對話數量徽章。
   - **智慧時間分組**：自動將對話依「今天 (Today)」、「昨天 (Yesterday)」、「過去 7 天 (Last 7 Days)」與「更早以前 (Older)」分組呈現。
@@ -33,11 +45,12 @@
   - 新增 [`lib/chat-history.tsx`](lib/chat-history.tsx)，每次對話與工具執行（包括 TradingView 走勢圖、即時報價、大師 AI 分析、2MD 搜尋、Wiki 發布結果）皆自動同步保存於本機 `localStorage` (`stockbot_chat_sessions_v1`)。
   - **全組件 UI State 還原器 (`createUIStateFromStoredMessages`)**：點擊歷史對話時即時將序列化狀態還原為對應的 React Financial Cards 組件與 AI 對話上下文，無須重新向 LLM 發送請求即可回顧完整圖表。
 - **動態對話路由支援**：
-  - 新增 [`app/(chat)/chat/[id]/page.tsx`](app/(chat)/chat/[id]/page.tsx)，支援直接透過 URL 分享或重新載入特定歷史對話。
+  - 新增 [`app/(chat)/chat/[id]/page.tsx`](<app/(chat)/chat/[id]/page.tsx>)，支援直接透過 URL 分享或重新載入特定歷史對話。
 - **工具伴隨總結文字持久化 (Caption Persistence)**：
   - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 更新 13 個工具調用，在寫入 `aiState.done` 前先生成 `caption` 並存放於 `result.caption`，確保歷史回顧時所有伴隨解說文字完好無損。
 
 ### 🐛 修復與 SEO 優化 (Fixed & SEO)
+
 - **修正標題重複問題 (`888 StockBot - 888 StockBot`)**：
   - 根治 Next.js `title.template` 與首頁 `metadata.title` 衝突引發的重複標題問題。
   - 將根佈局設定為 `title.default = '888 StockBot - 即時 AI 股票圖表與大師投資分析'`，子頁面使用 `%s | 888 StockBot`。
@@ -52,27 +65,32 @@
 ## [2026-08-29] - 台股跑馬燈價格修復與介面清理
 
 ### 🐛 修復 (Fixed)
+
 - **修正台股跑馬燈不顯示股價**：
   - 將 `/api/dynamic-prompts` 回傳的台股價格顯示於 TradingView 跑馬燈。
   - 強化 `TWSE`、`TPEX` 與 `.TW` / `.TWO` 股票代碼正規化。
 
 ### 🧹 介面調整 (Changed)
+
 - 移除首頁的 AI Function Calling / Vercel AI SDK / TradingView Widgets 介紹段落。
 - 移除右上角 GitHub 按鈕與 GitHub icon。
 - Footer 新增「技術提供 david888.com」。
 - 優化手機版 Header、提示卡與底部輸入面板，避免內容遮住或產生橫向溢出。
 
 ### ✨ 新增 (Added)
+
 - **完整 TradingView Stock Heatmap 市場清單**：加入官方 widget data source 可用的北美、南美、歐洲、中東非洲、亞洲與太平洋市場，並以分區下拉選單呈現，手機版不再被大量按鈕推爆。
 - **公司名稱轉股票代號**：常見中英文公司名稱可直接正規化為交易所代號；未知名稱要求先經 `searchFinancialWeb` 即時查證後再呼叫股票工具。
 
 ### 🐛 修復 (Fixed)
+
 - **修正報價快取過久**：動態股票 API 改為 5 分鐘記憶體快取、上游請求使用 `no-store`，前端每 5 分鐘刷新。
 - **修正台股價格被 TradingView iframe 隱藏**：跑馬燈改由 `/api/dynamic-prompts` 直接渲染台股／美股價格，避免 iframe 對台股標的只顯示名稱或錯誤圖示。
 
 ## [2026-08-28] - 15 輪多輪自主工具循環、David888 WikiPublisher 自主發布器與 2MD Web Reader
 
 ### ✨ 新增 (Added)
+
 - **15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)**：
   - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 支援最多 15 輪多步自主工具調用與推理鏈，實現複雜調研：搜尋 ➔ 網頁深讀 ➔ 13 位大師分析 ➔ 線圖繪製 ➔ 自動產出並發布 Wiki 報告。
 - **David888 WikiPublisher 自主發布器 (`publishToDavid888Wiki`)**：
@@ -88,6 +106,7 @@
 ## [2026-08-27] - 無限階層動態容錯路由、雙模型職責分離、3 階段漸進式加載與 2MD 即時連網搜尋
 
 ### ✨ 新增 (Added)
+
 - **無限階層動態容錯路由 (Multi-Tier Dynamic Failover Router)**：
   - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 實作全自動故障轉移路由，支援依序輪替：**Primary ➡️ Fallback #1 ➡️ Fallback #2 ➡️ ... ➡️ Fallback #N**。
   - 支援三大公有雲與具名供應商原生接入（OpenAI、Google Gemini、Azure OpenAI、Groq、DeepSeek）。
@@ -115,6 +134,7 @@
   - 所有圖表與分析卡片一律渲染於文字訊息上方，AI 伴隨說明一律使用「以上是...」、「如上方所示...」，嚴禁使用「以下是...」。
 
 ### 🐛 修復 (Fixed)
+
 - **移除舊版硬編碼 `GROQ_API_KEY` 首頁檢查**：
   - 重構 [`app/actions.ts`](app/actions.ts) 與 [`components/missing-api-key-banner.tsx`](components/missing-api-key-banner.tsx)，改為檢查是否具備任意有效 LLM API 金鑰（Primary / Fallback / Gemini / DeepSeek 等），解決未設定 `GROQ_API_KEY` 時首頁強制彈出錯誤橫幅的問題。
 - **解決 Next.js Webpack 圖示相依編譯報錯**：
@@ -127,6 +147,7 @@
 ## [2026-08-26] - 13+ 傳奇投資大師圓桌辯論分析、888 StockBot 品牌升級與動態推薦
 
 ### ✨ 新增 (Added)
+
 - **13+ 傳奇投資大師分析團隊**：
   - 擴充 AI 投資顧問團隊陣容，涵蓋巴菲特 (Warren Buffett)、蒙格 (Charlie Munger)、葛拉漢 (Ben Graham)、彼得林區 (Peter Lynch)、女股神 (Cathie Wood)、麥可貝瑞 (Michael Burry)、費雪 (Phil Fisher)、艾克曼 (Bill Ackman)、Nancy Pelosi、WSB 以及基本面/估值/技術/情緒分析師。
   - 於 [`components/tradingview/stock-analysis.tsx`](components/tradingview/stock-analysis.tsx) 支援多輪投資委員會圓桌辯論歷程（Round-table Debate Transcript）的結構化呈現與人性化看多/看空評分。
@@ -136,6 +157,7 @@
   - 更新頂部導覽列與介面識別為 888 StockBot，支援繁體中文與多國語系切換。
 
 ### 🐛 修復 (Fixed)
+
 - **Undici 限制埠號問題修復**：
   - 解決 Node.js / Undici 阻擋連線至 6000 埠 (bad port restriction) 的問題，改以原生 `node:http` 模組向 AI Hedge Fund 後端發送請求。
 - **Python NaN 數值解析修復**：
@@ -150,6 +172,7 @@
 ## [2025-12-04] - AI 投資分析模組整合與多國市場支援
 
 ### ✨ 新增 (Added)
+
 - **AI Hedge Fund API 整合**：
   - 首次整合後端多智能體 AI 避險基金分析系統，提供股票全方位分析代理 API。
 - **多國市場熱圖與概覽**：
@@ -162,5 +185,6 @@
 ## [2025-04-10] - 專案初始版本 (Initial Release)
 
 ### ✨ 新增 (Added)
+
 - Fork 自 `bklieger-groq/stockbot-on-groq`，基於 Next.js 14、Vercel AI SDK 與 Groq 超高速推理打造。
 - 整合 TradingView 互動式金融圖表、即時股價、K線圖、財務報表與股票篩選器。

@@ -11,10 +11,13 @@ export function ThemeToggle() {
   const [_, startTransition] = React.useTransition()
 
   return (
-    <div className="fixed bottom-1 left-1 z-50 flex size-6 items-center justify-center rounded-full p-4 font-mono text-xs text-white">
+    <div className="flex shrink-0 items-center justify-center">
       <Button
         size="icon"
-        variant="link"
+        variant="ghost"
+        className="size-8 rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-zinc-800 dark:hover:text-white"
+        aria-label="切換深色模式"
+        title="切換深色模式"
         onClick={() => {
           startTransition(() => {
             setTheme(theme === 'light' ? 'dark' : 'light')
