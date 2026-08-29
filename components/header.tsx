@@ -63,7 +63,9 @@ export function Header() {
 
       <div className="flex min-w-0 shrink items-center gap-1.5 text-sm sm:gap-2">
         <div className="hidden text-sm leading-snug text-orange-600 sm:block">
-          {lang === 'en' ? 'Not investment advice · ' : '非投資建議 · '}
+          {lang === 'en'
+            ? 'For reference only · Investment advice: '
+            : '本服務僅供參考；投資建議請至 '}
           <a
             href="https://t.me/oli_billion_bot"
             target="_blank"
@@ -74,7 +76,9 @@ export function Header() {
           </a>
         </div>
         <div className="whitespace-nowrap text-[9px] leading-tight text-orange-600 sm:hidden">
-          {lang === 'en' ? 'Not investment advice · ' : '非投資建議 · '}
+          {lang === 'en'
+            ? 'For reference only · Advice: '
+            : '僅供參考；投資建議：'}
           <a
             href="https://t.me/oli_billion_bot"
             target="_blank"
