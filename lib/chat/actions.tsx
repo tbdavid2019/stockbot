@@ -1199,33 +1199,18 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               )
 
               let results: any[] = []
-              let liveIntel = ''
-
               try {
-                const [resultsRes, liveIntelRes] = await Promise.allSettled([
-                  searchWeb2MD(query, 5),
-                  fetchLiveFinancialIntelligence(query)
-                ])
-                results =
-                  resultsRes.status === 'fulfilled' ? resultsRes.value : []
-                liveIntel =
-                  liveIntelRes.status === 'fulfilled' ? liveIntelRes.value : ''
+                results = await searchWeb2MD(query, 5)
               } catch (e) {
                 console.warn('[searchFinancialWeb] Search failed:', e)
               }
 
-              let contextData = results
+              const contextData = results
                 .map(
                   (r, idx) =>
                     `[結果 ${idx + 1}] 標題: ${r.title} | 摘要: ${r.description} | 網址: ${r.url}`
                 )
                 .join('\n')
-
-              if (liveIntel) {
-                contextData = contextData
-                  ? `${contextData}\n\n【2MD 全維度金融研調情報】:\n${liveIntel}`
-                  : liveIntel
-              }
 
               let caption = ''
               try {

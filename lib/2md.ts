@@ -256,124 +256,23 @@ const SYMBOL_NAMES: Record<string, string> = {
 }
 
 /**
- * Multi-dimensional Live Financial Intelligence Search (Macro, Bonds, Peers, Breaking News & Quotes)
- * Automatically adapts search queries and report structures for English and Traditional Chinese.
+ * Fetch live stock context or financial search summary from 2MD search.
  */
-export async function fetchLiveFinancialIntelligence(
-  query: string,
-  options?: {
-    lang?: 'zh' | 'en'
-    includePeers?: boolean
-    includeMacro?: boolean
-    includeNews?: boolean
-  }
-): Promise<string> {
+export async function fetchLiveStockContext(query: string): Promise<string> {
   if (!query || !query.trim()) return ''
-
-  const timeoutPromise = new Promise<string>(resolve =>
-    setTimeout(() => resolve(''), 2000)
-  )
-
-  const executionPromise = (async (): Promise<string> => {
-    try {
-      const rawClean = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
-      const isPureDigits = /^\d{4,5}$/.test(rawClean)
-      const cleanQuery = SYMBOL_NAMES[rawClean.toUpperCase()] || rawClean
-      const isChinese =
-        options?.lang === 'zh' ||
-        isPureDigits ||
-        (/[\u4e00-\u9fa5]/.test(query) && options?.lang !== 'en')
-
-      // Prepare bilingual search queries
-      const quoteSearchQuery = isChinese
-        ? `${cleanQuery} 即時股價 漲跌 營收 本益比 殖利率`
-        : `${cleanQuery} stock price quote live valuation PE ratio dividend revenue`
-
-      const peerSearchQuery = isChinese
-        ? `${cleanQuery} 相關概念股 供應鏈 同業比較 競爭對手`
-        : `${cleanQuery} supply chain peer comparison competitors related stocks`
-
-      const macroSearchQuery = isChinese
-        ? `${cleanQuery} 總體經濟 聯準會 美債殖利率 降息 產業趨勢`
-        : `${cleanQuery} macroeconomic 10Y treasury yield fed interest rate inflation outlook`
-
-      const newsSearchQuery = isChinese
-        ? `${cleanQuery} 最新財經新聞 法人外資買賣超 法說會`
-        : `${cleanQuery} breaking financial news institutional flow earnings guidance catalysts`
-
-      // Dispatch concurrent multi-dimensional intelligence searches via 2MD
-      const searches = [
-        // 1. Core Quotes & Financial Metrics
-        searchWeb2MD(quoteSearchQuery, 3),
-        // 2. Related Peers & Supply Chain
-        options?.includePeers !== false
-          ? searchWeb2MD(peerSearchQuery, 3)
-          : Promise.resolve([]),
-        // 3. Macro, Bonds & Interest Rates
-        options?.includeMacro !== false
-          ? searchWeb2MD(macroSearchQuery, 3)
-          : Promise.resolve([]),
-        // 4. Breaking Financial News & Institutional Flows
-        options?.includeNews !== false
-          ? searchWeb2MD(newsSearchQuery, 3)
-          : Promise.resolve([])
-      ]
-
-      const [quotes, peers, macro, news] = await Promise.all(searches)
-    const sections: string[] = []
-
-    if (quotes && quotes.length > 0) {
-      sections.push(
-        isChinese
-          ? `【📊 即時行情與核心財務指標】:\n` +
-              quotes.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-          : `[📊 Live Market Quotes & Key Valuation Metrics]:\n` +
-              quotes.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-      )
-    }
-
-    if (peers && peers.length > 0) {
-      sections.push(
-        isChinese
-          ? `【⛓️ 相關個股、供應鏈與同業比較】:\n` +
-              peers.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-          : `[⛓️ Supply Chain, Peer Comparison & Competitors]:\n` +
-              peers.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-      )
-    }
-
-    if (macro && macro.length > 0) {
-      sections.push(
-        isChinese
-          ? `【🏦 總體經濟、美債利率與產業環境】:\n` +
-              macro.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-          : `[🏦 Macroeconomics, Treasury Yields & Monetary Policy]:\n` +
-              macro.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-      )
-    }
-
-    if (news && news.length > 0) {
-      sections.push(
-        isChinese
-          ? `【📰 最新新聞、法人籌碼與重大事件】:\n` +
-              news.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-          : `[📰 Breaking Financial News & Institutional Flows]:\n` +
-              news.map((r, i) => `  - [${r.title}] ${r.description}`).join('\n')
-      )
-    }
-
-    if (sections.length > 0) {
-      return sections.join('\n\n')
-    }
-    return ''
+  try {
+    const rawClean = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
+    const cleanQuery = SYMBOL_NAMES[rawClean.toUpperCase()] || rawClean
+    const results = await searchWeb2MD(cleanQuery, 4)
+    if (!results || results.length === 0) return ''
+    return results
+      .map((r, i) => `[${i + 1}] ${r.title}: ${r.description}`)
+      .join('\n')
   } catch (err) {
-    console.warn('[fetchLiveFinancialIntelligence] Failed:', err)
+    console.warn('[fetchLiveStockContext] Failed:', err)
     return ''
   }
-})()
-
-return Promise.race([executionPromise, timeoutPromise])
 }
 
-// Backward-compatible alias for existing callers
-export const fetchLiveStockContext = fetchLiveFinancialIntelligence
+// Backward-compatible alias
+export const fetchLiveFinancialIntelligence = fetchLiveStockContext
