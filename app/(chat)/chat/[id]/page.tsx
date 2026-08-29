@@ -6,11 +6,9 @@ export const metadata = {
   title: '歷史對話'
 }
 
-export default async function ChatPage({
-  params
-}: {
-  params: { id: string }
-}) {
+export const maxDuration = 60
+
+export default async function ChatPage({ params }: { params: { id: string } }) {
   const missingKeys = await getMissingKeys()
 
   return (

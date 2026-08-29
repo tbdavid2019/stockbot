@@ -11,7 +11,8 @@
 - 新增 `lib/chat/routing.ts` 確定性路由：包含 ticker 的大師分析、圖表、股價、財務與新聞請求直接鎖定正確工具。
 - 修正「要求多位大師分析卻只顯示 2MD 搜尋結果」的工具優先序錯誤；2MD 僅在沒有可解析 ticker 時負責查證。
 - 移除金融卡 caption 的巢狀 RSC token stream，改成卡片先呈現、caption 完成後以純文字更新，避免 Vercel `Connection closed.`。
-- 聊天 Route Segment 設定 `maxDuration = 60`，並將 caption provider failover 限制為兩層、每層 4.5 秒。
+- 在首頁與歷史對話 page entry 明確設定 `maxDuration = 60`；僅放在 layout 不會套用至 Vercel Server Action。
+- 卡片 caption 不再同步等待 2MD 預抓資料，且僅嘗試一個 provider、最多 3 秒；即時資料由卡片自身 API 載入，避免拖垮 RSC 連線。
 - 修正首頁動態提示卡提交時漏傳使用者 API key 的問題。
 
 ---

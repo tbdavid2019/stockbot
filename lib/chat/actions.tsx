@@ -31,12 +31,7 @@ import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 import { BotCaption } from '@/components/stocks/bot-caption'
-import {
-  searchWeb2MD,
-  readUrl2MD,
-  fetchLiveStockContext,
-  fetchLiveFinancialIntelligence
-} from '@/lib/2md'
+import { searchWeb2MD, readUrl2MD } from '@/lib/2md'
 import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
 import {
@@ -358,7 +353,10 @@ Language: reply in the same language the user used most recently. If Chinese, re
     }
   ]
 
-  const candidates = getProviderCandidates().slice(0, 2)
+  // Captions are secondary UI copy. Keep them bounded so a slow provider can
+  // never hold the primary financial card open long enough to break the RSC
+  // connection. Live data is loaded by the card itself.
+  const candidates = getProviderCandidates().slice(0, 1)
 
   for (const candidate of candidates) {
     try {
@@ -368,7 +366,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const result = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(4500),
+        abortSignal: AbortSignal.timeout(3000),
         messages: messagesToModel
       })
 
@@ -737,22 +735,11 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              let liveContext = ''
-              try {
-                liveContext = await fetchLiveStockContext(formattedSymbol)
-              } catch (e) {
-                console.warn(
-                  '[showStockChart] fetchLiveStockContext failed:',
-                  e
-                )
-              }
-
               caption = await generateCaption(
                 formattedSymbol,
                 normalizedComparison,
                 'showStockChart',
-                aiState,
-                liveContext
+                aiState
               )
 
               const toolCallId = nanoid()
@@ -831,22 +818,11 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              let liveContext = ''
-              try {
-                liveContext = await fetchLiveStockContext(formattedSymbol)
-              } catch (e) {
-                console.warn(
-                  '[showStockPrice] fetchLiveStockContext failed:',
-                  e
-                )
-              }
-
               caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'showStockPrice',
-                aiState,
-                liveContext
+                aiState
               )
 
               const toolCallId = nanoid()
@@ -915,22 +891,11 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              let liveContext = ''
-              try {
-                liveContext = await fetchLiveStockContext(formattedSymbol)
-              } catch (e) {
-                console.warn(
-                  '[showStockFinancials] fetchLiveStockContext failed:',
-                  e
-                )
-              }
-
               caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'StockFinancials',
-                aiState,
-                liveContext
+                aiState
               )
 
               const toolCallId = nanoid()
@@ -999,19 +964,11 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              let liveContext = ''
-              try {
-                liveContext = await fetchLiveStockContext(formattedSymbol)
-              } catch (e) {
-                console.warn('[showStockNews] fetchLiveStockContext failed:', e)
-              }
-
               caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'showStockNews',
-                aiState,
-                liveContext
+                aiState
               )
 
               const toolCallId = nanoid()
@@ -1411,22 +1368,11 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              let liveContext = ''
-              try {
-                liveContext = await fetchLiveStockContext(formattedSymbol)
-              } catch (e) {
-                console.warn(
-                  '[analyzeStockWithAI] fetchLiveStockContext failed:',
-                  e
-                )
-              }
-
               caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'analyzeStockWithAI',
-                aiState,
-                liveContext
+                aiState
               )
 
               const toolCallId = nanoid()
