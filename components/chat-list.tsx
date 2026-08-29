@@ -24,7 +24,9 @@ export function ChatList({
 
   return (
     <div
-      className={`relative mx-auto px-4 ${wide ? 'max-w-6xl' : 'max-w-2xl'}`}
+      className={`relative mx-auto px-4 w-full transition-all duration-200 ${
+        wide ? 'max-w-7xl' : 'max-w-3xl'
+      }`}
     >
       {messages.map((message, index) => (
         <div key={message.id}>

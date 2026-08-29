@@ -32,23 +32,6 @@ const ANSWERBOOK_MARKET_DATA = {
   ]
 }
 
-const DEFAULT_TW_STOCKS: StockItem[] = [
-  { symbol: '2330', name: '台積電' },
-  { symbol: '2317', name: '鴻海' },
-  { symbol: '2454', name: '聯發科' },
-  { symbol: '2382', name: '廣達' },
-  { symbol: '1216', name: '統一' },
-  { symbol: '2881', name: '富邦金' }
-]
-
-const DEFAULT_US_STOCKS: StockItem[] = [
-  { symbol: 'AAPL', name: 'Apple' },
-  { symbol: 'NVDA', name: 'Nvidia' },
-  { symbol: 'MSFT', name: 'Microsoft' },
-  { symbol: 'TSLA', name: 'Tesla' },
-  { symbol: 'GOOGL', name: 'Alphabet' }
-]
-
 let cachedData: {
   timestamp: number
   usStocks: StockItem[]

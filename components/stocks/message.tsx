@@ -70,7 +70,7 @@ export function BotMessage({
       <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
         <div className="relative group/botmsg">
           <MemoizedReactMarkdown
-            className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0"
+            className="prose max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 w-full"
             remarkPlugins={[remarkGfm, remarkMath]}
             components={{
               p({ children }) {

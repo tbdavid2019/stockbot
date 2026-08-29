@@ -78,164 +78,69 @@ function shufflePrompts(
   return nextBatch
 }
 
-const exampleMessagesZh: ExampleMessage[] = [
+const fallbackPromptsZh: ExampleMessage[] = [
   {
-    heading: '台積電 (2330) 現價',
-    subheading: '查詢台積電即時股價',
-    message: '台積電 2330 目前股價是多少？'
+    heading: '查一檔即時股價',
+    subheading: '輸入公司名稱或代號，取得最新行情',
+    message: '請查詢我指定公司的最新股價'
   },
   {
-    heading: '查看 Google 走勢圖',
-    subheading: '顯示 $GOOGL 即時走勢圖',
-    message: '幫我顯示 GOOGL 的股票圖表'
+    heading: '看一張股票走勢圖',
+    subheading: '輸入任一台股或美股標的',
+    message: '請顯示我指定標的的股票走勢圖'
   },
   {
-    heading: '傳奇大師多維投資評估',
-    subheading: '特斯拉 (TSLA) 現在值得買嗎？',
-    message: 'TSLA 值得買嗎？請用多位大師進行深度投資價值評估'
+    heading: '多位投資大師觀點',
+    subheading: '輸入標的，查看多角度投資評估',
+    message: '請用多位投資大師分析我指定標的的投資價值'
   },
   {
-    heading: '微軟最新財務數據',
-    subheading: '微軟 (MSFT) 最新財報狀況',
-    message: '微軟 MSFT 最近的財務數據如何？'
+    heading: '拆解最新財務數據',
+    subheading: '營收、獲利、毛利率與估值一次看',
+    message: '請整理我指定公司的最新財務數據與估值'
   },
   {
-    heading: '今日美股產業表現',
-    subheading: '查看各產業板塊熱力圖',
-    message: '今天股票市場各產業表現如何？'
+    heading: '找出產業鏈標的',
+    subheading: '從公司往上游、下游與同業延伸',
+    message: '請整理我指定公司的供應鏈與相關概念股'
   },
   {
-    heading: '📑 財報與年報深度解讀',
-    subheading: '點擊 📎 上傳 PDF 或輸入財報網址',
-    message:
-      '請告訴我可以如何上傳公司財報 PDF 或輸入財報網址讓您進行深度財務比率與大師投資分析？'
-  },
-  {
-    heading: '台股供應鏈快覽',
-    subheading: '找出上下游與同產業連動標的',
-    message: '請整理今天值得留意的台股供應鏈與相關概念股'
-  },
-  {
-    heading: '盤前新聞濃縮包',
-    subheading: '整理影響台股、美股與總經的重點',
-    message: '請整理今天最重要的台股、美股與總經新聞'
-  },
-  {
-    heading: '波段觀察清單',
-    subheading: '用趨勢、成交量與支撐壓力篩選',
-    message: '請找出今天適合觀察的台股或美股波段標的'
-  },
-  {
-    heading: '財報體檢室',
-    subheading: '營收、毛利率與自由現金流一次看',
-    message: '請幫我做一份公司的最新財報與現金流體檢'
-  },
-  {
-    heading: '聯發科 (2454) 走勢診斷',
-    subheading: '技術面、量價與關鍵支撐壓力',
-    message: '請分析聯發科（2454）目前的趨勢、量價與支撐壓力'
-  },
-  {
-    heading: '鴻海 (2317) 法人觀察',
-    subheading: '基本面、法人動向與產業展望',
-    message: '請分析鴻海（2317）的基本面、法人動向與產業展望'
-  },
-  {
-    heading: 'NVDA 供應鏈雷達',
-    subheading: '找出 AI 伺服器上下游連動標的',
-    message: '請整理 NVDA 的供應鏈與相關概念股，並比較產業位置'
-  },
-  {
-    heading: 'JPM 財務體檢',
-    subheading: '營收、獲利、資產品質與估值',
-    message: '請整理 JPM 最新財務數據、資產品質與估值'
-  },
-  {
-    heading: '總經風向球',
-    subheading: '美債、美元、黃金與股市如何連動？',
-    message: '請分析美債殖利率、美元與黃金對台股美股的影響'
+    heading: '今日市場熱力圖',
+    subheading: '查看美股、台股與各產業板塊表現',
+    message: '請分析今天台股、美股與各產業板塊的表現'
   }
 ]
 
-const exampleMessagesEn: ExampleMessage[] = [
+const fallbackPromptsEn: ExampleMessage[] = [
   {
-    heading: 'What is the price',
-    subheading: 'of Apple Inc.?',
-    message: 'What is the price of Apple stock?'
+    heading: 'Check a live stock price',
+    subheading: 'Enter any company name or ticker',
+    message: 'Check the latest price for the company I specify'
   },
   {
     heading: 'Show me a stock chart',
-    subheading: 'for $GOOGL',
-    message: 'Show me a stock chart for $GOOGL'
+    subheading: 'For any Taiwan or US ticker',
+    message: 'Show me a stock chart for the ticker I specify'
   },
   {
-    heading: 'Legendary Master Valuation',
-    subheading: 'Should I buy TSLA?',
-    message:
-      'Should I buy TSLA? Please provide multi-analyst investment valuation'
+    heading: 'Multi-analyst investor view',
+    subheading: 'Enter a ticker for a full investment review',
+    message: 'Give me a multi-analyst investment view of the ticker I specify'
   },
   {
-    heading: `What are Microsoft's`,
-    subheading: 'latest financials?',
-    message: `What are Microsoft's latest financials?`
+    heading: 'Break down the latest financials',
+    subheading: 'Revenue, earnings, margins and valuation',
+    message: 'Summarize the latest financials and valuation for the company I specify'
   },
   {
-    heading: 'How is the stock market',
-    subheading: 'performing today by sector?',
-    message: `How is the stock market performing today by sector?`
+    heading: 'Map the supply chain',
+    subheading: 'Find peers, suppliers and related companies',
+    message: 'Map the supply chain and related companies for the ticker I specify'
   },
   {
-    heading: '📑 Financial Report & PDF Analysis',
-    subheading: 'Click 📎 or provide report URL',
-    message:
-      'How can I upload a financial report PDF or provide a 10-K URL for in-depth ratio and master investor analysis?'
-  },
-  {
-    heading: 'Taiwan supply-chain scan',
-    subheading: 'Related companies and industry links',
-    message:
-      'Find Taiwan supply-chain and related companies worth watching today'
-  },
-  {
-    heading: 'Pre-market news brief',
-    subheading: 'Taiwan, US and macro market highlights',
-    message:
-      'Summarize the most important Taiwan, US and macro market news today'
-  },
-  {
-    heading: 'Swing-trade watchlist',
-    subheading: 'Trend, volume, support and resistance',
-    message: 'Find Taiwan or US stocks worth watching for swing trading today'
-  },
-  {
-    heading: 'Financial health check',
-    subheading: 'Revenue, margins and free cash flow',
-    message: 'Give me a financial health check for a company'
-  },
-  {
-    heading: 'MediaTek (2454) technical check',
-    subheading: 'Trend, volume, support and resistance',
-    message: 'Analyze the trend, volume, support and resistance for MediaTek (2454)'
-  },
-  {
-    heading: 'Hon Hai (2317) investor watch',
-    subheading: 'Fundamentals, institutions and industry outlook',
-    message: 'Analyze Hon Hai (2317) fundamentals, institutional flow and outlook'
-  },
-  {
-    heading: 'NVDA supply-chain radar',
-    subheading: 'AI server links and related companies',
-    message: 'Map NVDA supply-chain and related companies, then compare their positions'
-  },
-  {
-    heading: 'JPM financial health check',
-    subheading: 'Earnings, asset quality and valuation',
-    message: 'Summarize JPM latest financials, asset quality and valuation'
-  },
-  {
-    heading: 'Macro market compass',
-    subheading: 'Treasuries, dollar, gold and equities',
-    message: 'Explain how Treasury yields, the dollar and gold may affect Taiwan and US stocks'
+    heading: 'Market heatmap today',
+    subheading: 'Taiwan, US and sector performance',
+    message: "Analyze today's Taiwan, US and sector market performance"
   }
 ]
 
@@ -253,15 +158,11 @@ export function ChatPanel({
   const { submitUserMessage } = useActions()
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
-  const [cachedPromptsZh, setCachedPromptsZh] = useLocalStorage<
-    ExampleMessage[]
-  >('stockbot_cached_prompts_zh', exampleMessagesZh)
-  const [cachedPromptsEn, setCachedPromptsEn] = useLocalStorage<
-    ExampleMessage[]
-  >('stockbot_cached_prompts_en', exampleMessagesEn)
+  const [cachedPromptsZh, setCachedPromptsZh] = useState(fallbackPromptsZh)
+  const [cachedPromptsEn, setCachedPromptsEn] = useState(fallbackPromptsEn)
 
   const [visibleExamples, setVisibleExamples] =
-    useState<ExampleMessage[]>(exampleMessagesZh)
+    useState<ExampleMessage[]>(fallbackPromptsZh)
   const [promptLabelIndex, setPromptLabelIndex] = useState(0)
 
   useEffect(() => {
@@ -288,7 +189,7 @@ export function ChatPanel({
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [setCachedPromptsEn, setCachedPromptsZh])
 
   const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
   const promptLabels = lang === 'zh' ? promptLabelsZh : promptLabelsEn

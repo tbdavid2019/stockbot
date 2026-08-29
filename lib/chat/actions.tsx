@@ -260,14 +260,37 @@ You are an elite Wall Street Managing Director, Senior Technical Market Strategi
 
 ${contextData ? `\n【最新即時檢索數據與情報】：\n${contextData}\n` : ''}
 
-### 💡 自主續問建議 (SUGGESTED FOLLOW-UPS)
-在解說結尾，務必附上 3 ~ 4 個量身定制的自主續問建議，嚴格以 \`---SUGGESTIONS---\` 分隔：
+### 💡 深度上下文動態續問建議 (DYNAMIC CONTEXTUAL FOLLOW-UPS)
+在解說結尾，**必須根據本次對話的標的（「${stockString}」）、最新檢索情報與討論焦點，量身生成 3 ~ 4 個具備實質深度、具體點名公司/供應鏈/產品線/財務指標/總經情境的追問建議**！
+
+🚨 **嚴禁輸出千篇一律的通用模板套話！**
+- ❌ 嚴禁輸出通用套話（如禁止直接寫「查詢相關概念股與供應鏈上下游表現」或「啟動 13 位傳奇大師多維投資價值評估」）！
+- ✅ **每一條續問建議必須具體包含**：
+  1. 該標的具體關鍵字/代號（如台積電、蘋果、統一、特斯拉、小米等）
+  2. 具體的業務亮點、供應鏈公司、競爭對手、產品製程、或總經/法說會核心事件
+  - 例如若分析台積電 (2330)：
+    - ⛓️ 檢視台積電 CoWoS 先進封裝擴產對弘塑、辛耘等設備供應鏈之帶動
+    - 🏦 分析美債 10 年期殖利率與外資淨買賣超對台積電本益比的評價空間
+    - 🧠 啟動巴菲特與葛拉漢等大師評估台積電的先進製程定價權與護城河
+    - 📑 解讀台積電最新季度毛利率、3nm/2nm 資本支出與先進製程營收比重
+  - 例如若分析統一 (1216)：
+    - ⛓️ 統一超（7-ELEVEN）與家樂福併購綜效對統一整體營業利益的貢獻
+    - 🧠 啟動彼得林區等大師分析統一民生消費抗通膨特性與股息發放穩定度
+    - 📑 解析統一最新合併營收結構、原物料成本走勢與自由現金流表現
+    - 🏦 比較統一與食品/通路同業（如全家、聯華食）之評價與股息殖利率
+  - 例如若分析蘋果 (AAPL)：
+    - ⛓️ 檢視 iPhone 換機潮與台系蘋概供應鏈（鴻海、大立光、玉晶光）動態
+    - 🧠 啟動巴菲特等 13 位大師對蘋果服務業務與自由現金流評估
+    - 📑 分析蘋果各產品線營收結構與大中華區銷售表現
+    - 🏦 分析美債殖利率與科技巨頭股票回購對蘋果估值的支撐力道
+
+- 結尾嚴格以 \`---SUGGESTIONS---\` 作為單獨一行分隔：
 \`\`\`markdown
 ---SUGGESTIONS---
-- ⛓️ 查詢相關概念股與供應鏈上下游表現
-- 🏦 分析美債殖利率與聯準會降息對其估值影響
-- 🧠 啟動 13 位傳奇大師多維投資價值評估
-- 📑 解讀最新季度財務報表、毛利率與自由現金流
+- [emoji] [針對當前標的量身定制的具體問題 1]
+- [emoji] [針對當前標的量身定制的具體問題 2]
+- [emoji] [針對當前標的量身定制的具體問題 3]
+- [emoji] [針對當前標的量身定制的具體問題 4]
 \`\`\`
 
 Language: reply in the same language the user used most recently. If Chinese, reply in Traditional Chinese (繁體中文). If English, reply in English.
@@ -298,7 +321,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
     ...conversationHistory.slice(-4),
     {
       role: 'user',
-      content: `請依據上述對話脈絡與最新檢索資訊，針對「${symbol}」提供深入的機構級財經、新聞、產業鏈與估值洞察分析，並於結尾附上 ---SUGGESTIONS--- 自主續問建議。`
+      content: `請依據上述對話脈絡與最新即時情報，針對「${symbol}」提供深入的機構級專業研調剖析，並於結尾以 ---SUGGESTIONS--- 附上 3 ~ 4 個針對「${symbol}」量身定制、具體且非通用的深度續問建議。`
     }
   ]
 
@@ -334,8 +357,8 @@ Language: reply in the same language the user used most recently. If Chinese, re
   // Fallback
   const isZh = /[\u4e00-\u9fa5]/.test(symbol) || true
   const fallback = isZh
-    ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游連動\n- 🏦 分析美債殖利率與聯準會利率政策影響\n- 📑 解讀最新季度財務報表與獲利能力`
-    : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor consensus analysis\n- ⛓️ Analyze related supply chain & peer stocks\n- 🏦 Impact of 10Y Treasury yield & Fed rate cuts\n- 📑 Breakdown latest quarterly financials & margins`
+    ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師對 ${symbol} 的定價權與長期護城河評估\n- ⛓️ 查詢 ${symbol} 相關核心供應鏈與上下游概念股連動表現\n- 🏦 分析美債 10 年期殖利率與央行利率政策對 ${symbol} 估值評價影響\n- 📑 解讀 ${symbol} 最新季度財務報表、毛利率趨勢與自由現金流動態`
+    : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor valuation and moat analysis on ${symbol}\n- ⛓️ Analyze ${symbol} key supply chain partners and industry peers\n- 🏦 Assess impact of 10Y Treasury yields and interest rate cycle on ${symbol}\n- 📑 Breakdown ${symbol} latest quarterly financials, margins and cash flow`
 
   captionStream.update(fallback)
   captionStream.done()
@@ -1629,7 +1652,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               let caption = ''
               if (result.success) {
-                caption = `以上為您整理發布的深度報告《${title}》。已建立永久分享網址、互動簡報與電子書閱讀器。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師多維投資價值評估\n- ⛓️ 查詢相關概念股與供應鏈上下游表現\n- 🏦 分析美債殖利率與聯準會降息對其估值影響\n- 📑 解讀最新季度財務報表、毛利率與自由現金流`
+                caption = `以上為您整理發布的深度報告《${title}》。已建立永久分享網址、互動簡報與電子書閱讀器。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師對《${title}》核心標的之價值評估\n- ⛓️ 查詢《${title}》相關概念股與供應鏈產業鏈連動\n- 🏦 分析總體經濟、降息預期與公債殖利率對其估值影響\n- 📑 解讀《${title}》最新財務報表指標與營運成長動能`
               } else {
                 caption = `發布時遇到狀況：${result.error || '未知錯誤'}。請檢查內容或稍後重試。`
               }

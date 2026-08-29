@@ -40,7 +40,7 @@ export function BotCaption({ content }: BotCaptionProps) {
       {mainText && (
         <div className="relative group/caption">
           <MemoizedReactMarkdown
-            className="prose break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-headings:font-semibold prose-headings:text-foreground prose-h3:text-base prose-h3:mt-3.5 prose-h3:mb-1.5 prose-ul:my-2 prose-li:my-0.5 text-sm"
+            className="prose max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 prose-headings:font-semibold prose-headings:text-foreground prose-h3:text-base prose-h3:mt-3.5 prose-h3:mb-1.5 prose-ul:my-2 prose-li:my-0.5 text-sm w-full"
             remarkPlugins={[remarkGfm, remarkMath]}
             components={{
               p({ children }) {

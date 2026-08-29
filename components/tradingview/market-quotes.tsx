@@ -48,11 +48,13 @@ export function MarketQuotes({
 
         const twQuotes = Array.isArray(data.twStocks)
           ? data.twStocks
+              .filter(stock => stock.price)
               .slice(0, 12)
               .map(stock => ({ ...stock, market: 'TW' as const }))
           : []
         const usQuotes = Array.isArray(data.usStocks)
           ? data.usStocks
+              .filter(stock => stock.price)
               .slice(0, 12)
               .map(stock => ({ ...stock, market: 'US' as const }))
           : []
