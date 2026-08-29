@@ -4,6 +4,17 @@
 
 ---
 
+## [2026-08-29] - Market Data 標的來源改為即時目錄
+
+### 🐛 修復 (Fixed)
+
+- 移除 dynamic prompts 與行情列中的硬編碼公司、代號與價格，避免下市或過期資料繼續顯示。
+- 改用 `answerbook.david888.com` Market Data 的 SP500、Nasdaq100、Dow Jones、TW0050 與 TW0051 目錄。
+- `stock.david888.com` 僅用於補充當次抓到的價格；沒有即時價格時不顯示假報價。
+- 前端移除舊提示標的的 localStorage 快取，避免隔日持續看到過期標的。
+
+---
+
 ## [2026-08-29] - 全工具說明文字即時流式輸出 (Token-by-Token Progressive Streaming)
 
 ### ✨ 新增與優化 (Added & Enhanced)

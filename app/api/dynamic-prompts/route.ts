@@ -340,7 +340,8 @@ function buildPrompts(
     {
       heading: 'Pre-market news brief',
       subheading: 'The stories moving Taiwan and US markets',
-      message: 'Summarize the most important Taiwan, US and macro market news today'
+      message:
+        'Summarize the most important Taiwan, US and macro market news today'
     }
   ]
 
@@ -391,10 +392,7 @@ export async function GET() {
   }
 
   const scrapedStocks = parseStocks(rawContent)
-  const sp500 = mergeCurrentPrices(
-    answerBookData.usStocks,
-    scrapedStocks.sp500
-  )
+  const sp500 = mergeCurrentPrices(answerBookData.usStocks, scrapedStocks.sp500)
   const tw50 = mergeCurrentPrices(answerBookData.tw50, scrapedStocks.tw50)
   const twMid = mergeCurrentPrices(answerBookData.twMid, scrapedStocks.twMid)
   const { promptsZh, promptsEn } = buildPrompts(sp500, tw50, twMid)

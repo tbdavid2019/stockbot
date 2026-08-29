@@ -325,8 +325,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
     }
   ]
 
-  const candidates = getProviderCandidates().slice(0, 2)
-  let accumulatedText = ''
+  const candidates = getProviderCandidates().slice(0, 3)
 
   for (const candidate of candidates) {
     try {
@@ -336,33 +335,71 @@ Language: reply in the same language the user used most recently. If Chinese, re
       })
       const result = await streamText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(5000),
+        abortSignal: AbortSignal.timeout(8000),
         messages: messagesToModel
       })
 
+      let accumulatedText = ''
       for await (const delta of result.textStream) {
         accumulatedText += delta
-        captionStream.update(delta)
+        try {
+          captionStream.update(delta)
+        } catch (e) {}
       }
 
       if (accumulatedText.trim().length > 0) {
-        captionStream.done()
+        try {
+          captionStream.done()
+        } catch (e) {}
         return accumulatedText
       }
     } catch (err: any) {
-      console.warn(`[Caption Stream Fallback] ${candidate.name} failed:`, err?.message)
+      console.warn(`[Caption Stream Fallback] ${candidate.name} failed:`, err?.message || err)
     }
   }
 
   // Fallback
+  const fallback = getSmartFallbackCaption(symbol)
+  try {
+    captionStream.update(fallback)
+    captionStream.done()
+  } catch (e) {}
+  return fallback
+}
+
+function getSmartFallbackCaption(symbol: string): string {
   const isZh = /[\u4e00-\u9fa5]/.test(symbol) || true
-  const fallback = isZh
+  return isZh
     ? `以上是 ${symbol} 的最新即時市場情報與動態數據分析。\n\n---SUGGESTIONS---\n- 🧠 啟動 13 位傳奇大師對 ${symbol} 的定價權與長期護城河評估\n- ⛓️ 查詢 ${symbol} 相關核心供應鏈與上下游概念股連動表現\n- 🏦 分析美債 10 年期殖利率與央行利率政策對 ${symbol} 估值評價影響\n- 📑 解讀 ${symbol} 最新季度財務報表、毛利率趨勢與自由現金流動態`
     : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor valuation and moat analysis on ${symbol}\n- ⛓️ Analyze ${symbol} key supply chain partners and industry peers\n- 🏦 Assess impact of 10Y Treasury yields and interest rate cycle on ${symbol}\n- 📑 Breakdown ${symbol} latest quarterly financials, margins and cash flow`
+}
 
-  captionStream.update(fallback)
-  captionStream.done()
-  return fallback
+async function safeStreamCaption(
+  symbol: string,
+  comparisonSymbols: ComparisonSymbolObject[],
+  toolName: string,
+  aiState: MutableAIState,
+  contextData: string | undefined,
+  captionStream: ReturnType<typeof createStreamableValue<string>>
+): Promise<string> {
+  try {
+    return await streamCaption(
+      symbol,
+      comparisonSymbols,
+      toolName,
+      aiState,
+      contextData,
+      captionStream
+    )
+  } catch (err: any) {
+    console.warn(`[safeStreamCaption] Error in ${toolName} for ${symbol}:`, err?.message || err)
+    const fallback = getSmartFallbackCaption(symbol)
+    try {
+      captionStream.update(fallback)
+      captionStream.done()
+    } catch (e) {}
+    return fallback
+  }
 }
 
 async function generateCaption(
@@ -373,7 +410,7 @@ async function generateCaption(
   contextData?: string
 ): Promise<string> {
   const dummyStream = createStreamableValue('')
-  return streamCaption(symbol, comparisonSymbols, toolName, aiState, contextData, dummyStream)
+  return safeStreamCaption(symbol, comparisonSymbols, toolName, aiState, contextData, dummyStream)
 }
 
 async function submitUserMessage(content: string) {
@@ -664,7 +701,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[showStockChart] fetchLiveStockContext failed:', e)
               }
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 formattedSymbol,
                 normalizedComparison,
                 'showStockChart',
@@ -756,7 +793,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[showStockPrice] fetchLiveStockContext failed:', e)
               }
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 formattedSymbol,
                 [],
                 'showStockPrice',
@@ -838,7 +875,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[showStockFinancials] fetchLiveStockContext failed:', e)
               }
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 formattedSymbol,
                 [],
                 'StockFinancials',
@@ -920,7 +957,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[showStockNews] fetchLiveStockContext failed:', e)
               }
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 formattedSymbol,
                 [],
                 'showStockNews',
@@ -988,7 +1025,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 '全球精選股票',
                 [],
                 'showStockScreener',
@@ -1055,7 +1092,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 '全球市場總覽',
                 [],
                 'showMarketOverview',
@@ -1122,7 +1159,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 '全球股市熱力圖',
                 [],
                 'showMarketHeatmap',
@@ -1189,7 +1226,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 '全球 ETF 熱力圖',
                 [],
                 'showETFHeatmap',
@@ -1256,7 +1293,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 '今日熱門股排行榜',
                 [],
                 'showTrendingStocks',
@@ -1338,7 +1375,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[analyzeStockWithAI] fetchLiveStockContext failed:', e)
               }
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 formattedSymbol,
                 [],
                 'analyzeStockWithAI',
@@ -1424,7 +1461,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
                 .join('\n')
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 query,
                 [],
                 'searchFinancialWeb',
@@ -1514,7 +1551,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               const contextData = `【網頁全文擷取 (${url})】：\n${text ? text.slice(0, 2000) : '未獲取到內容'}`
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 url,
                 [],
                 'readWebPage',
@@ -1760,7 +1797,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               const contextData = `【財報/年報/PDF 全文解析 (${url})】：\n${text ? text.slice(0, 4000) : '未獲取到內容'}`
 
-              const caption = await streamCaption(
+              const caption = await safeStreamCaption(
                 symbol || url,
                 [],
                 'readFinancialReport',

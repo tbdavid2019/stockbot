@@ -9,16 +9,29 @@ export const useStreamableText = (
   )
 
   useEffect(() => {
+    let isMounted = true
     ;(async () => {
-      if (typeof content === 'object') {
-        let value = ''
-        for await (const delta of readStreamableValue(content)) {
-          if (typeof delta === 'string') {
-            setRawContent((value = value + delta))
+      if (typeof content === 'object' && content !== null) {
+        try {
+          let value = ''
+          for await (const delta of readStreamableValue(content)) {
+            if (!isMounted) break
+            if (typeof delta === 'string') {
+              setRawContent((value = value + delta))
+            }
           }
+        } catch (err: any) {
+          console.warn(
+            '[useStreamableText] stream read caught safely:',
+            err?.message || err
+          )
         }
       }
     })()
+
+    return () => {
+      isMounted = false
+    }
   }, [content])
 
   return rawContent

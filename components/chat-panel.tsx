@@ -44,8 +44,18 @@ const promptLabelsEn = [
   '⚡ Market inspiration for today'
 ]
 
-const promptModesZh = ['🎲 隨機靈感', '📊 市場雷達', '🧭 深度拆解', '⚡ 快問快答']
-const promptModesEn = ['🎲 Random picks', '📊 Market radar', '🧭 Deep dive', '⚡ Quick scan']
+const promptModesZh = [
+  '🎲 隨機靈感',
+  '📊 市場雷達',
+  '🧭 深度拆解',
+  '⚡ 快問快答'
+]
+const promptModesEn = [
+  '🎲 Random picks',
+  '📊 Market radar',
+  '🧭 Deep dive',
+  '⚡ Quick scan'
+]
 
 function shufflePrompts(
   prompts: ExampleMessage[],
@@ -130,12 +140,14 @@ const fallbackPromptsEn: ExampleMessage[] = [
   {
     heading: 'Break down the latest financials',
     subheading: 'Revenue, earnings, margins and valuation',
-    message: 'Summarize the latest financials and valuation for the company I specify'
+    message:
+      'Summarize the latest financials and valuation for the company I specify'
   },
   {
     heading: 'Map the supply chain',
     subheading: 'Find peers, suppliers and related companies',
-    message: 'Map the supply chain and related companies for the ticker I specify'
+    message:
+      'Map the supply chain and related companies for the ticker I specify'
   },
   {
     heading: 'Market heatmap today',
