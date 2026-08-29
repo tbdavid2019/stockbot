@@ -55,6 +55,10 @@
 - 🔍 **2MD 全維度金融研調大腦** (新功能)：自動並發檢索個股行情、產業鏈上下游/概念股、美債 10 年殖利率、聯準會降息循環、總經 CPI/GDP 指標與法人外資籌碼，LLM 具備機構級研調視野
 - 📑 **財報與年報深度解讀 & 文件上傳** (新功能)：點擊輸入框 📎 即可上傳 PDF、Excel、Word 財報文件，或直接提供 10-K/10-Q 網址，由 2MD AnyDoc 引擎秒級萃取三大報表、計算關鍵財務比率並進行深度投資評價
 - 🤖 **AI 投資分析** (新功能)：整合 AI Hedge Fund API，提供傳奇投資大師（巴菲特、葛拉漢、乾克曼等）的專業投資建議
+- 📐 **原生量化分析** (新功能)：提供 DCF/CAPM/WACC、同業倍數與 5×5 敏感度矩陣的合理價模型；缺少 beta 或負 EBITDA 時會使用可標示的產業預設並降級至 EV/Sales。
+- 🚀 **SEPA 趨勢策略** (新功能)：檢查 Minervini 八項 Trend Template、Stage 1–4、VCP 收縮型態、5% 買入區、停損與風險式部位大小。
+- 🧾 **財報前瞻** (新功能)：顯示公開 earnings 日期、EPS/營收共識區間、分析師目標價與最近四季 beat/miss surprise。
+- 🧮 **衍生品與微結構** (新功能)：支援 Black-Scholes 多腿選擇權互動曲線、ETF NAV 溢折價/GEX 欄位，以及 Amihud、float turnover 與平方根市場衝擊估算。
 
 ## AI 投資分析功能
 
@@ -92,6 +96,8 @@ AI_HEDGE_FUND_PORT=6000
 - `app/api/stock-analysis/route.ts` - API 代理路由
 - `components/tradingview/stock-analysis.tsx` - 多輪委員會分析與辯論結果組件
 - `lib/chat/actions.tsx` - 聊天工具定義 (analyzeStockWithAI)
+- `lib/quant/valuation.ts`、`lib/quant/sepa.ts`、`lib/quant/black-scholes.ts`、`lib/quant/microstructure.ts` - 純 TypeScript 量化引擎
+- `components/stocks/company-valuation-card.tsx`、`sepa-strategy-card.tsx`、`earnings-briefing-card.tsx`、`options-payoff-card.tsx`、`stock-liquidity-card.tsx`、`etf-premium-card.tsx` - 原生量化卡片
 
 ## Interfaces
 

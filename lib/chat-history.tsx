@@ -20,6 +20,12 @@ import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 import { BotCaption } from '@/components/stocks/bot-caption'
+import { CompanyValuationCard } from '@/components/stocks/company-valuation-card'
+import { SepaStrategyCard } from '@/components/stocks/sepa-strategy-card'
+import { EarningsBriefingCard } from '@/components/stocks/earnings-briefing-card'
+import { OptionsPayoffCard } from '@/components/stocks/options-payoff-card'
+import { StockLiquidityCard } from '@/components/stocks/stock-liquidity-card'
+import { EtfPremiumCard } from '@/components/stocks/etf-premium-card'
 
 export const CHAT_STORAGE_KEY = 'stockbot_chat_sessions_v1'
 export const CHAT_HISTORY_EVENT = 'stockbot-chat-history-updated'
@@ -296,6 +302,51 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                     symbol={args.symbol || result?.symbol || 'AAPL'}
                   />
                 )
+                break
+
+              case 'calculateCompanyValuation':
+                cardContent = (
+                  <CompanyValuationCard
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                    price={result?.price}
+                    data={result?.data}
+                  />
+                )
+                break
+
+              case 'analyzeSepaStrategy':
+                cardContent = (
+                  <SepaStrategyCard
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                    data={result?.data}
+                  />
+                )
+                break
+
+              case 'previewEarnings':
+                cardContent = <EarningsBriefingCard data={result?.data} />
+                break
+
+              case 'simulateOptionsPayoff':
+                cardContent = (
+                  <OptionsPayoffCard
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                    data={result?.data}
+                  />
+                )
+                break
+
+              case 'analyzeStockLiquidity':
+                cardContent = (
+                  <StockLiquidityCard
+                    symbol={args.symbol || result?.symbol || 'AAPL'}
+                    data={result?.data}
+                  />
+                )
+                break
+
+              case 'analyzeEtfPremium':
+                cardContent = <EtfPremiumCard data={result?.data} />
                 break
 
               case 'searchFinancialWeb':

@@ -10,6 +10,12 @@ export type DeterministicToolName =
   | 'showETFHeatmap'
   | 'showTrendingStocks'
   | 'analyzeStockWithAI'
+  | 'calculateCompanyValuation'
+  | 'analyzeSepaStrategy'
+  | 'previewEarnings'
+  | 'simulateOptionsPayoff'
+  | 'analyzeEtfPremium'
+  | 'analyzeStockLiquidity'
 
 const NON_TICKER_WORDS = new Set([
   'AI',
@@ -114,6 +120,49 @@ export function inferDeterministicTool(
   }
 
   if (!resolvedTicker) return undefined
+
+  if (
+    /合理價|內在價值|估值模型|估值分析|DCF|WACC|fair value|intrinsic value|valuation/i.test(
+      content
+    )
+  ) {
+    return 'calculateCompanyValuation'
+  }
+  if (
+    /SEPA|趨勢模板|VCP|stage\s*[1-4]|買點|突破買入|trend template|position sizing/i.test(
+      content
+    )
+  ) {
+    return 'analyzeSepaStrategy'
+  }
+  if (
+    /財報前瞻|財報預測|財報預期|earnings preview|earnings estimate|when is .* earnings|分析師共識/i.test(
+      content
+    )
+  ) {
+    return 'previewEarnings'
+  }
+  if (
+    /選擇權|期權|options?\s+(?:payoff|profit|loss|strategy)|損益模擬|損益曲線|black.scholes/i.test(
+      content
+    )
+  ) {
+    return 'simulateOptionsPayoff'
+  }
+  if (
+    /ETF.{0,12}(溢價|折價|溢折價|NAV|淨值)|(?:溢價|折價|溢折價).{0,12}ETF|premium.{0,12}NAV|discount.{0,12}NAV/i.test(
+      content
+    )
+  ) {
+    return 'analyzeEtfPremium'
+  }
+  if (
+    /流動性|市場衝擊|滑價|滑點|Amihud|market impact|liquidity|float turnover/i.test(
+      content
+    )
+  ) {
+    return 'analyzeStockLiquidity'
+  }
 
   if (
     /多位.*大師|投資大師|大師分析|大師觀點|13\s*位|值得買|該買嗎|值得投資|適合投資|投資價值|投資評估|multi[- ]analyst|investor view|should i buy|worth buying/i.test(

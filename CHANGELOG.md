@@ -4,6 +4,21 @@
 
 ---
 
+## [2026-08-30] - 原生量化金融分析工具
+
+### ✨ 新增 (Added)
+
+- 新增純 TypeScript 量化引擎：DCF/CAPM/WACC、同業倍數、5×5 敏感度矩陣、Minervini SEPA、VCP、Black-Scholes Greeks 與多腿損益、Amihud/Float Turnover、平方根市場衝擊及 ETF NAV 溢折價。
+- 新增六個確定性聊天工具：`calculateCompanyValuation`、`analyzeSepaStrategy`、`previewEarnings`、`simulateOptionsPayoff`、`analyzeEtfPremium`、`analyzeStockLiquidity`。
+- 新增合理價、SEPA、財報前瞻、選擇權損益、股票流動性與 ETF NAV 原生卡片；卡片皆位於 caption 上方，並可安全保存至本機對話歷史。
+- Yahoo Finance 結構化資料新增 earnings 日期、EPS/營收共識、四季 surprise 與分析師目標價解析。
+
+### 🧪 驗證 (Verification)
+
+- 通過 `pnpm type-check` 與 `pnpm build`。
+
+---
+
 ## [2026-08-30] - 上下文續問架構重寫
 
 ### ✨ 改進 (Changed)

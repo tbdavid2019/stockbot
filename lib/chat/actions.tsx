@@ -35,7 +35,32 @@ import { BotCaption } from '@/components/stocks/bot-caption'
 import { readUrl2MD } from '@/lib/2md'
 import { searchResearchEvidence } from '@/lib/research-search'
 import { fetchFinancialFundamentals } from '@/lib/financial-fundamentals'
+import {
+  fetchEarningsIntelligence,
+  type EarningsIntelligence
+} from '@/lib/financial-fundamentals'
 import { publishToWiki } from '@/lib/wiki'
+import { fetchQuantMarketSnapshot } from '@/lib/quant/market-data'
+import { calculateValuation } from '@/lib/quant/valuation'
+import { analyzeSepa } from '@/lib/quant/sepa'
+import {
+  createStrategyLegs,
+  generatePayoffCurve,
+  summarizePayoff,
+  type OptionStrategy
+} from '@/lib/quant/black-scholes'
+import {
+  calculateAmihudIlliquidity,
+  calculateEtfPremium,
+  calculateFloatTurnover,
+  calculateMarketImpact
+} from '@/lib/quant/microstructure'
+import { CompanyValuationCard } from '@/components/stocks/company-valuation-card'
+import { SepaStrategyCard } from '@/components/stocks/sepa-strategy-card'
+import { EarningsBriefingCard } from '@/components/stocks/earnings-briefing-card'
+import { OptionsPayoffCard } from '@/components/stocks/options-payoff-card'
+import { StockLiquidityCard } from '@/components/stocks/stock-liquidity-card'
+import { EtfPremiumCard } from '@/components/stocks/etf-premium-card'
 import { toast } from 'sonner'
 import {
   extractExplicitTicker,
@@ -605,6 +630,75 @@ async function appendContextualFollowups(
 ): Promise<string> {
   const suggestions = await generateContextualFollowups(aiState, input)
   return serializeFollowups(answer, suggestions)
+}
+
+function latestFactValue(
+  facts:
+    | Array<{ key: string; frequency: string; date: string; value: number }>
+    | undefined,
+  key: string,
+  frequency?: string
+): number | undefined {
+  return facts
+    ?.filter(
+      fact => fact.key === key && (!frequency || fact.frequency === frequency)
+    )
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .at(-1)?.value
+}
+
+function emptyEarnings(symbol: string): EarningsIntelligence {
+  return {
+    symbol,
+    session: 'unknown',
+    eps: {},
+    revenue: {},
+    history: [],
+    priceTarget: {},
+    source: {
+      title: 'Yahoo Finance Earnings',
+      url: `https://finance.yahoo.com/quote/${encodeURIComponent(symbol)}/analysis/`,
+      description: '目前沒有取得可核實的 earnings 資料。',
+      publisher: 'Yahoo Finance'
+    }
+  }
+}
+
+function saveQuantToolResult(
+  aiState: MutableAIState,
+  toolName: string,
+  args: Record<string, any>,
+  result: Record<string, any>,
+  caption: string
+) {
+  const toolCallId = nanoid()
+  try {
+    aiState.done({
+      ...aiState.get(),
+      messages: [
+        ...aiState.get().messages,
+        {
+          id: nanoid(),
+          role: 'assistant',
+          content: [{ type: 'tool-call', toolName, toolCallId, args }]
+        },
+        {
+          id: nanoid(),
+          role: 'tool',
+          content: [
+            {
+              type: 'tool-result',
+              toolName,
+              toolCallId,
+              result: { ...result, caption }
+            }
+          ]
+        }
+      ]
+    })
+  } catch (error) {
+    console.warn(`[${toolName}] aiState.done failed:`, error)
+  }
 }
 
 async function submitUserMessage(content: string, userApiKey?: string) {
@@ -1780,6 +1874,472 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockAnalysis symbol={formattedSymbol} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          calculateCompanyValuation: {
+            description:
+              'Calculate a company valuation using DCF, CAPM/WACC, peer multiples, and a 5 by 5 sensitivity matrix.',
+            parameters: z.object({
+              symbol: z.string().describe('The explicit stock ticker.')
+            }),
+            generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在載入 {formattedSymbol} 財務資料並計算 DCF…
+                  </div>
+                </BotCard>
+              )
+              let snapshot
+              try {
+                snapshot = await fetchQuantMarketSnapshot(formattedSymbol)
+              } catch (error) {
+                console.warn('[calculateCompanyValuation] data failed:', error)
+              }
+              const facts = snapshot?.fundamentals?.facts
+              const price = snapshot?.price
+              const data = calculateValuation({
+                price: price || 0,
+                sharesOutstanding: snapshot?.sharesOutstanding || 0,
+                revenue:
+                  snapshot?.revenue ||
+                  latestFactValue(facts, 'TotalRevenue') ||
+                  0,
+                ebitda: snapshot?.ebitda,
+                eps: snapshot?.eps,
+                freeCashFlow: snapshot?.freeCashFlow || 0,
+                cash: snapshot?.cash,
+                debt: snapshot?.debt,
+                beta: snapshot?.beta,
+                revenueGrowth: snapshot?.revenueGrowth
+              })
+              const context = JSON.stringify({
+                price,
+                wacc: data.capm.wacc,
+                dcf: data.dcf?.sharePrice,
+                fairValue: data.blendedFairValue,
+                upside: data.impliedUpsideDownside
+              })
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'calculateCompanyValuation',
+                aiState,
+                context
+              )
+              saveQuantToolResult(
+                aiState,
+                'calculateCompanyValuation',
+                { symbol: formattedSymbol },
+                { symbol: formattedSymbol, price, data },
+                caption
+              )
+              return (
+                <BotCard>
+                  <CompanyValuationCard
+                    symbol={formattedSymbol}
+                    price={price}
+                    data={data}
+                  />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          analyzeSepaStrategy: {
+            description:
+              'Evaluate Minervini SEPA Trend Template, four stages, VCP, and risk-based position sizing for a ticker.',
+            parameters: z.object({
+              symbol: z.string().describe('The explicit stock ticker.'),
+              accountEquity: z.number().optional(),
+              riskPercent: z.number().optional(),
+              stopPercent: z.number().optional()
+            }),
+            generate: async function* ({
+              symbol,
+              accountEquity,
+              riskPercent,
+              stopPercent
+            }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在載入 {formattedSymbol} 歷史 OHLCV 並檢查 SEPA…
+                  </div>
+                </BotCard>
+              )
+              let snapshot
+              try {
+                snapshot = await fetchQuantMarketSnapshot(formattedSymbol)
+              } catch (error) {
+                console.warn('[analyzeSepaStrategy] data failed:', error)
+              }
+              const data = analyzeSepa(snapshot?.prices || [], {
+                accountEquity,
+                riskPercent,
+                stopPercent
+              })
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'analyzeSepaStrategy',
+                aiState,
+                JSON.stringify({
+                  score: data.score,
+                  stage: data.stage,
+                  rsRating: data.rsRating,
+                  vcp: data.vcp.detected
+                })
+              )
+              saveQuantToolResult(
+                aiState,
+                'analyzeSepaStrategy',
+                { symbol: formattedSymbol },
+                { symbol: formattedSymbol, data },
+                caption
+              )
+              return (
+                <BotCard>
+                  <SepaStrategyCard symbol={formattedSymbol} data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          previewEarnings: {
+            description:
+              'Show upcoming earnings date, EPS and revenue consensus ranges, analyst price targets, and the last four EPS surprises.',
+            parameters: z.object({
+              symbol: z.string().describe('The explicit stock ticker.')
+            }),
+            generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在載入 {formattedSymbol} earnings 共識資料…
+                  </div>
+                </BotCard>
+              )
+              let data
+              try {
+                data = await fetchEarningsIntelligence(formattedSymbol)
+              } catch (error) {
+                console.warn('[previewEarnings] data failed:', error)
+              }
+              const earnings = data || emptyEarnings(formattedSymbol)
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'previewEarnings',
+                aiState,
+                JSON.stringify({
+                  earningsDate: earnings.earningsDate,
+                  eps: earnings.eps,
+                  revenue: earnings.revenue,
+                  history: earnings.history
+                })
+              )
+              saveQuantToolResult(
+                aiState,
+                'previewEarnings',
+                { symbol: formattedSymbol },
+                { symbol: formattedSymbol, data: earnings },
+                caption
+              )
+              return (
+                <BotCard>
+                  <EarningsBriefingCard data={earnings} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          simulateOptionsPayoff: {
+            description:
+              'Simulate an interactive multi-leg options payoff curve with Black-Scholes theoretical pricing and Greeks.',
+            parameters: z.object({
+              symbol: z.string().describe('The explicit underlying ticker.'),
+              strategy: z
+                .enum([
+                  'straddle',
+                  'vertical-call',
+                  'vertical-put',
+                  'butterfly',
+                  'iron-condor',
+                  'covered-call'
+                ])
+                .optional()
+                .default('straddle'),
+              spot: z.number().optional(),
+              strike: z.number().optional(),
+              dte: z.number().optional().default(30),
+              iv: z.number().optional().default(0.3),
+              width: z.number().optional(),
+              premium: z.number().optional().default(0)
+            }),
+            generate: async function* ({
+              symbol,
+              strategy,
+              spot: requestedSpot,
+              strike: requestedStrike,
+              dte,
+              iv,
+              width,
+              premium
+            }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在建立 {formattedSymbol} 選擇權損益模擬器…
+                  </div>
+                </BotCard>
+              )
+              let snapshot
+              if (
+                requestedSpot === undefined ||
+                requestedStrike === undefined
+              ) {
+                try {
+                  snapshot = await fetchQuantMarketSnapshot(formattedSymbol)
+                } catch (error) {
+                  console.warn('[simulateOptionsPayoff] quote failed:', error)
+                }
+              }
+              const spot = requestedSpot || snapshot?.price || 100
+              const strike = requestedStrike || spot
+              const safeDte = Math.max(1, Math.min(730, dte || 30))
+              const safeIv = Math.max(0.01, Math.min(2, iv || 0.3))
+              const legs = createStrategyLegs(
+                (strategy || 'straddle') as OptionStrategy,
+                strike,
+                width,
+                premium || 0
+              )
+              const curve = generatePayoffCurve(legs, spot, safeDte, safeIv)
+              const summary = summarizePayoff(curve)
+              const data = {
+                strategy: (strategy || 'straddle') as OptionStrategy,
+                legs,
+                spot,
+                strike,
+                dte: safeDte,
+                iv: safeIv,
+                summary
+              }
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'simulateOptionsPayoff',
+                aiState,
+                JSON.stringify({
+                  strategy,
+                  maxProfit: summary.maxProfit,
+                  maxLoss: summary.maxLoss,
+                  breakevens: summary.breakevens
+                })
+              )
+              saveQuantToolResult(
+                aiState,
+                'simulateOptionsPayoff',
+                {
+                  symbol: formattedSymbol,
+                  strategy,
+                  spot,
+                  strike,
+                  dte: safeDte,
+                  iv: safeIv
+                },
+                { symbol: formattedSymbol, data },
+                caption
+              )
+              return (
+                <BotCard>
+                  <OptionsPayoffCard symbol={formattedSymbol} data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          analyzeEtfPremium: {
+            description:
+              'Analyze an ETF market price versus NAV, peer median divergence, bid-ask context, and dealer gamma exposure.',
+            parameters: z.object({
+              symbol: z.string().describe('The explicit ETF ticker.'),
+              nav: z.number().optional(),
+              gex: z.number().optional(),
+              peerMedianDivergence: z.number().optional()
+            }),
+            generate: async function* ({
+              symbol,
+              nav: requestedNav,
+              gex,
+              peerMedianDivergence
+            }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在載入 {formattedSymbol} ETF NAV 與市場資料…
+                  </div>
+                </BotCard>
+              )
+              let snapshot
+              try {
+                snapshot = await fetchQuantMarketSnapshot(formattedSymbol)
+              } catch (error) {
+                console.warn('[analyzeEtfPremium] data failed:', error)
+              }
+              const price = snapshot?.price || 0
+              const nav = requestedNav || snapshot?.nav || 0
+              const data = {
+                symbol: formattedSymbol,
+                ...calculateEtfPremium(price, nav, {
+                  gex,
+                  peerMedianDivergence,
+                  bidAskSpreadBps: snapshot?.bidAskSpreadBps
+                })
+              }
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'analyzeEtfPremium',
+                aiState,
+                JSON.stringify({
+                  price,
+                  nav,
+                  divergence: data.divergencePercent,
+                  gamma: data.gammaCondition
+                })
+              )
+              saveQuantToolResult(
+                aiState,
+                'analyzeEtfPremium',
+                { symbol: formattedSymbol },
+                { symbol: formattedSymbol, data },
+                caption
+              )
+              return (
+                <BotCard>
+                  <EtfPremiumCard data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          analyzeStockLiquidity: {
+            description:
+              'Compute Amihud illiquidity, float turnover, and square-root market impact for a custom order size.',
+            parameters: z.object({
+              symbol: z.string().describe('The explicit stock ticker.'),
+              orderSize: z.number().optional().default(50000)
+            }),
+            generate: async function* ({ symbol, orderSize }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在載入 {formattedSymbol} 成交量與流動性資料…
+                  </div>
+                </BotCard>
+              )
+              let snapshot
+              try {
+                snapshot = await fetchQuantMarketSnapshot(formattedSymbol)
+              } catch (error) {
+                console.warn('[analyzeStockLiquidity] data failed:', error)
+              }
+              const prices = snapshot?.prices || []
+              const returns = prices
+                .slice(1)
+                .map((point, index) =>
+                  prices[index].close > 0
+                    ? point.close / prices[index].close - 1
+                    : 0
+                )
+                .filter(Number.isFinite)
+              const volatility = returns.length
+                ? Math.sqrt(
+                    returns.reduce((sum, value) => sum + value * value, 0) /
+                      returns.length
+                  ) * Math.sqrt(252)
+                : 0
+              const volumes = prices
+                .map(point => point.volume)
+                .filter(value => value > 0)
+              const averageVolume = volumes.length
+                ? volumes.reduce((sum, value) => sum + value, 0) /
+                  volumes.length
+                : 0
+              const impact = calculateMarketImpact(
+                volatility,
+                orderSize || 50000,
+                averageVolume,
+                snapshot?.price
+              )
+              const curve = [0.25, 0.5, 1, 2, 4].map(multiplier => {
+                const size = (orderSize || 50000) * multiplier
+                return {
+                  orderSize: size,
+                  impactBps: calculateMarketImpact(
+                    volatility,
+                    size,
+                    averageVolume
+                  ).impactBps
+                }
+              })
+              const data = {
+                price: snapshot?.price,
+                averageVolume,
+                floatShares: snapshot?.floatShares,
+                amihud: calculateAmihudIlliquidity(prices),
+                floatTurnover: calculateFloatTurnover(
+                  volumes,
+                  snapshot?.floatShares || 0
+                ),
+                impact,
+                orderSize: orderSize || 50000,
+                curve
+              }
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'analyzeStockLiquidity',
+                aiState,
+                JSON.stringify({
+                  amihud: data.amihud,
+                  floatTurnover: data.floatTurnover,
+                  impactBps: impact.impactBps
+                })
+              )
+              saveQuantToolResult(
+                aiState,
+                'analyzeStockLiquidity',
+                { symbol: formattedSymbol, orderSize: data.orderSize },
+                { symbol: formattedSymbol, data },
+                caption
+              )
+              return (
+                <BotCard>
+                  <StockLiquidityCard symbol={formattedSymbol} data={data} />
                   <BotCaption content={caption} />
                 </BotCard>
               )

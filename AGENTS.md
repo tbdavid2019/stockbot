@@ -120,6 +120,13 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - **`showStockNews` ➔ `<NativeStockNewsCard />`**：由 2MD 全網情報大腦即時檢索最新重大快訊、法說會動態與新聞外鏈，無任何交易所限制。
   - **全局錯誤邊界 (`SafeCardErrorBoundary`)**：所有訊息與卡片均包裹安全邊界，單一異常絕不拖垮整場對話。
 
+### 9. 📐 原生量化金融分析 (Native Quantitative Finance)
+
+- `lib/quant/valuation.ts` 提供 5 年 FCFF DCF、CAPM/WACC、同業 P/E、EV/EBITDA、EV/Sales 與 WACC × 終值成長率 5×5 敏感度矩陣；缺少 beta 時使用明確標示的產業預設，負 EBITDA 時不使用無效 EV/EBITDA。
+- `lib/quant/sepa.ts` 提供 Minervini 八項 Trend Template、Stage 1–4、VCP 型態與風險式部位大小；`lib/quant/black-scholes.ts` 提供多腿策略、Greeks 與到期/理論損益曲線。
+- `lib/quant/microstructure.ts` 提供 Amihud、年化 float turnover、平方根市場衝擊與 ETF NAV divergence。上游缺少資料時卡片顯示 `—` 或「待確認」，禁止使用展示用財務數字。
+- 新工具透過 `lib/chat/routing.ts` 確定性路由至 `lib/chat/actions.tsx`，並由 `lib/chat-history.tsx` 以純 JSON 結果還原；所有量化卡片必須渲染在伴隨 caption 上方。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)

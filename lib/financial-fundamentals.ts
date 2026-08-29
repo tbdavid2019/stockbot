@@ -19,6 +19,39 @@ export interface FinancialFundamentalsResult {
   source: TwoMDResultItem
 }
 
+export interface EarningsConsensus {
+  average?: number
+  low?: number
+  high?: number
+  analystCount?: number
+  yearOverYearGrowth?: number
+}
+
+export interface EarningsHistoryItem {
+  date: string
+  epsEstimate?: number
+  epsActual?: number
+  surprise?: number
+  surprisePercent?: number
+}
+
+export interface EarningsIntelligence {
+  symbol: string
+  earningsDate?: string
+  session: 'before-open' | 'after-close' | 'unknown'
+  eps: EarningsConsensus
+  revenue: EarningsConsensus
+  history: EarningsHistoryItem[]
+  priceTarget: {
+    currentPrice?: number
+    low?: number
+    high?: number
+    mean?: number
+    median?: number
+  }
+  source: TwoMDResultItem
+}
+
 const METRICS: Array<{
   key: string
   label: string
@@ -40,8 +73,16 @@ const METRICS: Array<{
     pattern: /forward\s*P\s*\/?\s*E|預估本益比/i
   },
   { key: 'PeRatio', label: '本益比', pattern: /\bP\s*\/?\s*E\b|本益比/i },
-  { key: 'PbRatio', label: '股價淨值比', pattern: /\bP\s*\/?\s*B\b|股價淨值比/i },
-  { key: 'PsRatio', label: '股價營收比', pattern: /\bP\s*\/?\s*S\b|股價營收比/i },
+  {
+    key: 'PbRatio',
+    label: '股價淨值比',
+    pattern: /\bP\s*\/?\s*B\b|股價淨值比/i
+  },
+  {
+    key: 'PsRatio',
+    label: '股價營收比',
+    pattern: /\bP\s*\/?\s*S\b|股價營收比/i
+  },
   { key: 'PegRatio', label: 'PEG', pattern: /\bPEG\b/i },
   { key: 'MarketCap', label: '市值', pattern: /市值|market cap/i },
   {
@@ -133,7 +174,7 @@ const FUNDAMENTAL_KEYS = Array.from(
   ])
 )
 
-function toYahooSymbol(symbol: string): string {
+export function toYahooSymbol(symbol: string): string {
   const normalized = symbol.trim().toUpperCase()
   const parts = normalized.split(':')
   if (parts.length === 2) {
@@ -147,11 +188,118 @@ function toYahooSymbol(symbol: string): string {
   return normalized
 }
 
+function rawNumber(value: any): number | undefined {
+  const raw = Number(value?.raw ?? value)
+  return Number.isFinite(raw) ? raw : undefined
+}
+
+function consensusFromTrend(
+  trend: any,
+  key: 'eps' | 'revenue'
+): EarningsConsensus {
+  const estimate = trend?.earningsEstimate || trend?.revenueEstimate
+  const selected =
+    key === 'eps' ? trend?.earningsEstimate : trend?.revenueEstimate
+  const data = selected || estimate
+  return {
+    average: rawNumber(data?.avg),
+    low: rawNumber(data?.low),
+    high: rawNumber(data?.high),
+    analystCount: rawNumber(data?.numberOfAnalysts),
+    yearOverYearGrowth: rawNumber(data?.growth)
+  }
+}
+
+export async function fetchEarningsIntelligence(
+  symbol: string
+): Promise<EarningsIntelligence | undefined> {
+  const yahooSymbol = toYahooSymbol(symbol)
+  const url = new URL(
+    `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yahooSymbol)}`
+  )
+  url.searchParams.set(
+    'modules',
+    'calendarEvents,earningsTrend,earningsHistory,financialData,price'
+  )
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 stockbot/2.0'
+      },
+      signal: AbortSignal.timeout(5000),
+      next: { revalidate: 300 }
+    })
+    if (!response.ok) return undefined
+    const result = (await response.json())?.quoteSummary?.result?.[0]
+    if (!result) return undefined
+
+    const calendar = result.calendarEvents?.earnings
+    const earningsDate =
+      calendar?.earningsDate?.[0]?.fmt || calendar?.earningsDate?.[0]?.raw
+    const trend =
+      (result.earningsTrend?.trend || []).find(
+        (item: any) => item.period === '0q' || item.period === '+1q'
+      ) || result.earningsTrend?.trend?.[0]
+    const history = (result.earningsHistory?.history || [])
+      .slice(-4)
+      .reverse()
+      .map((item: any): EarningsHistoryItem => {
+        const estimate = rawNumber(item.epsEstimate)
+        const actual = rawNumber(item.epsActual)
+        const surprise = rawNumber(item.surprise)
+        const surprisePercent = rawNumber(item.surprisePercent)
+        return {
+          date: String(item.quarter?.fmt || item.quarter?.raw || ''),
+          epsEstimate: estimate,
+          epsActual: actual,
+          surprise,
+          surprisePercent:
+            surprisePercent !== undefined && Math.abs(surprisePercent) <= 1
+              ? surprisePercent * 100
+              : surprisePercent
+        }
+      })
+      .filter((item: EarningsHistoryItem) => item.date)
+
+    const financialData = result.financialData || {}
+    return {
+      symbol,
+      earningsDate: earningsDate ? String(earningsDate) : undefined,
+      session: 'unknown',
+      eps: consensusFromTrend(trend, 'eps'),
+      revenue: consensusFromTrend(trend, 'revenue'),
+      history,
+      priceTarget: {
+        currentPrice: rawNumber(financialData.currentPrice),
+        low: rawNumber(financialData.targetLowPrice),
+        high: rawNumber(financialData.targetHighPrice),
+        mean: rawNumber(financialData.targetMeanPrice),
+        median: rawNumber(financialData.targetMedianPrice)
+      },
+      source: {
+        title: `${yahooSymbol} Earnings 與分析師共識 - Yahoo Finance`,
+        url: `https://finance.yahoo.com/quote/${encodeURIComponent(yahooSymbol)}/analysis/`,
+        description: '財報日期、分析師共識、歷史 EPS surprise 與目標價資料。',
+        publisher: 'Yahoo Finance'
+      }
+    }
+  } catch (error: any) {
+    console.warn(
+      `[Earnings Intelligence] Failed for ${yahooSymbol}:`,
+      error?.message || error
+    )
+    return undefined
+  }
+}
+
 function formatValue(value: number, currency: string): string {
   const absolute = Math.abs(value)
   const prefix = currency === 'USD' ? 'US$' : currency ? `${currency} ` : ''
   const sign = value < 0 ? '-' : ''
-  if (absolute >= 1e12) return `${sign}${prefix}${(absolute / 1e12).toFixed(2)}T`
+  if (absolute >= 1e12)
+    return `${sign}${prefix}${(absolute / 1e12).toFixed(2)}T`
   if (absolute >= 1e9) return `${sign}${prefix}${(absolute / 1e9).toFixed(2)}B`
   if (absolute >= 1e6) return `${sign}${prefix}${(absolute / 1e6).toFixed(2)}M`
   return `${sign}${prefix}${absolute.toLocaleString('en-US', { maximumFractionDigits: 2 })}`
@@ -175,10 +323,14 @@ function sortFacts(facts: FinancialFact[]): FinancialFact[] {
 }
 
 function percentChange(current: number, previous: number): number | undefined {
-  if (!Number.isFinite(current) || !Number.isFinite(previous) || previous === 0) {
+  if (
+    !Number.isFinite(current) ||
+    !Number.isFinite(previous) ||
+    previous === 0
+  ) {
     return undefined
   }
-  return ((current / previous) - 1) * 100
+  return (current / previous - 1) * 100
 }
 
 function signedPercent(value: number | undefined): string {
@@ -214,11 +366,7 @@ function buildBroadSummaryAnswer(
   const operatingIncome = latestFact(facts, 'OperatingIncome', 'quarterly')
   const netIncome = latestFact(facts, 'NetIncome', 'quarterly')
   const eps = latestFact(facts, 'DilutedEPS', 'quarterly')
-  const operatingCashFlow = latestFact(
-    facts,
-    'OperatingCashFlow',
-    'annual'
-  )
+  const operatingCashFlow = latestFact(facts, 'OperatingCashFlow', 'annual')
   const freeCashFlow = latestFact(facts, 'FreeCashFlow', 'annual')
   const totalDebt = latestFact(facts, 'TotalDebt', 'quarterly')
   const marketCap = latestFact(facts, 'MarketCap', 'trailing')
@@ -226,11 +374,7 @@ function buildBroadSummaryAnswer(
   const forwardPe = latestFact(facts, 'ForwardPeRatio', 'trailing')
   const pb = latestFact(facts, 'PbRatio', 'trailing')
   const ps = latestFact(facts, 'PsRatio', 'trailing')
-  const evEbitda = latestFact(
-    facts,
-    'EnterprisesValueEBITDARatio',
-    'trailing'
-  )
+  const evEbitda = latestFact(facts, 'EnterprisesValueEBITDARatio', 'trailing')
 
   if (!revenue && !marketCap && !pe) return undefined
 
@@ -309,9 +453,7 @@ function buildDirectAnswer(
   if (!requestedKey) return buildBroadSummaryAnswer(question, symbol, facts)
 
   const relevant = facts.filter(fact => fact.key === requestedKey)
-  const annual = sortFacts(
-    relevant.filter(fact => fact.frequency === 'annual')
-  )
+  const annual = sortFacts(relevant.filter(fact => fact.frequency === 'annual'))
   const quarterly = sortFacts(
     relevant.filter(fact => fact.frequency === 'quarterly')
   )
@@ -335,7 +477,9 @@ function buildDirectAnswer(
     if (periods.length >= 3) {
       const rows = periods.map((fact, index) => {
         const prior = index > 0 ? periods[index - 1] : undefined
-        const growth = prior ? percentChange(fact.value, prior.value) : undefined
+        const growth = prior
+          ? percentChange(fact.value, prior.value)
+          : undefined
         return `- ${fact.date.slice(0, 4)}：${formatFactValue(fact)}${growth === undefined ? '' : `，YoY ${signedPercent(growth)}`}`
       })
       const first = periods[0]
@@ -405,7 +549,9 @@ function buildEvidence(question: string, facts: FinancialFact[]): string {
 
   const lines: string[] = ['[結構化財務資料｜Yahoo Finance Fundamentals]']
   for (const [key, values] of Array.from(grouped.entries()).slice(0, 12)) {
-    const annual = sortFacts(values.filter(value => value.frequency === 'annual')).slice(-4)
+    const annual = sortFacts(
+      values.filter(value => value.frequency === 'annual')
+    ).slice(-4)
     const quarterly = sortFacts(
       values.filter(value => value.frequency === 'quarterly')
     ).slice(-5)
