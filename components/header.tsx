@@ -25,25 +25,25 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 min-w-0 items-center justify-between gap-2 border-b bg-gradient-to-b from-background/10 via-background/50 to-background/80 px-2 backdrop-blur-xl sm:px-4">
-      <div className="flex min-w-0 items-center space-x-1.5 sm:space-x-2 font-semibold">
+    <header className="sticky top-0 z-50 flex h-12 min-w-0 items-center justify-between gap-2 border-b bg-gradient-to-b from-background/10 via-background/50 to-background/80 px-3 backdrop-blur-xl sm:h-14 sm:px-5">
+      <div className="flex min-w-0 items-center space-x-1.5 font-semibold sm:space-x-2">
         {/* Chat History Drawer Trigger */}
         <ChatHistorySheet />
 
-        <IconSeparator className="hidden size-6 text-muted-foreground/30 sm:block" />
+        <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
 
         {/* Logo */}
         <a
           href="/"
           onClick={handleNewChat}
-          className="flex items-center gap-1.5 text-base font-bold text-slate-900 dark:text-slate-100 hover:opacity-80 transition-opacity"
+          className="flex items-center gap-1.5 text-sm font-bold text-slate-900 transition-opacity hover:opacity-80 dark:text-slate-100 sm:text-base"
         >
-          <span className="text-xl">📈</span>
+          <span className="text-lg sm:text-xl">📈</span>
           <span className="hidden sm:inline">888 StockBot</span>
           <span className="sm:hidden">888</span>
         </a>
 
-        <IconSeparator className="hidden size-6 text-muted-foreground/30 sm:block" />
+        <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
 
         {/* Start New Chat Button */}
         <button
@@ -51,7 +51,7 @@ export function Header() {
           onClick={handleNewChat}
           className={cn(
             buttonVariants({ variant: 'ghost' }),
-            'flex items-center gap-1 text-xs font-semibold'
+            'flex items-center gap-1 text-[11px] font-semibold sm:text-xs'
           )}
           style={{ borderRadius: 6, color: '#F55036', padding: '4px 8px' }}
         >
@@ -61,8 +61,8 @@ export function Header() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2 min-w-0 shrink text-right text-xs">
-        <div className="hidden text-xs leading-snug text-orange-600 sm:block">
+      <div className="flex min-w-0 shrink items-center gap-1.5 text-right text-xs sm:gap-2">
+        <div className="hidden text-[11px] leading-snug text-orange-600 sm:block sm:text-xs">
           本機器人沒有提供投資建議，若需要投資建議請用{' '}
           <a
             href="https://t.me/oli_billion_bot"
@@ -84,7 +84,7 @@ export function Header() {
             Telegram
           </a>
         </div>
-        <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-[11px] shadow-sm">
+        <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-[10px] shadow-sm sm:text-[11px]">
           <button
             type="button"
             className={`rounded px-1.5 py-1 font-medium transition-all sm:px-2 ${
@@ -112,7 +112,7 @@ export function Header() {
         </div>
         <button
           type="button"
-          className="flex h-8 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs"
           aria-pressed={layoutMode === 'wide'}
           title={layoutMode === 'wide' ? '切換窄版' : '切換寬版'}
           onClick={() => {

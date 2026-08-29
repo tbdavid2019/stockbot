@@ -42,10 +42,10 @@ export function TickerTape() {
   }, [resolvedTheme])
 
   return (
-    <div className="mb-2 min-h-20 w-full min-w-0 max-w-full overflow-hidden border-y border-border bg-background">
+    <div className="min-h-14 w-full min-w-0 max-w-full overflow-hidden border-b border-border bg-background">
       <div
         ref={tradingViewContainer}
-        className="h-20 min-w-0 overflow-hidden border-b border-border bg-background"
+        className="h-14 min-w-0 overflow-hidden bg-background"
       />
     </div>
   )
