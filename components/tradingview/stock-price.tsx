@@ -1,16 +1,18 @@
 'use client'
 
 import React, { useEffect, useRef, memo } from 'react'
+import { useTheme } from 'next-themes'
 import { formatStockSymbol } from '@/lib/utils'
 
 export function StockPrice({ props: symbol }: { props: string }) {
   const container = useRef<HTMLDivElement>(null)
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     if (!container.current) return
     // 格式化股票代號，特別處理台灣股票代號
     const formattedSymbol = formatStockSymbol(symbol)
-    
+
     const script = document.createElement('script')
     script.src =
       'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js'
@@ -27,7 +29,7 @@ export function StockPrice({ props: symbol }: { props: string }) {
         "width": "100%",
         "height": "100%",
         "locale": "zh_TW",
-        "colorTheme": "light",
+        "colorTheme": "${resolvedTheme === 'dark' ? 'dark' : 'light'}",
         "autosize": true,
         "showVolume": false,
         "showMA": false,
@@ -68,7 +70,7 @@ export function StockPrice({ props: symbol }: { props: string }) {
         }
       }
     }
-  }, [symbol])
+  }, [symbol, resolvedTheme])
 
   return (
     <div style={{ height: '500px' }}>

@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useEffect, useRef, memo } from 'react'
+import { useTheme } from 'next-themes'
 
 export function StockScreener({}) {
   const container = useRef<HTMLDivElement>(null)
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     if (!container.current) return
@@ -19,7 +21,7 @@ export function StockScreener({}) {
       defaultScreen: 'most_capitalized',
       market: 'america',
       showToolbar: true,
-      colorTheme: 'light',
+      colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
       locale: 'en',
       isTransparent: true
     })
@@ -31,7 +33,7 @@ export function StockScreener({}) {
         container.current.removeChild(script)
       }
     }
-  }, [])
+  }, [resolvedTheme])
 
   return (
     <div style={{ height: '500px' }}>

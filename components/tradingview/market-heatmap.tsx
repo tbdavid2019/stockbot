@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState, memo } from 'react'
+import { useTheme } from 'next-themes'
 
 type MarketPreset = {
   id: string
@@ -135,6 +136,7 @@ const MARKET_PRESETS: MarketPreset[] = MARKET_GROUPS.flatMap(
 export function MarketHeatmap({}) {
   const container = useRef<HTMLDivElement>(null)
   const [selectedMarketId, setSelectedMarketId] = useState<string>('us_spx')
+  const { resolvedTheme } = useTheme()
 
   const selectedMarket = useMemo(
     () =>
@@ -174,7 +176,7 @@ export function MarketHeatmap({}) {
       blockColor: 'change',
       locale: selectedMarket.locale,
       symbolUrl: '',
-      colorTheme: 'light',
+      colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
       hasTopBar: true,
       isDataSetEnabled: true,
       isZoomEnabled: true,
@@ -190,16 +192,16 @@ export function MarketHeatmap({}) {
       script.remove()
       parent.innerHTML = ''
     }
-  }, [selectedMarket])
+  }, [selectedMarket, resolvedTheme])
 
   return (
     <div style={{ height: '540px' }} className="flex flex-col gap-3">
-      <label className="flex min-w-0 items-center gap-2 text-sm text-slate-600">
+      <label className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
         <span className="shrink-0">市場</span>
         <select
           value={selectedMarketId}
           onChange={event => setSelectedMarketId(event.target.value)}
-          className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          className="min-w-0 flex-1 rounded border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           aria-label="選擇熱力圖市場"
         >
           {MARKET_GROUPS.map(([region, markets]) => (
@@ -212,7 +214,7 @@ export function MarketHeatmap({}) {
             </optgroup>
           ))}
         </select>
-        <span className="hidden shrink-0 text-xs text-slate-400 sm:inline">
+        <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
           {MARKET_PRESETS.length} 個市場
         </span>
       </label>

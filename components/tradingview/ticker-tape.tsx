@@ -95,14 +95,14 @@ export function TickerTape() {
   }, [resolvedTheme])
 
   return (
-    <div className="mb-2 min-h-16 w-full min-w-0 max-w-full overflow-hidden border-y border-slate-100 bg-white dark:border-zinc-800 dark:bg-background">
+    <div className="mb-2 min-h-16 w-full min-w-0 max-w-full overflow-hidden border-y border-border bg-background">
       <div
         ref={tradingViewContainer}
-        className="h-14 min-w-0 overflow-hidden border-b border-slate-100 dark:border-zinc-800"
+        className="h-20 min-w-0 overflow-hidden border-b border-border bg-background"
       />
 
-      <div className="ticker-viewport flex min-h-12 items-center overflow-hidden py-2">
-        {quotes.length > 0 ? (
+      {quotes.length > 0 && (
+        <div className="ticker-viewport flex min-h-12 items-center overflow-hidden py-2">
           <div className="ticker-track flex min-w-max shrink-0 items-center hover:[animation-play-state:paused]">
             {[...quotes, ...quotes].map((quote, index) => (
               <div
@@ -120,12 +120,8 @@ export function TickerTape() {
               </div>
             ))}
           </div>
-        ) : (
-          <span className="px-4 text-sm text-slate-400">
-            載入台股／美股報價…
-          </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

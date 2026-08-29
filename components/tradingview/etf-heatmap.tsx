@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useEffect, useRef, memo } from 'react'
+import { useTheme } from 'next-themes'
 
 export function ETFHeatmap({}) {
   const container = useRef<HTMLDivElement>(null)
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     if (!container.current) return
@@ -20,7 +22,7 @@ export function ETFHeatmap({}) {
       grouping: 'asset_class',
       locale: 'en',
       symbolUrl: '',
-      colorTheme: 'light',
+      colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
       hasTopBar: true,
       isDataSetEnabled: true,
       isZoomEnabled: true,
@@ -37,7 +39,7 @@ export function ETFHeatmap({}) {
         container.current.removeChild(script)
       }
     }
-  }, [])
+  }, [resolvedTheme])
 
   return (
     <div style={{ height: '500px' }}>

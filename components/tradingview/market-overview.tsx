@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useEffect, useRef, memo } from 'react'
+import { useTheme } from 'next-themes'
 
 export function MarketOverview({}) {
   const container = useRef<HTMLDivElement>(null)
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     if (!container.current) return
@@ -148,7 +150,7 @@ export function MarketOverview({}) {
       ],
       showSymbolLogo: true,
       isTransparent: true,
-      colorTheme: 'light',
+      colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
       locale: 'en'
       // backgroundColor: "#ffffff"
     })
@@ -160,7 +162,7 @@ export function MarketOverview({}) {
         container.current.removeChild(script)
       }
     }
-  }, [])
+  }, [resolvedTheme])
 
   return (
     <div style={{ height: '300px' }}>

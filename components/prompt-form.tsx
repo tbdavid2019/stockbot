@@ -46,7 +46,9 @@ export function PromptForm({
   const [apiKey, setApiKey] = useLocalStorage('groqKey', '')
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
-  const [attachedDoc, setAttachedDoc] = React.useState<AttachedDocument | null>(null)
+  const [attachedDoc, setAttachedDoc] = React.useState<AttachedDocument | null>(
+    null
+  )
   const [isUploading, setIsUploading] = React.useState(false)
 
   React.useEffect(() => {
@@ -95,7 +97,9 @@ export function PromptForm({
       )
     } catch (err: any) {
       console.error('Upload document error:', err)
-      toast.error(`❌ 解析失敗: ${err.message || '請確認檔案格式'}`, { id: toastId })
+      toast.error(`❌ 解析失敗: ${err.message || '請確認檔案格式'}`, {
+        id: toastId
+      })
     } finally {
       setIsUploading(false)
       if (fileInputRef.current) {
@@ -122,7 +126,9 @@ export function PromptForm({
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 dark:bg-indigo-950/50 dark:border-indigo-800 dark:text-indigo-300 text-xs font-semibold">
             <span>📑 附件財報/文件：{currentDoc.filename}</span>
             {currentDoc.pages ? (
-              <span className="text-[10px] opacity-75">({currentDoc.pages} 頁)</span>
+              <span className="text-[10px] opacity-75">
+                ({currentDoc.pages} 頁)
+              </span>
             ) : null}
           </div>
           <p className="text-sm">
@@ -177,7 +183,7 @@ export function PromptForm({
         }}
       />
 
-      <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background px-8 sm:border sm:px-14">
+      <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background pl-24 pr-14 sm:border sm:pl-24 sm:pr-16">
         {/* Left Action Buttons */}
         <div className="absolute left-0 top-[14px] flex items-center gap-1 sm:left-3">
           {/* New Chat Button */}
@@ -282,7 +288,7 @@ export function PromptForm({
                 ? '輸入訊息或點擊 📎 上傳財報/PDF 解讀...（例如：台積電股價、TSLA 值得買嗎）'
                 : 'Send a message or click 📎 to upload financial report/PDF... (e.g. Apple stock price, Should I buy TSLA?)'
           }
-          className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
+          className="min-h-[60px] w-full resize-none bg-transparent px-0 py-[1.3rem] focus-within:outline-none sm:text-sm"
           autoFocus
           spellCheck={false}
           autoComplete="off"

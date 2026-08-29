@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useEffect, useRef, memo } from 'react'
+import { useTheme } from 'next-themes'
 
 export function MarketTrending({}) {
   const container = useRef<HTMLDivElement>(null)
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     if (!container.current) return
@@ -14,7 +16,7 @@ export function MarketTrending({}) {
     script.type = 'text/javascript'
     script.async = true
     script.innerHTML = JSON.stringify({
-      colorTheme: 'light',
+      colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
       dateRange: '1D',
       exchange: 'US',
       showChart: true,
@@ -28,7 +30,10 @@ export function MarketTrending({}) {
       plotLineColorGrowing: 'rgba(106, 168, 79, 1)',
       plotLineColorFalling: 'rgba(255, 0, 0, 1)',
       gridLineColor: 'rgba(0, 0, 0, 0)',
-      scaleFontColor: 'rgba(19, 23, 34, 1)',
+      scaleFontColor:
+        resolvedTheme === 'dark'
+          ? 'rgba(226, 232, 240, 1)'
+          : 'rgba(19, 23, 34, 1)',
       belowLineFillColorGrowing: 'rgba(41, 98, 255, 0.12)',
       belowLineFillColorFalling: 'rgba(41, 98, 255, 0.12)',
       belowLineFillColorGrowingBottom: 'rgba(41, 98, 255, 0)',
@@ -43,7 +48,7 @@ export function MarketTrending({}) {
         container.current.removeChild(script)
       }
     }
-  }, [])
+  }, [resolvedTheme])
 
   return (
     <div style={{ height: '500px' }}>
