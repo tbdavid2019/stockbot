@@ -101,6 +101,7 @@ export function ChatPanel({
   const [messages, setMessages] = useUIState<typeof AI>()
   const { submitUserMessage } = useActions()
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
+  const [apiKey] = useLocalStorage('groqKey', '')
 
   const [cachedPromptsZh, setCachedPromptsZh] = useState<ExampleMessage[]>([])
   const [cachedPromptsEn, setCachedPromptsEn] = useState<ExampleMessage[]>([])
@@ -163,10 +164,10 @@ export function ChatPanel({
         }
       ])
 
-      const responseMessage = await submitUserMessage(prompt)
+      const responseMessage = await submitUserMessage(prompt, apiKey)
       setMessages(currentMessages => [...currentMessages, responseMessage])
     },
-    [lang, setMessages, submitUserMessage]
+    [apiKey, lang, setMessages, submitUserMessage]
   )
 
   useEffect(() => {

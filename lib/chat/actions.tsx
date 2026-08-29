@@ -64,8 +64,38 @@ interface ProviderCandidate {
   toolModel: string // 工具調用與意圖分流模型 (Function Calling / Tool Model)
 }
 
-function getProviderCandidates(): ProviderCandidate[] {
+function getProviderCandidates(userKey?: string): ProviderCandidate[] {
   const candidates: ProviderCandidate[] = []
+
+  // 0. 前端使用者傳入之 API Key (User Client Key - Groq / OpenAI / Gemini)
+  if (userKey && typeof userKey === 'string' && userKey.trim().length > 5) {
+    const trimmedKey = userKey.trim()
+    if (trimmedKey.startsWith('gsk_')) {
+      candidates.push({
+        name: `User Client Groq Key [openai/gpt-oss-20b]`,
+        baseURL: 'https://api.groq.com/openai/v1',
+        apiKey: trimmedKey,
+        model: 'openai/gpt-oss-20b',
+        toolModel: 'openai/gpt-oss-20b'
+      })
+    } else if (trimmedKey.startsWith('sk-')) {
+      candidates.push({
+        name: `User Client OpenAI Key [gpt-4o-mini]`,
+        baseURL: 'https://api.openai.com/v1',
+        apiKey: trimmedKey,
+        model: 'gpt-4o-mini',
+        toolModel: 'gpt-4o-mini'
+      })
+    } else if (trimmedKey.startsWith('AIza')) {
+      candidates.push({
+        name: `User Client Gemini Key [gemini-2.5-flash]`,
+        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        apiKey: trimmedKey,
+        model: 'gemini-2.5-flash',
+        toolModel: 'gemini-2.5-flash'
+      })
+    }
+  }
 
   // --------------------------------------------------------------------------
   // 1. 主要 LLM 配置 (Primary / Main Model - 如 OpenAI / Azure / 自訂端點)
@@ -413,7 +443,7 @@ async function generateCaption(
   return safeStreamCaption(symbol, comparisonSymbols, toolName, aiState, contextData, dummyStream)
 }
 
-async function submitUserMessage(content: string) {
+async function submitUserMessage(content: string, userApiKey?: string) {
   'use server'
 
   const aiState = getMutableAIState<typeof AI>()
@@ -497,7 +527,7 @@ async function submitUserMessage(content: string) {
     }
   }
 
-  const candidates = getProviderCandidates()
+  const candidates = getProviderCandidates(userApiKey)
   let lastError: any = null
 
   for (const candidate of candidates) {

@@ -113,8 +113,19 @@ export const getMessageFromCode = (resultCode: string) => {
 // }
 export function formatStockSymbol(symbol: string): string {
   if (!symbol) return ''
+  let trimmed = symbol.trim()
+
+  // 0. 如果字串中含有全形或半形括號包裹的股票代碼，例如 "Mosaic Co/The (MOS)" 或 "旭隼（6409）" 或 "MetLife (MET)"
+  const bracketMatch = trimmed.match(/[\(（]([A-Za-z0-9.:_-]+)[\)）]/)
+  if (bracketMatch) {
+    const inside = bracketMatch[1].trim()
+    if (inside.length >= 1 && inside.length <= 10) {
+      trimmed = inside
+    }
+  }
+
   // 移除所有內部與兩端空格
-  let trimmed = symbol.replace(/\s+/g, '').toUpperCase()
+  trimmed = trimmed.replace(/\s+/g, '').toUpperCase()
 
   // 常見公司名稱先轉成 TradingView 可辨識的交易所代號。
   const stockAliases: Record<string, string> = {
