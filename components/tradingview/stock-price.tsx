@@ -15,50 +15,32 @@ export function StockPrice({ props: symbol }: { props: string }) {
 
     const script = document.createElement('script')
     script.src =
-      'https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js'
+      'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
     script.type = 'text/javascript'
     script.async = true
-    script.innerHTML = `
-      {
-        "symbols": [
-          [
-            "${formattedSymbol}"
-          ]
-        ],
-        "chartOnly": false,
-        "width": "100%",
-        "height": "100%",
-        "locale": "zh_TW",
-        "colorTheme": "${resolvedTheme === 'dark' ? 'dark' : 'light'}",
-        "autosize": true,
-        "showVolume": false,
-        "showMA": false,
-        "hideDateRanges": false,
-        "hideMarketStatus": false,
-        "hideSymbolLogo": false,
-        "scalePosition": "right",
-        "scaleMode": "Normal",
-        "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-        "fontSize": "10",
-        "noTimeScale": false,
-        "valuesTracking": "1",
-        "changeMode": "price-and-percent",
-        "chartType": "area",
-        "maLineColor": "#2962FF",
-        "maLineWidth": 1,
-        "maLength": 9,
-        "backgroundColor": "rgba(255, 255, 255, 0)",
-        "lineWidth": 2,
-        "lineType": 0,
-        "dateRanges": [
-          "1d|1",
-          "1m|30",
-          "3m|60",
-          "12m|1D",
-          "60m|1W",
-          "all|1M"
-        ]
-      }`
+    script.innerHTML = JSON.stringify({
+      autosize: true,
+      symbol: formattedSymbol,
+      interval: 'D',
+      timezone: 'Asia/Taipei',
+      theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+      style: '1',
+      locale: 'zh_TW',
+      backgroundColor:
+        resolvedTheme === 'dark'
+          ? 'rgba(19, 23, 34, 1)'
+          : 'rgba(255, 255, 255, 1)',
+      gridColor:
+        resolvedTheme === 'dark'
+          ? 'rgba(42, 46, 57, 0.6)'
+          : 'rgba(247, 247, 247, 1)',
+      withdateranges: true,
+      hide_side_toolbar: true,
+      allow_symbol_change: true,
+      calendar: false,
+      hide_top_toolbar: false,
+      support_host: 'https://www.tradingview.com'
+    })
 
     container.current.appendChild(script)
 

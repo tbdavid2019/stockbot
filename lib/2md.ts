@@ -235,6 +235,26 @@ export async function batchReadUrls2MD(urls: string[]): Promise<{ url: string; c
   return fallbackResults
 }
 
+const SYMBOL_NAMES: Record<string, string> = {
+  '2330': '台積電 TSMC 2330',
+  '2317': '鴻海 Foxconn 2317',
+  '2454': '聯發科 MediaTek 2454',
+  '2308': '台達電 Delta 2308',
+  '2382': '廣達 Quanta 2382',
+  '3008': '大立光 Largan 3008',
+  '2303': '聯電 UMC 2303',
+  '2603': '長榮 Evergreen 2603',
+  'AAPL': 'Apple 蘋果 AAPL',
+  'NVDA': 'NVIDIA 輝達 NVDA',
+  'TSLA': 'Tesla 特斯拉 TSLA',
+  'MSFT': 'Microsoft 微軟 MSFT',
+  'GOOGL': 'Google 谷歌 GOOGL',
+  'META': 'Meta 臉書 META',
+  'AMZN': 'Amazon 亞馬遜 AMZN',
+  'AMD': 'AMD 超微半導體 AMD',
+  'TSM': '台積電 ADR TSMC TSM'
+}
+
 /**
  * Multi-dimensional Live Financial Intelligence Search (Macro, Bonds, Peers, Breaking News & Quotes)
  * Automatically adapts search queries and report structures for English and Traditional Chinese.
@@ -256,47 +276,50 @@ export async function fetchLiveFinancialIntelligence(
 
   const executionPromise = (async (): Promise<string> => {
     try {
-      const cleanQuery = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
+      const rawClean = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
+      const isPureDigits = /^\d{4,5}$/.test(rawClean)
+      const cleanQuery = SYMBOL_NAMES[rawClean.toUpperCase()] || rawClean
       const isChinese =
         options?.lang === 'zh' ||
+        isPureDigits ||
         (/[\u4e00-\u9fa5]/.test(query) && options?.lang !== 'en')
 
-    // Prepare bilingual search queries
-    const quoteSearchQuery = isChinese
-      ? `${cleanQuery} 即時股價 漲跌 營收 本益比 殖利率`
-      : `${cleanQuery} stock price quote live valuation PE ratio dividend revenue`
+      // Prepare bilingual search queries
+      const quoteSearchQuery = isChinese
+        ? `${cleanQuery} 即時股價 漲跌 營收 本益比 殖利率`
+        : `${cleanQuery} stock price quote live valuation PE ratio dividend revenue`
 
-    const peerSearchQuery = isChinese
-      ? `${cleanQuery} 相關概念股 供應鏈 同業比較 競爭對手`
-      : `${cleanQuery} supply chain peer comparison competitors related stocks`
+      const peerSearchQuery = isChinese
+        ? `${cleanQuery} 相關概念股 供應鏈 同業比較 競爭對手`
+        : `${cleanQuery} supply chain peer comparison competitors related stocks`
 
-    const macroSearchQuery = isChinese
-      ? `${cleanQuery} 總體經濟 聯準會 美債殖利率 降息 產業趨勢`
-      : `${cleanQuery} macroeconomic 10Y treasury yield fed interest rate inflation outlook`
+      const macroSearchQuery = isChinese
+        ? `${cleanQuery} 總體經濟 聯準會 美債殖利率 降息 產業趨勢`
+        : `${cleanQuery} macroeconomic 10Y treasury yield fed interest rate inflation outlook`
 
-    const newsSearchQuery = isChinese
-      ? `${cleanQuery} 最新財經新聞 法人外資買賣超 法說會`
-      : `${cleanQuery} breaking financial news institutional flow earnings guidance catalysts`
+      const newsSearchQuery = isChinese
+        ? `${cleanQuery} 最新財經新聞 法人外資買賣超 法說會`
+        : `${cleanQuery} breaking financial news institutional flow earnings guidance catalysts`
 
-    // Dispatch concurrent multi-dimensional intelligence searches via 2MD
-    const searches = [
-      // 1. Core Quotes & Financial Metrics
-      searchWeb2MD(quoteSearchQuery, 3),
-      // 2. Related Peers & Supply Chain
-      options?.includePeers !== false
-        ? searchWeb2MD(peerSearchQuery, 3)
-        : Promise.resolve([]),
-      // 3. Macro, Bonds & Interest Rates
-      options?.includeMacro !== false
-        ? searchWeb2MD(macroSearchQuery, 3)
-        : Promise.resolve([]),
-      // 4. Breaking Financial News & Institutional Flows
-      options?.includeNews !== false
-        ? searchWeb2MD(newsSearchQuery, 3)
-        : Promise.resolve([])
-    ]
+      // Dispatch concurrent multi-dimensional intelligence searches via 2MD
+      const searches = [
+        // 1. Core Quotes & Financial Metrics
+        searchWeb2MD(quoteSearchQuery, 3),
+        // 2. Related Peers & Supply Chain
+        options?.includePeers !== false
+          ? searchWeb2MD(peerSearchQuery, 3)
+          : Promise.resolve([]),
+        // 3. Macro, Bonds & Interest Rates
+        options?.includeMacro !== false
+          ? searchWeb2MD(macroSearchQuery, 3)
+          : Promise.resolve([]),
+        // 4. Breaking Financial News & Institutional Flows
+        options?.includeNews !== false
+          ? searchWeb2MD(newsSearchQuery, 3)
+          : Promise.resolve([])
+      ]
 
-    const [quotes, peers, macro, news] = await Promise.all(searches)
+      const [quotes, peers, macro, news] = await Promise.all(searches)
     const sections: string[] = []
 
     if (quotes && quotes.length > 0) {

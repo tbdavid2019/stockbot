@@ -295,10 +295,10 @@ ${contextData ? `\n【最新即時檢索數據與行情資訊】：\n${contextDa
    \`\`\`markdown
    ---SUGGESTIONS---
    - ⛓️ 查詢相關概念股與供應鏈上下游表現
-   - 🏦 分析美債殖利率與聯準會降息對其估值影響
-   - 🧠 啟動 13 位大師多維 AI 投資價值評估
-   - 📑 解讀最新季度財務報表、毛利率與自由現金流
    \`\`\`
+### 🧠 高智商機構研調鐵律 (HIGH-IQ INSTITUTIONAL ANALYSIS RULE)
+- **嚴禁回答「我目前無法取得最新走勢圖或即時行情資料」等推託短句！**
+- 身為頂級機構分析師，請立即針對該標的（如台積電先進製程晶圓代工與 CoWoS 領先地位、AI 晶片強勁需求、毛利率展望、資本支出、地緣政治與美債利率環境）提供條理清晰的深度基本面、技術走勢與投資展望剖析！
 
 Language: reply in the same language the user used most recently. If Chinese, reply in Traditional Chinese (繁體中文). If English, reply in English.
     `
