@@ -15,6 +15,7 @@ export function FollowupPrompts({ prompts }: FollowupPromptsProps) {
   const { submitUserMessage } = useActions()
   const [_, setMessages] = useUIState<typeof AI>()
   const [apiKey] = useLocalStorage('groqKey', '')
+  const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
   if (!prompts || prompts.length === 0) return null
 
@@ -44,7 +45,11 @@ export function FollowupPrompts({ prompts }: FollowupPromptsProps) {
     <div className="mt-3.5 pt-3 border-t border-border/40 flex flex-col space-y-2">
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold">
         <span className="text-sm">💡</span>
-        <span>您可以接著問（點擊快速追問）：</span>
+        <span>
+          {lang === 'en'
+            ? 'Suggested follow-ups (Click to ask):'
+            : '您可以接著問（點擊快速追問）：'}
+        </span>
       </div>
       <div className="flex flex-wrap gap-2">
         {prompts.map((p, idx) => {

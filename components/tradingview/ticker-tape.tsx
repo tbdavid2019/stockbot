@@ -113,7 +113,7 @@ export function TickerTape() {
                 <span className="font-medium text-slate-700 dark:text-slate-300">
                   {quote.name} ({quote.symbol})
                 </span>
-                <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
+                <span className="font-mono font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                   {quote.market === 'TW' ? 'NT$' : '$'}
                   {quote.price ?? '—'}
                 </span>

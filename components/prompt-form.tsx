@@ -197,7 +197,9 @@ export function PromptForm({
                 <span className="sr-only">New Chat</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>開啟新對話 (New Chat)</TooltipContent>
+            <TooltipContent>
+              {lang === 'en' ? 'Start New Chat' : '開啟新對話 (New Chat)'}
+            </TooltipContent>
           </Tooltip>
 
           {/* Upload Document / PDF / Financial Report Button */}
@@ -228,10 +230,18 @@ export function PromptForm({
                     />
                   </svg>
                 )}
-                <span className="sr-only">上傳財報、年報、PDF或文件</span>
+                <span className="sr-only">
+                  {lang === 'en'
+                    ? 'Upload financial report, annual report, or PDF'
+                    : '上傳財報、年報、PDF或文件'}
+                </span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>上傳財報、年報、PDF 或 Excel 文件解讀</TooltipContent>
+            <TooltipContent>
+              {lang === 'en'
+                ? 'Upload financial report, annual report, PDF or spreadsheet'
+                : '上傳財報、年報、PDF 或 Excel 文件解讀'}
+            </TooltipContent>
           </Tooltip>
         </div>
 
@@ -244,14 +254,14 @@ export function PromptForm({
             </span>
             {attachedDoc.pages && (
               <span className="rounded bg-indigo-200/60 px-1 py-0.2 text-[10px] dark:bg-indigo-900/60">
-                {attachedDoc.pages} 頁
+                {attachedDoc.pages} {lang === 'en' ? 'pages' : '頁'}
               </span>
             )}
             <button
               type="button"
               onClick={() => setAttachedDoc(null)}
               className="ml-auto text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
-              title="移除附件"
+              title={lang === 'en' ? 'Remove attachment' : '移除附件'}
             >
               <IconClose className="size-3" />
             </button>
@@ -265,10 +275,12 @@ export function PromptForm({
           onKeyDown={onKeyDown}
           placeholder={
             attachedDoc
-              ? '輸入分析要求（例如：請幫我分析這份財報的毛利率與自由現金流，並以巴菲特觀點評估）'
+              ? lang === 'en'
+                ? 'Enter analysis prompt (e.g., analyze margins, free cash flow & master investor evaluation)...'
+                : '輸入分析要求（例如：請幫我分析這份財報的毛利率與自由現金流，並以巴菲特觀點評估）'
               : lang === 'zh'
                 ? '輸入訊息或點擊 📎 上傳財報/PDF 解讀...（例如：台積電股價、TSLA 值得買嗎）'
-                : 'Send a message or upload financial report / PDF...'
+                : 'Send a message or click 📎 to upload financial report/PDF... (e.g. Apple stock price, Should I buy TSLA?)'
           }
           className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
           autoFocus

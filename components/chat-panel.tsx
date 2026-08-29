@@ -108,7 +108,7 @@ export function ChatPanel({
   const [aiState] = useAIState()
   const [messages, setMessages] = useUIState<typeof AI>()
   const { submitUserMessage } = useActions()
-  const [lang, setLang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
+  const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
   const [cachedPromptsZh, setCachedPromptsZh] = useLocalStorage<
     ExampleMessage[]

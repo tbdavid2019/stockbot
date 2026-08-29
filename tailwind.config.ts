@@ -18,8 +18,19 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-geist-sans)'],
-        mono: ['var(--font-geist-mono)']
+        sans: [
+          'Maple Mono',
+          'var(--font-geist-sans)',
+          'PingFang TC',
+          'Microsoft JhengHei',
+          'sans-serif'
+        ],
+        mono: [
+          'JetBrains Mono',
+          'Maple Mono',
+          'var(--font-geist-mono)',
+          'monospace'
+        ]
       },
       colors: {
         border: 'hsl(var(--border))',
