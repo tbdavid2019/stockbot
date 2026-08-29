@@ -27,6 +27,7 @@ import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
+import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 import { searchWeb2MD, readUrl2MD } from '@/lib/2md'
 import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
@@ -261,6 +262,9 @@ This tool fetches full web page or online news article text and converts it to m
 13. publishToDavid888Wiki
 This tool publishes an in-depth financial research report, stock thesis, valuation summary, or multi-chapter analysis to David888 Wiki (https://wiki.david888.com/api), returning a permanent public share link (shareUrl), 2D presentation deck (/present), and dual-pane eBook reader (/book).
 
+14. readFinancialReport
+This tool reads, parses, and analyzes an official financial report, annual report (10-K), quarterly report (10-Q), earnings release, investor presentation, or financial PDF from a URL using 2MD AnyDoc Engine.
+
 ### 🔴 零幻覺與即時檢索鐵律 (ZERO HALLUCINATION & REAL-TIME SEARCH POLICY)
 1. 你的底層模型內部知識庫可能已經過期。嚴禁憑過期記憶斷定公司未上市、沒有股票代號或編造數據！
 2. 當有提供即時檢索數據時，你的說明文字必須 100% 依據該檢索結果總結，嚴禁與檢索結果矛盾！
@@ -409,8 +413,12 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
 ### 🔄 15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)
 你是一個具備強大自主推理 (ReAct) 能力的 AI 投資分析大腦。你可以連續調用最多 15 輪工具鏈，完成深度複雜任務：
 1. **深度連網研調 (Deep Research)**：可先調用 searchFinancialWeb 搜尋 ➔ 發現精確文章或新聞網址 ➔ 調用 readWebPage 深度研讀全文。
-2. **多維大師分析 (Master Consensus)**：遇到投資價值評估時調用 analyzeStockWithAI 獲取 13 位傳奇大師觀點。
-3. **自主發布執行器 (David888 WikiPublisher 鐵律)**：
+2. **財報與年報深度解讀 (Financial & Annual Report Analysis)**：
+   - 當使用者提供財報/年報 PDF 連結或線上公開報告時，調用 readFinancialReport(url, symbol) 進行全文萃取與分析。
+   - 當使用者上傳財報/PDF/Excel/Word 文件時，2MD AnyDoc 引擎已將全文萃取並傳入對話中。
+   - 必須結構化剖析：三大財務報表（損益表、資產負債表、現金流量表）、關鍵比率（毛利率、營業利益率、淨利率、ROE、ROIC、FCF）、YoY/QoQ 成長動能、管理層指引 (Guidance) 與下行風險因子。
+3. **多維大師分析 (Master Consensus)**：遇到投資價值評估時調用 analyzeStockWithAI 獲取 13 位傳奇大師觀點。
+4. **自主發布執行器 (David888 WikiPublisher 鐵律)**：
    - 當使用者要求產出長篇研究報告、深度估值模型、投資備忘錄 (Investment Memo) 或多章節分析時，自動調用 publishToDavid888Wiki(title, content, theme) 發布至 David888 Wiki。
    - 👑 **排版鐵律 (Mandatory Structure)**：content 內容【第一行必須以 # Document Title 開頭】！嚴禁在前面加上任何對話性閒聊或開場白（例如嚴禁加上「好的，這是為您整理的...」）。[TOC] 與 > 執行摘要 必須緊隨在 # Document Title 之後！Mermaid 流程圖節點文字必須用雙引號包裹如 NODE["Label"]。
 
@@ -1378,6 +1386,94 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       ⚠️ Wiki 發布失敗：{result.error}
                     </div>
                   )}
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          readFinancialReport: {
+            description:
+              'Read, parse, and analyze an official financial report, annual report (10-K), quarterly report (10-Q), earnings release, investor presentation, or financial PDF from a URL using 2MD AnyDoc Engine. Use this whenever the user provides a link to a PDF, financial statement, SEC filing, or asks to parse a report.',
+            parameters: z.object({
+              url: z
+                .string()
+                .describe(
+                  'The URL of the PDF, financial report, or annual report to read.'
+                ),
+              symbol: z
+                .string()
+                .optional()
+                .describe('The optional stock symbol or company name.')
+            }),
+            generate: async function* ({ url, symbol }) {
+              yield (
+                <BotCard>
+                  <div className="flex items-center space-x-2 p-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent"></div>
+                    <span>📊 正在透過 2MD AnyDoc 引擎解析財報/年報 PDF 全文與財務數據...</span>
+                  </div>
+                </BotCard>
+              )
+
+              const text = await readUrl2MD(url)
+              const contextData = `【財報/年報/PDF 全文解析 (${url})】：\n${text ? text.slice(0, 4000) : '未獲取到內容'}`
+
+              const caption = await generateCaption(
+                symbol || url,
+                [],
+                'readFinancialReport',
+                aiState,
+                contextData
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'readFinancialReport',
+                        toolCallId,
+                        args: { url, symbol }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'readFinancialReport',
+                        toolCallId,
+                        result: {
+                          url,
+                          symbol,
+                          content: text ? text.slice(0, 5000) : '無法讀取財報內容',
+                          caption
+                        }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <FinancialReportCard
+                    filename={url.split('/').pop() || '財報文件.pdf'}
+                    url={url}
+                    contentSnippet={
+                      text ? text.slice(0, 600) + '...' : '未能萃取出文字內容'
+                    }
+                    fullContent={text}
+                  />
                   {caption}
                 </BotCard>
               )

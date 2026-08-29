@@ -15,6 +15,7 @@ import { ETFHeatmap } from '@/components/tradingview/etf-heatmap'
 import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
+import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 
 export const CHAT_STORAGE_KEY = 'stockbot_chat_sessions_v1'
 export const CHAT_HISTORY_EVENT = 'stockbot-chat-history-updated'
@@ -269,6 +270,17 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                       {args.url || result?.url}
                     </p>
                   </div>
+                )
+                break
+
+              case 'readFinancialReport':
+                cardContent = (
+                  <FinancialReportCard
+                    filename={args.url?.split('/').pop() || result?.filename || '財報/年報解析.pdf'}
+                    url={args.url || result?.url}
+                    contentSnippet={result?.content ? result.content.slice(0, 600) + '...' : ''}
+                    fullContent={result?.content}
+                  />
                 )
                 break
 

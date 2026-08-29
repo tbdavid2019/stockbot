@@ -3,25 +3,84 @@ import { GeistMono } from 'geist/font/mono'
 
 import '@/app/globals.css'
 import { cn } from '@/lib/utils'
-// import { ThemeToggle } from '@/components/theme-toggle'
 import { Providers } from '@/components/providers'
 import { Header } from '@/components/header'
 import { Toaster } from '@/components/ui/sonner'
 
+const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://bot.david888.com'
+
 export const metadata = {
-  metadataBase: process.env.VERCEL_URL
-    ? new URL(`https://${process.env.VERCEL_URL}`)
-    : undefined,
+  metadataBase: new URL(siteUrl),
   title: {
-    default: '888 StockBot',
-    template: `%s - 888 StockBot`
+    default: '888 StockBot - 即時 AI 股票圖表與大師投資分析',
+    template: `%s | 888 StockBot`
   },
   description:
-    'Lightning Fast AI Chatbot that Responds With Live Interactive Stock Charts, Financials, News, Screeners, and More.',
+    '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+  keywords: [
+    '888 StockBot',
+    'StockBot',
+    'AI 股票機器人',
+    'TradingView',
+    '台股即時報價',
+    '美股走勢圖',
+    'AI 投資分析',
+    '巴菲特分析',
+    '2MD 搜尋'
+  ],
+  authors: [{ name: 'david888.com', url: 'https://david888.com' }],
+  creator: 'david888.com',
+  publisher: 'david888.com',
+  alternates: {
+    canonical: 'https://bot.david888.com'
+  },
+  openGraph: {
+    title: '888 StockBot - 即時 AI 股票圖表與大師投資分析',
+    description:
+      '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+    url: 'https://bot.david888.com',
+    siteName: '888 StockBot',
+    locale: 'zh_TW',
+    type: 'website',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: '888 StockBot - 即時 AI 股票圖表與大師投資分析'
+      }
+    ]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '888 StockBot - 即時 AI 股票圖表與大師投資分析',
+    description:
+      '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+    site: '@david888',
+    creator: '@david888',
+    images: ['/twitter-image.png']
+  },
   icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png'
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' }
+    ],
+    shortcut: '/favicon.ico',
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }]
+  },
+  manifest: '/site.webmanifest',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1
+    }
   }
 }
 
@@ -37,8 +96,30 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: '888 StockBot',
+    url: 'https://bot.david888.com',
+    description:
+      '極速 AI 股票對話機器人，即時提供 TradingView 互動式走勢圖、台美股即時報價、13 位傳奇大師 AI 投資分析與 2MD 即時連網搜尋。',
+    applicationCategory: 'FinanceApplication',
+    operatingSystem: 'All',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD'
+    }
+  }
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="zh-TW" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
       <body
         className={cn(
           'font-sans antialiased',
@@ -57,7 +138,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <Header />
             <main className="flex flex-col flex-1 bg-muted/50">{children}</main>
           </div>
-          {/* <ThemeToggle /> */}
         </Providers>
       </body>
     </html>

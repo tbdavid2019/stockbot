@@ -4,6 +4,23 @@
 
 ---
 
+## [2026-08-29] - 2MD AnyDoc 財報與年報深度解讀、PDF/文件上傳與分析工具鏈
+
+### ✨ 新增 (Added)
+- **2MD AnyDoc 財報與年報多模態解讀引擎 (`lib/2md.ts`)**：
+  - 於 [`lib/2md.ts`](lib/2md.ts) 實作 `parseDocument2MD` 與 `batchReadUrls2MD`，支援將 PDF、Word (.docx)、Excel (.xlsx/.csv)、PPT、TXT 轉換為結構化乾淨 Markdown。
+  - 支援遠端財報/年報/SEC 10-K/10-Q 網址直讀 (`readUrl2MD`) 與本機文件 Multipart Form-Data 上傳解析。
+- **後端文件解析 API 端點 (`/api/parse-document`)**：
+  - 新增 [`app/api/parse-document/route.ts`](app/api/parse-document/route.ts)，支援最大 25MB 文件解析與自動頁數萃取，串接 2MD 多端點容錯備援。
+- **財報/年報/PDF 互動式視覺卡片 (`FinancialReportCard`)**：
+  - 新增 [`components/stocks/financial-report-card.tsx`](components/stocks/financial-report-card.tsx)，提供文件標題、頁數徽章、內容摘錄、一鍵複製 Markdown 與展開全文功能。
+- **自主財報分析工具 (`readFinancialReport`)**：
+  - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 註冊 `readFinancialReport` 工具，支援 AI 自主提取三大財務報表（損益表、資產負債表、現金流量表）、計算毛利率/ROE/ROIC/自由現金流 (FCF)、評估管理層指引 (Guidance) 與風險因子。
+- **前端 📎 財報/PDF 文件上傳器 (`PromptForm`)**：
+  - 於 [`components/prompt-form.tsx`](components/prompt-form.tsx) 新增 📎 檔案上傳按鈕，支援上傳進度狀態、附件預覽徽章 (含頁數標籤與一鍵移除)、拖曳與自訂分析 Prompt 提交。
+
+---
+
 ## [2026-08-29] - 對話歷史紀錄抽屜 (Chat History Drawer)、本機 LocalStorage 持久化與無縫回顧切換
 
 ### ✨ 新增 (Added)
@@ -19,6 +36,16 @@
   - 新增 [`app/(chat)/chat/[id]/page.tsx`](app/(chat)/chat/[id]/page.tsx)，支援直接透過 URL 分享或重新載入特定歷史對話。
 - **工具伴隨總結文字持久化 (Caption Persistence)**：
   - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 更新 13 個工具調用，在寫入 `aiState.done` 前先生成 `caption` 並存放於 `result.caption`，確保歷史回顧時所有伴隨解說文字完好無損。
+
+### 🐛 修復與 SEO 優化 (Fixed & SEO)
+- **修正標題重複問題 (`888 StockBot - 888 StockBot`)**：
+  - 根治 Next.js `title.template` 與首頁 `metadata.title` 衝突引發的重複標題問題。
+  - 將根佈局設定為 `title.default = '888 StockBot - 即時 AI 股票圖表與大師投資分析'`，子頁面使用 `%s | 888 StockBot`。
+- **全面修復 Open Graph、Twitter Cards 與 SEO Meta 標籤**：
+  - 設定 `metadataBase` 為 `https://bot.david888.com`，根絕社群平台無法讀取預覽圖 (`og:image` broken) 問題。
+  - 加入 canonical 網址 (`https://bot.david888.com`)、`og:url`、`og:site_name`、`og:locale` (`zh_TW`) 與 `twitter:site` (`@david888`)。
+  - 補齊 `favicon.svg`、`favicon-32x32.png`、`site.webmanifest` (PWA 支援) 與 `<html lang="zh-TW">` 語系宣告。
+  - 注入 Schema.org `WebApplication` JSON-LD 結構化資料，提升搜尋引擎 Rich Snippet 與排名權重。
 
 ---
 

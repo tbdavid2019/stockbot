@@ -3,7 +3,7 @@ import { AI } from '@/lib/chat/actions'
 import { getMissingKeys } from '@/app/actions'
 
 export const metadata = {
-  title: '888 StockBot'
+  title: '歷史對話'
 }
 
 export default async function ChatPage({

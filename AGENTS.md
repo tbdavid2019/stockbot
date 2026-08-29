@@ -59,6 +59,22 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - **`publishToDavid888Wiki`**：串接 `https://wiki.david888.com/api`，產出 Markdown 深度報告並自動回傳 `shareUrl`、`/present` 簡報與 `/book` 電子書。
 - **`readWebPage`**：透過 2MD Web Reader 萃取線上新聞/網址全文。
 
+### 5. 📜 對話歷史紀錄與 LocalStorage 持久化架構 (Chat History & LocalStorage Persistence)
+- **零後端純本機存儲**：透過 [`lib/chat-history.tsx`](lib/chat-history.tsx) 將所有對話（包含文字、TradingView 走勢圖、即時報價、大師 AI 分析、2MD 搜尋、Wiki 發布結果）持久化於瀏覽器 `localStorage` (`stockbot_chat_sessions_v1`)。
+- **全組件 UI State 還原機制 (`createUIStateFromStoredMessages`)**：
+  - 將序列化對話與工具呼叫結果還原為原生 React Financial Cards，並保留 AI 對話上下文。
+  - 13 個工具調用均在 `aiState.done` 前先生成 `caption` 並保存至 `result.caption`，保證歷史回顧時說明文字與圖表同步還原。
+- **事件驅動架構 (Event-Driven Architecture)**：
+  - `stockbot-chat-history-updated`：跨組件同步歷史紀錄更新。
+  - `stockbot-select-chat`：即時切換指定歷史對話。
+  - `stockbot-new-chat`：一鍵重置至全新空白對話。
+### 6. 📑 2MD AnyDoc 財報/年報解析與多模態文件架構 (Financial Report & Document Parsing)
+- **多端點 AnyDoc 容錯解析**：於 [`lib/2md.ts`](lib/2md.ts) 實作 `parseDocument2MD` 與 `readUrl2MD`，支援 PDF、Word (.docx)、Excel (.xlsx/.csv)、PPT、TXT。
+- **自主財報工具 (`readFinancialReport`)**：當使用者提供線上財報/年報/SEC 10-K/10-Q 網址時，AI 自主抓取並結構化剖析三大財務報表（損益表、資產負債表、現金流量表）、計算毛利率/ROE/ROIC/自由現金流 (FCF)、評估管理層指引與風險因子。
+- **本機文件上傳管道 (`/api/parse-document`)**：
+  - 前端 [`components/prompt-form.tsx`](components/prompt-form.tsx) 提供 📎 檔案上傳按鈕，支援最大 25MB 文件秒級解析。
+  - 解析後自動注入上下文並提供視覺化卡片 [`FinancialReportCard`](components/stocks/financial-report-card.tsx)。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)

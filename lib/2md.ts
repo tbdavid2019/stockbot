@@ -1,5 +1,5 @@
 /**
- * 2MD Live Financial & Web Search Helper for stockbot
+ * 2MD Live Financial, Web Search & Document/PDF Engine for stockbot
  * Prioritizes Primary (https://2md.aiurl.tw) and falls back to Backups (2md.glsoft.ai, create360.ai).
  */
 
@@ -10,12 +10,24 @@ export interface TwoMDResultItem {
   publisher?: string
 }
 
+export interface ParsedDocumentResult {
+  success: boolean
+  filename: string
+  title?: string
+  pages?: number
+  content: string
+  error?: string
+}
+
 const ENDPOINTS = [
   process.env.TWOMD_PRIMARY_URL || 'https://2md.aiurl.tw',
   process.env.TWOMD_BACKUP1_URL || 'https://2md.glsoft.ai',
   process.env.TWOMD_BACKUP2_URL || 'https://create360.ai'
 ]
 
+/**
+ * Perform live web search for financial news, tickers, IPOs, or market data.
+ */
 export async function searchWeb2MD(
   query: string,
   limit = 5
@@ -64,6 +76,9 @@ export async function searchWeb2MD(
   return []
 }
 
+/**
+ * Read any web page, online financial article, or remote PDF URL and convert to Markdown.
+ */
 export async function readUrl2MD(targetUrl: string): Promise<string> {
   const cleanTarget = targetUrl.replace(/^https?:\/\//, '')
   for (const baseUrl of ENDPOINTS) {
@@ -92,3 +107,101 @@ export async function readUrl2MD(targetUrl: string): Promise<string> {
   return ''
 }
 
+/**
+ * Parse an uploaded document file (PDF, DOCX, XLSX, CSV, PPT, TXT) into clean LLM-friendly Markdown.
+ */
+export async function parseDocument2MD(
+  fileBuffer: Buffer | Uint8Array | Blob,
+  filename = 'financial_report.pdf'
+): Promise<ParsedDocumentResult> {
+  for (const baseUrl of ENDPOINTS) {
+    try {
+      const formData = new FormData()
+      const blob =
+        fileBuffer instanceof Blob
+          ? fileBuffer
+          : new Blob([fileBuffer], { type: 'application/octet-stream' })
+      formData.append('file', blob, filename)
+
+      const endpoint = `${baseUrl.replace(/\/+$/, '')}/`
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          Accept: 'text/markdown, text/plain, */*',
+          'User-Agent': 'stockbot/2.0'
+        }
+      })
+
+      if (res.ok) {
+        const text = await res.text()
+        if (text && text.trim().length > 0) {
+          const pagesMatch = text.match(/Number of Pages:\s*(\d+)/i)
+          const titleMatch = text.match(/Title:\s*(.+)/i)
+          const pages = pagesMatch ? parseInt(pagesMatch[1], 10) : undefined
+          const title = titleMatch ? titleMatch[1].trim() : filename
+
+          return {
+            success: true,
+            filename,
+            title: title || filename,
+            pages,
+            content: text
+          }
+        }
+      }
+    } catch (err: any) {
+      console.warn(`[2MD ParseDocument] Failed on ${baseUrl}:`, err?.message || err)
+      continue
+    }
+  }
+
+  return {
+    success: false,
+    filename,
+    content: '',
+    error: '2MD AnyDoc 引擎暫時無法解析此文件。請確認檔案格式是否支援（PDF, DOCX, XLSX, CSV, TXT）。'
+  }
+}
+
+/**
+ * Batch crawl and extract multiple financial report or web URLs.
+ */
+export async function batchReadUrls2MD(urls: string[]): Promise<{ url: string; content: string }[]> {
+  if (!urls || urls.length === 0) return []
+  for (const baseUrl of ENDPOINTS) {
+    try {
+      const endpoint = `${baseUrl.replace(/\/+$/, '')}/v1/batch`
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'User-Agent': 'stockbot/2.0'
+        },
+        body: JSON.stringify({ urls })
+      })
+
+      if (res.ok) {
+        const json = await res.json()
+        if (json?.data && Array.isArray(json.data)) {
+          return json.data.map((item: any) => ({
+            url: item.url,
+            content: item.content || item.markdown || ''
+          }))
+        }
+      }
+    } catch (err) {
+      console.warn(`[2MD Batch] Failed on ${baseUrl}:`, err)
+      continue
+    }
+  }
+
+  // Fallback: fetch sequentially
+  const fallbackResults: { url: string; content: string }[] = []
+  for (const url of urls) {
+    const text = await readUrl2MD(url)
+    fallbackResults.push({ url, content: text })
+  }
+  return fallbackResults
+}

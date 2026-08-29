@@ -53,9 +53,9 @@ const exampleMessagesZh: ExampleMessage[] = [
     message: '今天股票市場各產業表現如何？'
   },
   {
-    heading: '股票篩選器',
-    subheading: '尋找潛力新標的',
-    message: '顯示股票篩選器來尋找新股票'
+    heading: '📑 財報與年報深度解讀',
+    subheading: '點擊 📎 上傳 PDF 或輸入財報網址',
+    message: '請告訴我可以如何上傳公司財報 PDF 或輸入財報網址讓您進行深度財務比率與大師投資分析？'
   }
 ]
 
@@ -87,9 +87,9 @@ const exampleMessagesEn: ExampleMessage[] = [
     message: `How is the stock market performing today by sector?`
   },
   {
-    heading: 'Show me a screener',
-    subheading: 'to find new stocks',
-    message: 'Show me a screener to find new stocks'
+    heading: '📑 Financial Report & PDF Analysis',
+    subheading: 'Click 📎 or provide report URL',
+    message: 'How can I upload a financial report PDF or provide a 10-K URL for in-depth ratio and master investor analysis?'
   }
 ]
 
