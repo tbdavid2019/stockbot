@@ -35,8 +35,24 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useUIState()
   const [aiState, setAIState] = useAIState()
+  const [wideMode, setWideMode] = useState(false)
   const currentChatIdRef = useRef<string>(id || nanoid())
   const hasHydratedRef = useRef(false)
+
+  useEffect(() => {
+    const syncLayoutMode = () => {
+      setWideMode(localStorage.getItem('stockbot_layout_mode') === '"wide"')
+    }
+
+    syncLayoutMode()
+    window.addEventListener('stockbot-layout-change', syncLayoutMode)
+    window.addEventListener('local-storage-change', syncLayoutMode)
+
+    return () => {
+      window.removeEventListener('stockbot-layout-change', syncLayoutMode)
+      window.removeEventListener('local-storage-change', syncLayoutMode)
+    }
+  }, [])
 
   // 1. Client-side hydration from localStorage on mount
   useEffect(() => {
@@ -73,7 +89,10 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
       })
 
       // Update URL without full refresh
-      if (typeof window !== 'undefined' && !window.location.pathname.includes(`/chat/${activeId}`)) {
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.pathname.includes(`/chat/${activeId}`)
+      ) {
         window.history.replaceState({}, '', `/chat/${activeId}`)
       }
     }
@@ -149,9 +168,14 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         ref={messagesRef}
       >
         {messages.length ? (
-          <ChatList messages={messages} isShared={false} session={session} />
+          <ChatList
+            messages={messages}
+            isShared={false}
+            session={session}
+            wide={wideMode}
+          />
         ) : (
-          <EmptyScreen />
+          <EmptyScreen wide={wideMode} />
         )}
         <div className="w-full h-px" ref={visibilityRef} />
       </div>
@@ -161,6 +185,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         setInput={setInput}
         isAtBottom={isAtBottom}
         scrollToBottom={scrollToBottom}
+        wide={wideMode}
       />
     </div>
   )

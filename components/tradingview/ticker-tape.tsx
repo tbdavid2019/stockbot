@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useTheme } from 'next-themes'
 
 interface StockItem {
   symbol: string
@@ -13,26 +14,20 @@ interface DynamicPromptsResponse {
   twStocks?: StockItem[]
 }
 
-type QuoteMarket = 'TW' | 'US' | 'INDEX' | 'CRYPTO'
-
 interface TickerQuote extends StockItem {
-  market: QuoteMarket
+  market: 'TW' | 'US'
 }
 
-const DEFAULT_MARKET_QUOTES: TickerQuote[] = [
-  { symbol: 'SPX500', name: 'S&P 500', market: 'INDEX' },
-  { symbol: 'NASDAQ100', name: 'Nasdaq 100', market: 'INDEX' },
-  { symbol: 'BTCUSD', name: 'Bitcoin', market: 'CRYPTO' }
+const INDEX_SYMBOLS = [
+  { proName: 'FOREXCOM:SPXUSD', title: 'S&P 500' },
+  { proName: 'FOREXCOM:NSXUSD', title: 'Nasdaq 100' },
+  { proName: 'BITSTAMP:BTCUSD', title: 'Bitcoin' }
 ]
 
-function quotePrefix(market: QuoteMarket) {
-  if (market === 'TW') return 'NT$'
-  if (market === 'US') return '$'
-  return ''
-}
-
 export function TickerTape() {
-  const [quotes, setQuotes] = useState<TickerQuote[]>(DEFAULT_MARKET_QUOTES)
+  const tradingViewContainer = useRef<HTMLDivElement>(null)
+  const [quotes, setQuotes] = useState<TickerQuote[]>([])
+  const { resolvedTheme } = useTheme()
 
   useEffect(() => {
     let isMounted = true
@@ -56,7 +51,7 @@ export function TickerTape() {
               .map(stock => ({ ...stock, market: 'US' as const }))
           : []
 
-        setQuotes([...DEFAULT_MARKET_QUOTES, ...twQuotes, ...usQuotes])
+        setQuotes([...twQuotes, ...usQuotes])
       } catch (error) {
         console.warn('[TickerTape] Failed to load live quotes:', error)
       }
@@ -71,32 +66,65 @@ export function TickerTape() {
     }
   }, [])
 
+  useEffect(() => {
+    const currentContainer = tradingViewContainer.current
+    if (!currentContainer) return
+
+    currentContainer.innerHTML = ''
+    const widget = document.createElement('div')
+    widget.className = 'tradingview-widget-container__widget'
+    currentContainer.appendChild(widget)
+
+    const script = document.createElement('script')
+    script.src =
+      'https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js'
+    script.async = true
+    script.innerHTML = JSON.stringify({
+      symbols: INDEX_SYMBOLS,
+      showSymbolLogo: true,
+      isTransparent: true,
+      displayMode: 'adaptive',
+      colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
+      locale: 'zh_TW'
+    })
+    currentContainer.appendChild(script)
+
+    return () => {
+      currentContainer.innerHTML = ''
+    }
+  }, [resolvedTheme])
+
   return (
     <div className="mb-2 min-h-16 w-full min-w-0 max-w-full overflow-hidden border-y border-slate-100 bg-white dark:border-zinc-800 dark:bg-background">
-      <div className="ticker-viewport flex items-center overflow-hidden py-2">
-        <div className="ticker-track flex min-w-max shrink-0 items-center hover:[animation-play-state:paused]">
-          {[...quotes, ...quotes].map((quote, index) => (
-            <div
-              key={`${quote.market}-${quote.symbol}-${index}`}
-              className="flex shrink-0 items-center gap-2 border-r border-slate-200 px-4 text-sm dark:border-zinc-700"
-              aria-hidden={index >= quotes.length}
-            >
-              <span className="font-medium text-slate-700 dark:text-slate-300">
-                {quote.name} ({quote.symbol})
-              </span>
-              {quote.price ? (
+      <div
+        ref={tradingViewContainer}
+        className="h-14 min-w-0 overflow-hidden border-b border-slate-100 dark:border-zinc-800"
+      />
+
+      <div className="ticker-viewport flex min-h-12 items-center overflow-hidden py-2">
+        {quotes.length > 0 ? (
+          <div className="ticker-track flex min-w-max shrink-0 items-center hover:[animation-play-state:paused]">
+            {[...quotes, ...quotes].map((quote, index) => (
+              <div
+                key={`${quote.market}-${quote.symbol}-${index}`}
+                className="flex shrink-0 items-center gap-2 border-r border-slate-200 px-4 text-sm dark:border-zinc-700"
+                aria-hidden={index >= quotes.length}
+              >
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {quote.name} ({quote.symbol})
+                </span>
                 <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
-                  {quotePrefix(quote.market)}
-                  {quote.price}
+                  {quote.market === 'TW' ? 'NT$' : '$'}
+                  {quote.price ?? '—'}
                 </span>
-              ) : (
-                <span className="text-xs text-slate-400 dark:text-slate-500">
-                  指數
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <span className="px-4 text-sm text-slate-400">
+            載入台股／美股報價…
+          </span>
+        )}
       </div>
     </div>
   )

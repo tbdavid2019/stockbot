@@ -7,10 +7,15 @@ import { cn } from '@/lib/utils'
 import { ChatHistorySheet } from '@/components/chat-history-sheet'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { CHAT_NEW_EVENT } from '@/lib/chat-history'
+import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import { useRouter } from 'next/navigation'
 
 export function Header() {
   const router = useRouter()
+  const [layoutMode, setLayoutMode] = useLocalStorage<'narrow' | 'wide'>(
+    'stockbot_layout_mode',
+    'narrow'
+  )
 
   const handleNewChat = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -43,7 +48,10 @@ export function Header() {
         <button
           type="button"
           onClick={handleNewChat}
-          className={cn(buttonVariants({ variant: 'ghost' }), 'flex items-center gap-1 text-xs font-semibold')}
+          className={cn(
+            buttonVariants({ variant: 'ghost' }),
+            'flex items-center gap-1 text-xs font-semibold'
+          )}
           style={{ borderRadius: 6, color: '#F55036', padding: '4px 8px' }}
         >
           <IconPlus className="size-3.5" />
@@ -53,7 +61,7 @@ export function Header() {
       </div>
 
       <div className="flex items-center gap-2 min-w-0 shrink text-right text-xs">
-        <div className="hidden text-[10px] leading-snug text-orange-600 sm:block">
+        <div className="hidden text-xs leading-snug text-orange-600 sm:block">
           本機器人沒有提供投資建議，若需要投資建議請用{' '}
           <a
             href="https://t.me/oli_billion_bot"
@@ -75,6 +83,22 @@ export function Header() {
             Telegram
           </a>
         </div>
+        <button
+          type="button"
+          className="flex h-8 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-pressed={layoutMode === 'wide'}
+          title={layoutMode === 'wide' ? '切換窄版' : '切換寬版'}
+          onClick={() => {
+            const nextMode = layoutMode === 'wide' ? 'narrow' : 'wide'
+            setLayoutMode(nextMode)
+            window.dispatchEvent(new Event('stockbot-layout-change'))
+          }}
+        >
+          <span aria-hidden="true">↔</span>
+          <span className="hidden sm:inline">
+            {layoutMode === 'wide' ? '窄版' : '寬版'}
+          </span>
+        </button>
         <ThemeToggle />
       </div>
     </header>

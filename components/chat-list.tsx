@@ -8,15 +8,23 @@ export interface ChatList {
   messages: UIState
   session?: Session
   isShared: boolean
+  wide?: boolean
 }
 
-export function ChatList({ messages, session, isShared }: ChatList) {
+export function ChatList({
+  messages,
+  session,
+  isShared,
+  wide = false
+}: ChatList) {
   if (!messages.length) {
     return null
   }
 
   return (
-    <div className="relative mx-auto max-w-2xl px-4">
+    <div
+      className={`relative mx-auto px-4 ${wide ? 'max-w-6xl' : 'max-w-2xl'}`}
+    >
       {messages.map((message, index) => (
         <div key={message.id}>
           {message.display}

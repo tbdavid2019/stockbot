@@ -18,6 +18,7 @@ export interface ChatPanelProps {
   setInput: (value: string) => void
   isAtBottom: boolean
   scrollToBottom: () => void
+  wide?: boolean
 }
 
 interface ExampleMessage {
@@ -55,7 +56,8 @@ const exampleMessagesZh: ExampleMessage[] = [
   {
     heading: '📑 財報與年報深度解讀',
     subheading: '點擊 📎 上傳 PDF 或輸入財報網址',
-    message: '請告訴我可以如何上傳公司財報 PDF 或輸入財報網址讓您進行深度財務比率與大師投資分析？'
+    message:
+      '請告訴我可以如何上傳公司財報 PDF 或輸入財報網址讓您進行深度財務比率與大師投資分析？'
   }
 ]
 
@@ -89,7 +91,8 @@ const exampleMessagesEn: ExampleMessage[] = [
   {
     heading: '📑 Financial Report & PDF Analysis',
     subheading: 'Click 📎 or provide report URL',
-    message: 'How can I upload a financial report PDF or provide a 10-K URL for in-depth ratio and master investor analysis?'
+    message:
+      'How can I upload a financial report PDF or provide a 10-K URL for in-depth ratio and master investor analysis?'
   }
 ]
 
@@ -99,7 +102,8 @@ export function ChatPanel({
   input,
   setInput,
   isAtBottom,
-  scrollToBottom
+  scrollToBottom,
+  wide = false
 }: ChatPanelProps) {
   const [aiState] = useAIState()
   const [messages, setMessages] = useUIState<typeof AI>()
@@ -151,7 +155,9 @@ export function ChatPanel({
         scrollToBottom={scrollToBottom}
       />
 
-      <div className="mx-auto sm:max-w-2xl sm:px-4">
+      <div
+        className={`mx-auto sm:px-4 ${wide ? 'sm:max-w-6xl' : 'sm:max-w-2xl'}`}
+      >
         {messages.length === 0 && (
           <div className="mb-4 px-3 sm:px-0">
             <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

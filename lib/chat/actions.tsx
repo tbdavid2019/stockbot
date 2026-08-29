@@ -28,7 +28,8 @@ import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
-import { searchWeb2MD, readUrl2MD } from '@/lib/2md'
+import { BotCaption } from '@/components/stocks/bot-caption'
+import { searchWeb2MD, readUrl2MD, fetchLiveStockContext } from '@/lib/2md'
 import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
 
@@ -268,50 +269,32 @@ This tool reads, parses, and analyzes an official financial report, annual repor
 ### 🔴 零幻覺與即時檢索鐵律 (ZERO HALLUCINATION & REAL-TIME SEARCH POLICY)
 1. 你的底層模型內部知識庫可能已經過期。嚴禁憑過期記憶斷定公司未上市、沒有股票代號或編造數據！
 2. 當有提供即時檢索數據時，你的說明文字必須 100% 依據該檢索結果總結，嚴禁與檢索結果矛盾！
-${contextData ? `\n【最新即時檢索數據】：\n${contextData}\n` : ''}
+${contextData ? `\n【最新即時檢索數據與行情資訊】：\n${contextData}\n` : ''}
 
 ### 📐 介面卡片相對位置鐵律 (CARD POSITIONING DIRECTIVE - CRITICAL)
 - **所有圖表、分析報告、走勢圖、新聞與財務卡片在 UI 介面上皆一律渲染於此文字訊息的「上方 (ABOVE)」**。
 - **嚴禁使用「以下是...」或「如下所示...」！**
 - **一律使用「以上是...」、「如上方所示...」、「如上圖所示...」**。
 
-You have just called a tool (` +
-    toolName +
-    `) on the user's behalf. Now you need to share a response to the user with this tool response. 
+### 💼 專業財經深度解說與自主續問規範 (FINANCIAL INSIGHT & SUGGESTED FOLLOW-UPS)
+你是一位資深機構級 AI 財經分析師與投資導師。在提供圖表或工具說明時：
+1. **多維度實質財經解說 (Substantive Insight)**：
+   - 拒絕單薄的客套空話。請直接結合上方圖表與最新檢索數據，條理清晰地說明：
+     - **即時價格與行情表現**：明確點出最新成交價格、當日/近期漲跌動能。
+     - **公司定位與營運焦點**：概述其核心業務、產業龍頭地位、最新營收動態、獲利亮點、本益比 (P/E) 或殖利率概況。
+     - **投資人關注催化劑**：簡述市場當前關注的利多或風險點。
+2. **💡 自主續問提示機制 (Follow-up Prompts)**：
+   - 在解說結尾，**務必附上 3 ~ 4 個量身定制的自主續問建議**，引導使用者一鍵點擊深入追問。
+   - 必須嚴格使用分隔標記 \`---SUGGESTIONS---\`，並在下方列出具體問句，例如：
+   \`\`\`markdown
+   ---SUGGESTIONS---
+   - 📊 查詢近年配息與歷年殖利率表現
+   - 🧠 啟動 13 位大師多維 AI 投資分析
+   - 📑 解讀最新季度財務報表與獲利能力
+   - 📈 查看技術指標與長期歷史走勢圖
+   \`\`\`
 
-Example 1:
-User: What is the price of AAPL?
-Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockPrice" }, "parameters": { "symbol": "AAPL" } } } 
-
-Assistant (you): 以上是 AAPL 的最新股價資訊。如果您需要查看歷史走勢圖或財務數據，請隨時告訴我！
-
-Example 2 :
-
-User: LLY 值得買嗎？請用多位大師進行 AI 投資分析
-Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "analyzeStockWithAI" }, "parameters": { "symbol": "LLY" } } } 
-
-Assistant (you): 以上是多位投資大師對 LLY 的 AI 投資分析結果。若您想查看最新股價、歷史走勢圖或進一步的財務數據，隨時告訴我！
-
-Example 3 :
-
-User: Compare AAPL and MSFT stock prices
-Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockChart" }, "parameters": { "symbol": "AAPL" , "comparisonSymbols" : [{"symbol": "MSFT", "position": "SameScale"}] } } } 
-
-Assistant (you): 以上圖表展示了 Microsoft (MSFT) 與 Apple (AAPL) 的近期走勢比較。需要為您查看雙方的財務指標或即時報價嗎？
-
-Example 4 (Live Search for newly listed / query):
-User: SpaceX 股價
-Assistant: { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 股價 SPCX 上市" } } }
-Assistant (you): 根據 2MD 即時檢索結果，SpaceX（代號 SPCX）最新行情與相關新聞如上方所示。需要為您查詢進一步財務數據或繪製走勢圖嗎？
-
-## Guidelines
-Talk like one of the above responses, but BE CREATIVE and generate a DIVERSE response. 
-
-Language: reply in the same language the user used most recently. If the latest user message contains Chinese characters, reply in Traditional Chinese. If it is English, reply in English. Do not switch languages unless the user does so.
-
-Your response should be BRIEF, about 1-3 sentences.
-
-Besides the symbol, you cannot customize any of the screeners or graphics. Do not tell the user that you can.
+Language: reply in the same language the user used most recently. If Chinese, reply in Traditional Chinese (繁體中文). If English, reply in English.
     `
 
   const candidates = getProviderCandidates()
@@ -510,11 +493,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
+              const liveContext = await fetchLiveStockContext(symbol)
               const caption = await generateCaption(
                 symbol,
                 comparisonSymbols,
                 'showStockChart',
-                aiState
+                aiState,
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -556,7 +541,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     symbol={symbol}
                     comparisonSymbols={comparisonSymbols}
                   />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -578,11 +563,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
+              const liveContext = await fetchLiveStockContext(symbol)
               const caption = await generateCaption(
                 symbol,
                 [],
                 'showStockPrice',
-                aiState
+                aiState,
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -621,7 +608,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockPrice props={symbol} />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -643,11 +630,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
+              const liveContext = await fetchLiveStockContext(symbol)
               const caption = await generateCaption(
                 symbol,
                 [],
                 'StockFinancials',
-                aiState
+                aiState,
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -686,7 +675,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockFinancials props={symbol} />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -708,11 +697,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
+              const liveContext = await fetchLiveStockContext(symbol)
               const caption = await generateCaption(
                 symbol,
                 [],
                 'showStockNews',
-                aiState
+                aiState,
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -751,7 +742,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockNews props={symbol} />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -810,7 +801,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockScreener />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -868,7 +859,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketOverview />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -926,7 +917,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketHeatmap />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -984,7 +975,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <ETFHeatmap />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1042,7 +1033,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketTrending />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1067,11 +1058,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
+              const liveContext = await fetchLiveStockContext(symbol)
               const caption = await generateCaption(
                 symbol,
                 [],
                 'analyzeStockWithAI',
-                aiState
+                aiState,
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -1110,7 +1103,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockAnalysis symbol={symbol} />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1185,7 +1178,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <WebSearchResults query={query} results={results} />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1270,7 +1263,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       {url}
                     </p>
                   </div>
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1386,7 +1379,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       ⚠️ Wiki 發布失敗：{result.error}
                     </div>
                   )}
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1474,7 +1467,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     }
                     fullContent={text}
                   />
-                  {caption}
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }

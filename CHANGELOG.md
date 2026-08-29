@@ -4,6 +4,31 @@
 
 ---
 
+## [2026-08-29] - 深度財經洞察強化、2MD 即時行情自動注入與互動式自主續問提示鏈
+
+### ✨ 新增 (Added)
+- **互動式自主續問提示機制 (Suggested Follow-up Prompts)**：
+  - 新增 [`components/stocks/followup-prompts.tsx`](components/stocks/followup-prompts.tsx) 與 [`components/stocks/bot-caption.tsx`](components/stocks/bot-caption.tsx)。
+  - 在每次 AI 回應與金融圖表下方，自動動態生成 3 ~ 4 個量身定制的自主續問按鈕（例如大師 AI 分析、配息殖利率、最新季報解讀、技術走勢圖等），使用者可一鍵點擊快速追問，免手動重複輸入。
+- **2MD 即時行情與公司數據自動注入 (`fetchLiveStockContext`)**：
+  - 於 [`lib/2md.ts`](lib/2md.ts) 實作 `fetchLiveStockContext`，在調用股票圖表、即時報價、財務報表與大師分析時，自動在背景檢索即時股價、漲跌動能、本益比、殖利率與營運亮點。
+- **LLM 財經深度解讀大幅強化**：
+  - 重構 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 的 `generateCaption` 與 System Prompt，徹底解決過往僅回覆單句客套空話的問題，改為提供包含最新盤勢、產業地位、財務指標與催化劑的機構級專業解說。
+
+---
+
+## [2026-08-29] - 免責文字整理、寬版切換與指數報價恢復
+
+### ✨ 新增 (Added)
+- Header 加入窄版／寬版切換，預設窄版並記住使用者選擇；手機版維持響應式排版。
+
+### 🐛 修復 (Fixed)
+- 移除輸入框下方重複的投資免責文字，只保留 Header 右上角版本。
+- Header 右上角免責文字放大。
+- 恢復 TradingView ticker iframe 的 S&P 500、Nasdaq 100、Bitcoin 數值，並保留 API 台股／美股價格跑馬燈。
+
+---
+
 ## [2026-08-29] - Header 主題切換與跑馬燈恢復
 
 ### 🐛 修復 (Fixed)

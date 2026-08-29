@@ -205,3 +205,26 @@ export async function batchReadUrls2MD(urls: string[]): Promise<{ url: string; c
   }
   return fallbackResults
 }
+
+/**
+ * Fetch live stock quotes, market summary, and company performance from 2MD search.
+ */
+export async function fetchLiveStockContext(query: string): Promise<string> {
+  if (!query) return ''
+  try {
+    const cleanQuery = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
+    const searchTerms = `${cleanQuery} 股票 股價 即時行情 營收 殖利率`
+    const results = await searchWeb2MD(searchTerms, 4)
+    if (results.length > 0) {
+      return results
+        .map(
+          (r, i) =>
+            `[即時行情與財經摘要 ${i + 1}] ${r.title}：${r.description}`
+        )
+        .join('\n')
+    }
+  } catch (err) {
+    console.warn('[fetchLiveStockContext] Failed:', err)
+  }
+  return ''
+}

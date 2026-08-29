@@ -16,6 +16,7 @@ import { StockAnalysis } from '@/components/tradingview/stock-analysis'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
+import { BotCaption } from '@/components/stocks/bot-caption'
 
 export const CHAT_STORAGE_KEY = 'stockbot_chat_sessions_v1'
 export const CHAT_HISTORY_EVENT = 'stockbot-chat-history-updated'
@@ -310,11 +311,7 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
               display: (
                 <BotCard>
                   {cardContent}
-                  {caption && (
-                    <div className="mt-2 text-sm text-foreground leading-relaxed">
-                      {caption}
-                    </div>
-                  )}
+                  {caption && <BotCaption content={caption} />}
                 </BotCard>
               )
             })

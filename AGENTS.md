@@ -75,6 +75,12 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 前端 [`components/prompt-form.tsx`](components/prompt-form.tsx) 提供 📎 檔案上傳按鈕，支援最大 25MB 文件秒級解析。
   - 解析後自動注入上下文並提供視覺化卡片 [`FinancialReportCard`](components/stocks/financial-report-card.tsx)。
 
+### 7. 💡 深度財經洞察與互動式自主續問架構 (Deep Financial Insight & Suggested Follow-ups)
+- **2MD 即時行情自動注入**：各金融工具與走勢圖調用時，透過 `fetchLiveStockContext` 自動在背景檢索標的即時股價、漲跌動態、本益比、殖利率與營運概況，解決 TradingView 部分冷門標的或嵌入限制引發的資訊空白。
+- **自主續問提示組件 (`FollowupPrompts` & `BotCaption`)**：
+  - AI 解說在結尾以 `---SUGGESTIONS---` 產生 3 ~ 4 個量身定制的自主續問建議。
+  - 前端組件 [`components/stocks/followup-prompts.tsx`](components/stocks/followup-prompts.tsx) 自動將其渲染為高質感互動按鈕，使用者點擊即可觸發無縫追問。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)
