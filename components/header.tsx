@@ -63,25 +63,25 @@ export function Header() {
 
       <div className="flex min-w-0 shrink items-center gap-1.5 text-sm sm:gap-2">
         <div className="hidden text-sm leading-snug text-orange-600 sm:block">
-          本機器人沒有提供投資建議，若需要投資建議請用{' '}
+          {lang === 'en' ? 'Not investment advice · ' : '非投資建議 · '}
           <a
             href="https://t.me/oli_billion_bot"
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-orange-700"
           >
-            https://t.me/oli_billion_bot
+            oli-™股靈精怪 Stock
           </a>
         </div>
         <div className="whitespace-nowrap text-[9px] leading-tight text-orange-600 sm:hidden">
-          非投資建議 ·{' '}
+          {lang === 'en' ? 'Not investment advice · ' : '非投資建議 · '}
           <a
             href="https://t.me/oli_billion_bot"
             target="_blank"
             rel="noopener noreferrer"
             className="underline"
           >
-            Telegram
+            oli-™股靈精怪
           </a>
         </div>
         <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-xs shadow-sm">
