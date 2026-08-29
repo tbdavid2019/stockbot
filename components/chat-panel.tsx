@@ -44,8 +44,35 @@ const promptLabelsEn = [
   '⚡ Market inspiration for today'
 ]
 
-function shufflePrompts(prompts: ExampleMessage[]) {
-  return [...prompts].sort(() => Math.random() - 0.5).slice(0, 6)
+function shufflePrompts(
+  prompts: ExampleMessage[],
+  previousPrompts: ExampleMessage[] = []
+) {
+  const makeBatch = () => {
+    const shuffled = [...prompts]
+    for (let index = shuffled.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(Math.random() * (index + 1))
+      const currentPrompt = shuffled[index]
+      shuffled[index] = shuffled[swapIndex]
+      shuffled[swapIndex] = currentPrompt
+    }
+    return shuffled.slice(0, 6)
+  }
+
+  let nextBatch = makeBatch()
+  let attempts = 0
+  while (
+    prompts.length > 6 &&
+    previousPrompts.length > 0 &&
+    nextBatch.every(prompt =>
+      previousPrompts.some(previous => previous.message === prompt.message)
+    ) &&
+    attempts < 8
+  ) {
+    nextBatch = makeBatch()
+    attempts += 1
+  }
+  return nextBatch
 }
 
 const exampleMessagesZh: ExampleMessage[] = [
@@ -79,6 +106,26 @@ const exampleMessagesZh: ExampleMessage[] = [
     subheading: '點擊 📎 上傳 PDF 或輸入財報網址',
     message:
       '請告訴我可以如何上傳公司財報 PDF 或輸入財報網址讓您進行深度財務比率與大師投資分析？'
+  },
+  {
+    heading: '台股供應鏈快覽',
+    subheading: '找出上下游與同產業連動標的',
+    message: '請整理今天值得留意的台股供應鏈與相關概念股'
+  },
+  {
+    heading: '盤前新聞濃縮包',
+    subheading: '整理影響台股、美股與總經的重點',
+    message: '請整理今天最重要的台股、美股與總經新聞'
+  },
+  {
+    heading: '波段觀察清單',
+    subheading: '用趨勢、成交量與支撐壓力篩選',
+    message: '請找出今天適合觀察的台股或美股波段標的'
+  },
+  {
+    heading: '財報體檢室',
+    subheading: '營收、毛利率與自由現金流一次看',
+    message: '請幫我做一份公司的最新財報與現金流體檢'
   }
 ]
 
@@ -114,6 +161,28 @@ const exampleMessagesEn: ExampleMessage[] = [
     subheading: 'Click 📎 or provide report URL',
     message:
       'How can I upload a financial report PDF or provide a 10-K URL for in-depth ratio and master investor analysis?'
+  },
+  {
+    heading: 'Taiwan supply-chain scan',
+    subheading: 'Related companies and industry links',
+    message:
+      'Find Taiwan supply-chain and related companies worth watching today'
+  },
+  {
+    heading: 'Pre-market news brief',
+    subheading: 'Taiwan, US and macro market highlights',
+    message:
+      'Summarize the most important Taiwan, US and macro market news today'
+  },
+  {
+    heading: 'Swing-trade watchlist',
+    subheading: 'Trend, volume, support and resistance',
+    message: 'Find Taiwan or US stocks worth watching for swing trading today'
+  },
+  {
+    heading: 'Financial health check',
+    subheading: 'Revenue, margins and free cash flow',
+    message: 'Give me a financial health check for a company'
   }
 ]
 
@@ -234,14 +303,16 @@ export function ChatPanel({
                   rel="noopener noreferrer"
                   className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 transition-colors hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/70"
                 >
-                  📡 stock.david888.com 模板
+                  📡 每日模板
                 </a>
               </div>
               <button
                 type="button"
                 className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 onClick={() => {
-                  setVisibleExamples(shufflePrompts(currentExamples))
+                  setVisibleExamples(
+                    shufflePrompts(currentExamples, visibleExamples)
+                  )
                   setPromptLabelIndex(
                     Math.floor(Math.random() * promptLabels.length)
                   )
