@@ -123,7 +123,7 @@ export function inferDeterministicTool(
     return 'analyzeStockWithAI'
   }
   if (
-    /走勢圖|股票圖|技術線圖|技術圖|k\s*線|線圖|stock chart|price chart/i.test(
+    /走勢圖|股票圖|技術線圖|技術圖|k\s*線|線圖|趨勢|量價|支撐|壓力|技術分析|stock chart|price chart|trend|support|resistance/i.test(
       content
     )
   ) {
@@ -141,7 +141,7 @@ export function inferDeterministicTool(
       content
     )
   ) {
-    return 'showStockFinancials'
+    return 'answerFinancialMetric'
   }
   if (/新聞|消息|重大事件|近期動態|stock news|latest news/i.test(content)) {
     return 'showStockNews'

@@ -22,7 +22,7 @@ export function FinancialMetricCard({
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
-              財務指標即時核實
+              財務數據即時核實
             </p>
             <h3 className="mt-0.5 break-words text-base font-bold text-slate-900 dark:text-slate-100 sm:text-lg">
               {symbol} · {question}

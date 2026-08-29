@@ -81,7 +81,7 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - `app/(chat)/page.tsx` 與 `app/(chat)/chat/[id]/page.tsx` 必須各自匯出 `maxDuration = 60`；只在 layout 宣告不會套用到 Vercel Server Action。
   - 一般金融卡的即時資料由卡片/API 自行載入；Server Action 內禁止為一般 caption 先用 2MD 預抓同一份資料。一般 Caption 僅允許單一 provider、1.5 秒上限，失敗即使用本機 fallback。
   - `answerFinancialMetric` 與 2MD 研究屬於使用者要求的主要答案，不是一般 caption；可在 60 秒 Server Action 預算內使用最多兩個 provider、每個 7 秒的證據合成。13 位大師綜合判讀則由 `/api/analysis-summary` 在卡片資料完成後獨立執行。
-  - `streamUI` 工具路由每個 provider 必須有明確 abort timeout，且每輪最多嘗試兩個 provider，禁止無上限串行重試。
+  - `streamUI` 每輪僅使用一個工具 provider。禁止將短時限 `AbortSignal` 直接傳入 `streamUI`：AI SDK 的串流可能在函式返回後才拋出 timeout，造成未捕捉的 RSC render exception；執行時間由 page entry 的 `maxDuration = 60` 收斂。
 - **事件驅動架構 (Event-Driven Architecture)**：
   - `stockbot-chat-history-updated`：跨組件同步歷史紀錄更新。
   - `stockbot-select-chat`：即時切換指定歷史對話。
@@ -110,6 +110,7 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - 系統已全面升級為原生 React 金融情報卡片：
   - **`showStockFinancials` ➔ `<NativeFinancialsCard />`**：串接量化分析 API 的結構化指標（P/E, P/B, P/S, ROE, 淨利率, 營業利益率, 流動比, 負債比, 營收年增率, DCF 內在價值）；實際可用欄位依上游市場與標的覆蓋為準。
   - **`answerFinancialMetric` ➔ `<FinancialMetricCard />` + `<BotCaption />`**：即時搜尋僅作為後端證據；上方卡片呈現來源，下方文字直接回答指標、財報期間、幣別與 reported/adjusted/estimate 口徑；不能核實時明確拒絕猜值。
+  - `answerFinancialMetric` 同時處理「最新財務數據與估值」等多指標摘要。台股代號先由 AnswerBook Market Data 解析公司名，再以公司名、純代號與財務意圖執行多查詢 2MD 搜尋；禁止直接把 `TWSE:` 前綴、emoji 或整句 UI 樣板當成唯一 query。
   - **禁止假財務預設值**：上游未提供的指標一律顯示 `—` 或「待確認」，不得用展示用數字或固定判斷取代真實資料。
   - **`showStockNews` ➔ `<NativeStockNewsCard />`**：由 2MD 全網情報大腦即時檢索最新重大快訊、法說會動態與新聞外鏈，無任何交易所限制。
   - **全局錯誤邊界 (`SafeCardErrorBoundary`)**：所有訊息與卡片均包裹安全邊界，單一異常絕不拖垮整場對話。

@@ -4,6 +4,17 @@
 
 ---
 
+## [2026-08-29] - 財務檢索與 RSC Runtime 緊急修復
+
+### 🐛 修復 (Fixed)
+
+- 修正 `streamUI` 直接使用 3 秒 `AbortSignal` 後，timeout 於 Server Components render 階段逸出並造成整張卡片崩潰（production digest `3382370668`）；改為單一工具 provider 並由 60 秒 Server Action 上限收斂執行時間。
+- 「最新財務數據與估值」等廣義財務需求改走 `answerFinancialMetric` 證據合成，不再送入可能回空資料的舊原生財務卡。
+- 新增 AnswerBook 市場目錄名稱解析與多查詢研究檢索：`TWSE:2382`、`TWSE:2603` 會先解析為廣達、長榮，再以純代號、公司名、財報／投資人關係與使用者意圖並行搜尋。
+- 搜尋結果加入公司名／代號關聯排序、去重與垃圾來源過濾，排除 YouTube Music 等與公司財務無關結果。
+
+---
+
 ## [2026-08-29] - 對話路由與 Vercel 卡片穩定性修復
 
 ### 🐛 修復 (Fixed)

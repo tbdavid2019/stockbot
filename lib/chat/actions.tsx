@@ -32,10 +32,12 @@ import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 import { BotCaption } from '@/components/stocks/bot-caption'
-import { searchWeb2MD, readUrl2MD } from '@/lib/2md'
+import { readUrl2MD } from '@/lib/2md'
+import { searchResearchEvidence } from '@/lib/research-search'
 import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
 import {
+  extractExplicitTicker,
   inferDeterministicTool,
   resolveTickerFromMessages
 } from '@/lib/chat/routing'
@@ -288,6 +290,7 @@ Rules:
 - Never output generic filler such as "以上是 ... 的最新即時市場情報與動態數據分析".
 - For a company-business question, explain what the company does, its core products/services, customers or distribution model, and how it makes money when the evidence supports those points.
 - For one requested financial metric, state the value first, then its reporting period, currency, and whether it is reported, adjusted, or an estimate. Do not confuse EBITDA with operating income or net income. Cite the source title inline. If the exact metric cannot be verified from the supplied evidence, say so plainly and identify the closest verified figure without presenting it as EBITDA.
+- For a broad financial-and-valuation request, synthesize only evidence-backed values for the latest reporting period. Prioritize revenue and growth, gross/operating/net margins, EPS, operating/free cash flow, leverage, and valuation multiples. Omit unavailable fields rather than inventing them.
 - Distinguish verified facts from inference. If the provided evidence is insufficient, state the missing point precisely instead of inventing it.
 - Refer to the evidence as "上方搜尋結果" or "上方資料" because the source card is above the answer.
 - Answer in the same language as the user's latest question. Chinese must use Traditional Chinese.
@@ -614,6 +617,7 @@ async function submitUserMessage(content: string, userApiKey?: string) {
   }
 
   const resolvedTicker = resolveTickerFromMessages(content, rawAiMessages)
+  const currentExplicitTicker = extractExplicitTicker(content)
   const deterministicTool = inferDeterministicTool(content, resolvedTicker)
 
   if (deterministicTool && sanitizedMessages.length > 0) {
@@ -625,7 +629,7 @@ async function submitUserMessage(content: string, userApiKey?: string) {
 
   // Bound routing failover. Unbounded provider loops can exceed the Server
   // Action lifetime even when each individual provider eventually times out.
-  const candidates = getProviderCandidates(userApiKey).slice(0, 2)
+  const candidates = getProviderCandidates(userApiKey).slice(0, 1)
   let lastError: any = null
 
   for (const candidate of candidates) {
@@ -639,7 +643,6 @@ async function submitUserMessage(content: string, userApiKey?: string) {
         model: client(candidate.toolModel),
         initial: <SpinnerMessage />,
         maxRetries: 0,
-        abortSignal: AbortSignal.timeout(3000),
         toolChoice: deterministicTool
           ? ({ type: 'tool', toolName: deterministicTool } as any)
           : 'auto',
@@ -681,7 +684,7 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
 3. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 小米 -> HKEX:1810, 騰訊 -> HKEX:700, 阿里 -> HKEX:9988, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
 4. Only for an unknown, new, private, or ambiguous company name with no explicit ticker, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
 5. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
-6. If an explicit ticker is present and the user asks about any financial-statement line item, ratio, growth comparison, valuation multiple, or accounting term (including unfamiliar ones), call answerFinancialMetric. Do not expose a raw search-results card for a focused metric question.
+6. If an explicit ticker is present and the user asks for a financial summary, valuation, any financial-statement line item, ratio, growth comparison, valuation multiple, or accounting term (including unfamiliar ones), call answerFinancialMetric. Do not expose a raw search-results card for a financial question.
 
 ### 🧠 多輪續問與標的繼承 (Multi-Turn Context & Symbol Resolution)
 1. 當使用者在多輪對話中進行追問（例如點擊或輸入「啟動 13 位傳奇大師多維投資價值評估」、「多位大師進行投資分析」、「查看走勢圖」、「財務狀況如何」、「相關概念股」、「該買嗎」），而當前提問未指明股票名稱/代碼時：
@@ -976,7 +979,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           answerFinancialMetric: {
             description:
-              'Answer one explicitly requested financial metric such as EBITDA, EBIT, EPS, FCF, ROE, ROIC, margins, valuation multiples, leverage ratios, or dividend yield. Search live evidence privately and return a concise synthesized answer instead of a raw search-results list.',
+              'Answer a financial summary or requested metric such as revenue, margins, EBITDA, EBIT, EPS, FCF, ROE, ROIC, growth, valuation multiples, leverage ratios, or dividend yield. Search live evidence privately and return a concise synthesized answer instead of a raw search-results list.',
             parameters: z.object({
               symbol: z
                 .string()
@@ -1002,10 +1005,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               let results: any[] = []
               try {
-                results = await searchWeb2MD(
-                  `${formattedSymbol} ${question} latest annual quarterly report filing investor relations`,
-                  5
-                )
+                const evidence = await searchResearchEvidence({
+                  question,
+                  symbol: formattedSymbol,
+                  mode: 'financial',
+                  limit: 6
+                })
+                results = evidence.results
               } catch (error) {
                 console.warn('[answerFinancialMetric] Search failed:', error)
               }
@@ -1643,7 +1649,13 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               let results: any[] = []
               try {
-                results = await searchWeb2MD(query, 5)
+                const evidence = await searchResearchEvidence({
+                  question: query,
+                  symbol: currentExplicitTicker,
+                  mode: 'general',
+                  limit: 6
+                })
+                results = evidence.results
               } catch (e) {
                 console.warn('[searchFinancialWeb] Search failed:', e)
               }
@@ -2089,8 +2101,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           {lastError?.message || '通道切換中'}）
         </div>
         <p className="text-xs text-amber-700 dark:text-amber-400">
-          已自動嘗試多個備用模型通道（DeepSeek、Qwen、Gemini
-          等）。請稍後重新發送訊息或重試。
+          本次工具模型通道未能完成請求。請稍後重新發送訊息或重試。
         </p>
       </div>
     )
