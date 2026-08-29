@@ -766,7 +766,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     symbol={formattedSymbol}
                     comparisonSymbols={normalizedComparison}
                   />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -848,7 +848,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockPrice props={formattedSymbol} />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -930,7 +930,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <NativeFinancialsCard symbol={formattedSymbol} />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1012,7 +1012,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <NativeStockNewsCard symbol={formattedSymbol} />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1080,7 +1080,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockScreener />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1147,7 +1147,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketOverview />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1214,7 +1214,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketHeatmap />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1281,7 +1281,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <ETFHeatmap />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1348,7 +1348,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketTrending />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1430,7 +1430,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockAnalysis symbol={formattedSymbol} />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1516,7 +1516,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <WebSearchResults query={query} results={results} />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1619,7 +1619,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       {url}
                     </p>
                   </div>
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
@@ -1864,7 +1864,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     }
                     fullContent={text}
                   />
-                  <BotCaption content={caption} />
+                  <BotCaption content={captionStream.value} />
                 </BotCard>
               )
             }
