@@ -73,7 +73,8 @@ const exampleMessagesEn: ExampleMessage[] = [
   {
     heading: 'AI Investment Analysis',
     subheading: 'Should I buy TSLA?',
-    message: 'Should I buy TSLA? Please provide multi-analyst AI investment analysis'
+    message:
+      'Should I buy TSLA? Please provide multi-analyst AI investment analysis'
   },
   {
     heading: `What are Microsoft's`,
@@ -105,14 +106,12 @@ export function ChatPanel({
   const { submitUserMessage } = useActions()
   const [lang, setLang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
-  const [cachedPromptsZh, setCachedPromptsZh] = useLocalStorage<ExampleMessage[]>(
-    'stockbot_cached_prompts_zh',
-    exampleMessagesZh
-  )
-  const [cachedPromptsEn, setCachedPromptsEn] = useLocalStorage<ExampleMessage[]>(
-    'stockbot_cached_prompts_en',
-    exampleMessagesEn
-  )
+  const [cachedPromptsZh, setCachedPromptsZh] = useLocalStorage<
+    ExampleMessage[]
+  >('stockbot_cached_prompts_zh', exampleMessagesZh)
+  const [cachedPromptsEn, setCachedPromptsEn] = useLocalStorage<
+    ExampleMessage[]
+  >('stockbot_cached_prompts_en', exampleMessagesEn)
 
   const [isDynamicLoaded, setIsDynamicLoaded] = useState(false)
 
@@ -146,7 +145,7 @@ export function ChatPanel({
   const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
 
   return (
-    <div className="fixed inset-x-0 bottom-0 w-full bg-gradient-to-b from-muted/30 from-0% to-muted/30 to-50% duration-300 ease-in-out animate-in dark:from-background/10 dark:from-10% dark:to-background/80 peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]">
+    <div className="fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] w-full overflow-x-hidden overflow-y-auto bg-gradient-to-b from-muted/30 from-0% to-muted/30 to-50% pb-[env(safe-area-inset-bottom)] duration-300 ease-in-out animate-in dark:from-background/10 dark:from-10% dark:to-background/80 peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]">
       <ButtonScrollToBottom
         isAtBottom={isAtBottom}
         scrollToBottom={scrollToBottom}
@@ -154,9 +153,9 @@ export function ChatPanel({
 
       <div className="mx-auto sm:max-w-2xl sm:px-4">
         {messages.length === 0 && (
-          <div className="mb-4 px-4 sm:px-0">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center space-x-1.5">
+          <div className="mb-4 px-3 sm:px-0">
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span className="text-xs font-medium text-muted-foreground">
                   {lang === 'zh'
                     ? '💡 建議提示語（點擊直接發問）：'
@@ -166,10 +165,10 @@ export function ChatPanel({
                   🔥 {lang === 'zh' ? '今日動態標的' : 'Daily Picks'}
                 </span>
               </div>
-              <div className="inline-flex rounded-lg border bg-muted/60 p-0.5 text-xs shadow-sm">
+              <div className="inline-flex self-end rounded-lg border bg-muted/60 p-0.5 text-xs shadow-sm sm:self-auto">
                 <button
                   type="button"
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  className={`rounded-md px-1.5 py-1 text-xs font-medium transition-all sm:px-2.5 ${
                     lang === 'zh'
                       ? 'bg-background text-foreground shadow-sm font-semibold'
                       : 'text-muted-foreground hover:text-foreground'
@@ -180,7 +179,7 @@ export function ChatPanel({
                 </button>
                 <button
                   type="button"
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                  className={`rounded-md px-1.5 py-1 text-xs font-medium transition-all sm:px-2.5 ${
                     lang === 'en'
                       ? 'bg-background text-foreground shadow-sm font-semibold'
                       : 'text-muted-foreground hover:text-foreground'
@@ -191,11 +190,11 @@ export function ChatPanel({
                 </button>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {currentExamples.map((example, index) => (
                 <div
                   key={`${lang}-${example.heading}-${index}`}
-                  className="cursor-pointer border bg-white p-3.5 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-900 rounded-lg transition-all shadow-2xs hover:border-blue-300 dark:hover:border-blue-700"
+                  className="cursor-pointer rounded-lg border bg-white p-2.5 shadow-2xs transition-all hover:border-blue-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900 sm:p-3.5"
                   onClick={async () => {
                     setMessages(currentMessages => [
                       ...currentMessages,
@@ -214,8 +213,10 @@ export function ChatPanel({
                     ])
                   }}
                 >
-                  <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{example.heading}</div>
-                  <div className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                  <div className="line-clamp-2 text-xs font-semibold text-slate-800 dark:text-slate-100 sm:text-sm">
+                    {example.heading}
+                  </div>
+                  <div className="mt-0.5 line-clamp-2 text-[11px] text-zinc-600 dark:text-zinc-400 sm:text-xs">
                     {example.subheading}
                   </div>
                 </div>

@@ -194,7 +194,7 @@ export function TickerTape() {
 
   return (
     <div
-      className="tradingview-widget-container mb-2 md:min-h-20 min-h-28 w-full"
+      className="tradingview-widget-container mb-2 min-h-28 w-full min-w-0 max-w-full overflow-hidden md:min-h-20"
       ref={container}
     >
       <div className="tradingview-widget-container__widget"></div>
