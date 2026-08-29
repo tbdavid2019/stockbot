@@ -40,7 +40,10 @@ import {
   type EarningsIntelligence
 } from '@/lib/financial-fundamentals'
 import { publishToWiki } from '@/lib/wiki'
-import { fetchQuantMarketSnapshot } from '@/lib/quant/market-data'
+import {
+  fetchQuantMarketSnapshot,
+  fetchPeerMultiples
+} from '@/lib/quant/market-data'
 import { calculateValuation } from '@/lib/quant/valuation'
 import { analyzeSepa } from '@/lib/quant/sepa'
 import {
@@ -1897,8 +1900,19 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
               let snapshot
+              let peerMultiples: Array<{
+                name: string
+                pe?: number
+                evToEbitda?: number
+                evToSales?: number
+              }> = []
               try {
-                snapshot = await fetchQuantMarketSnapshot(formattedSymbol)
+                const [snap, peers] = await Promise.all([
+                  fetchQuantMarketSnapshot(formattedSymbol),
+                  fetchPeerMultiples(formattedSymbol).catch(() => [])
+                ])
+                snapshot = snap
+                peerMultiples = peers
               } catch (error) {
                 console.warn('[calculateCompanyValuation] data failed:', error)
               }
@@ -1917,7 +1931,8 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 cash: snapshot?.cash,
                 debt: snapshot?.debt,
                 beta: snapshot?.beta,
-                revenueGrowth: snapshot?.revenueGrowth
+                revenueGrowth: snapshot?.revenueGrowth,
+                peerMultiples
               })
               const context = JSON.stringify({
                 price,

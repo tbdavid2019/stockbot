@@ -89,8 +89,21 @@ function dcfSharePrice(
   wacc: number,
   terminalGrowth: number
 ): number | undefined {
-  if (!finitePositive(input.sharesOutstanding)) return undefined
-  if (!Number.isFinite(input.freeCashFlow)) return undefined
+  const shares = finitePositive(input.sharesOutstanding)
+    ? input.sharesOutstanding
+    : input.price > 0 && input.revenue > 0
+      ? (input.revenue * 3) / input.price
+      : undefined
+  if (!shares || !finitePositive(shares)) return undefined
+
+  let fcf = input.freeCashFlow
+  if (!Number.isFinite(fcf) || fcf === 0) {
+    if (finitePositive(input.revenue)) {
+      fcf = input.revenue * 0.15
+    } else {
+      return undefined
+    }
+  }
   if (!(wacc > terminalGrowth && wacc > 0)) return undefined
 
   const growth = Number.isFinite(input.fcfGrowth)
@@ -100,7 +113,7 @@ function dcfSharePrice(
       : 0.08
   const projected = Array.from(
     { length: 5 },
-    (_, index) => input.freeCashFlow * Math.pow(1 + growth, index + 1)
+    (_, index) => fcf * Math.pow(1 + growth, index + 1)
   )
   const presentValue = projected.reduce(
     (sum, cashFlow, index) => sum + cashFlow / Math.pow(1 + wacc, index + 1),
@@ -110,7 +123,7 @@ function dcfSharePrice(
     (projected[4] * (1 + terminalGrowth)) / (wacc - terminalGrowth)
   const enterpriseValue = presentValue + terminalValue / Math.pow(1 + wacc, 5)
   const equityValue = enterpriseValue + (input.cash || 0) - (input.debt || 0)
-  return equityValue / input.sharesOutstanding
+  return equityValue / shares
 }
 
 export function calculateCapmWacc(
@@ -130,13 +143,13 @@ export function calculateCapmWacc(
     ? Math.max(0, input.costOfDebt!)
     : DEFAULT_COST_OF_DEBT
   const costOfEquity = riskFreeRate + beta * marketRiskPremium
-  const equityValue = Math.max(0, input.price * input.sharesOutstanding)
+  const equityValue = Math.max(0, input.price * (input.sharesOutstanding || 0))
   const debtValue = Math.max(0, input.debt || 0)
   const capital = equityValue + debtValue
   const wacc =
     Number.isFinite(input.wacc) && input.wacc! > 0
       ? input.wacc!
-      : capital > 0
+      : capital > 0 && equityValue > 0
         ? (equityValue / capital) * costOfEquity +
           (debtValue / capital) * costOfDebt * (1 - taxRate)
         : costOfEquity

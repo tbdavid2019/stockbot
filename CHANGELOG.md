@@ -4,6 +4,21 @@
 
 ---
 
+## [2026-08-30] - 量化估值模型與 DCF 數據管線修復 (Quant Valuation Pipeline Fix)
+
+### 🐛 修復 (Fixed)
+
+- **修復 DCF 與估值卡片空白/破折號 (`—`) 異常**：
+  - 修正 Yahoo Finance Fundamentals 查詢缺少流通股數相關指標（`DilutedAverageShares`、`OrdinarySharesNumber`、`BasicAverageShares`、`ShareIssued`），導致 `sharesOutstanding` 解析為 `undefined` 並使 DCF 股價、同業倍數及 5×5 敏感度矩陣全數退化為 `—` 的問題。
+  - 在 `fetchQuantMarketSnapshot` 中補齊股數解析階層（優先使用季度/年度 Diluted/Basic/Ordinary 股數，若缺漏則以 `MarketCap / Price` 或 `NetIncome / EPS` 自動推導），並提供自由現金流（FCF）與資本支出（CapEx）的多層容錯。
+  - 修復 `calculateCapmWacc` 在股數未提供時資本結構權重塌陷為 100% 債務（WACC 僅 3.95%）的問題，確保權益資本成本正常加權。
+- **補齊同業倍數估值三角驗證**：
+  - 新增 `fetchPeerMultiples`，自動對應並並發檢索龍頭與同業標的（如 NVDA ➡️ AMD、AVGO、QCOM；TSLA ➡️ RIVN、GM、F；2330 ➡️ 2454、2303、TSM）之 P/E、EV/EBITDA、EV/Sales 倍數，計算同業綜合估值與 DCF 之 60/40 綜合合理價。
+- **增強財報前瞻 (Earnings Intelligence) 容錯**：
+  - 當 Yahoo `quoteSummary` 因未附帶驗證而回傳 HTTP 401 時，自動無縫回退至結構化財報時間序列萃取近四季實際 EPS、季度營收、YoY 成長率與預估下季財報區間。
+
+---
+
 ## [2026-08-30] - 原生量化金融分析工具
 
 ### ✨ 新增 (Added)

@@ -170,7 +170,11 @@ const FUNDAMENTAL_KEYS = Array.from(
     'CashCashEquivalentsAndShortTermInvestments',
     'Inventory',
     'AccountsReceivable',
-    'TotalLiabilitiesNetMinorityInterest'
+    'TotalLiabilitiesNetMinorityInterest',
+    'DilutedAverageShares',
+    'OrdinarySharesNumber',
+    'BasicAverageShares',
+    'ShareIssued'
   ])
 )
 
@@ -228,66 +232,124 @@ export async function fetchEarningsIntelligence(
         Accept: 'application/json',
         'User-Agent': 'Mozilla/5.0 stockbot/2.0'
       },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(4000),
       next: { revalidate: 300 }
     })
-    if (!response.ok) return undefined
-    const result = (await response.json())?.quoteSummary?.result?.[0]
-    if (!result) return undefined
+    if (response.ok) {
+      const result = (await response.json())?.quoteSummary?.result?.[0]
+      if (result) {
+        const calendar = result.calendarEvents?.earnings
+        const earningsDate =
+          calendar?.earningsDate?.[0]?.fmt || calendar?.earningsDate?.[0]?.raw
+        const trend =
+          (result.earningsTrend?.trend || []).find(
+            (item: any) => item.period === '0q' || item.period === '+1q'
+          ) || result.earningsTrend?.trend?.[0]
+        const history = (result.earningsHistory?.history || [])
+          .slice(-4)
+          .reverse()
+          .map((item: any): EarningsHistoryItem => {
+            const estimate = rawNumber(item.epsEstimate)
+            const actual = rawNumber(item.epsActual)
+            const surprise = rawNumber(item.surprise)
+            const surprisePercent = rawNumber(item.surprisePercent)
+            return {
+              date: String(item.quarter?.fmt || item.quarter?.raw || ''),
+              epsEstimate: estimate,
+              epsActual: actual,
+              surprise,
+              surprisePercent:
+                surprisePercent !== undefined && Math.abs(surprisePercent) <= 1
+                  ? surprisePercent * 100
+                  : surprisePercent
+            }
+          })
+          .filter((item: EarningsHistoryItem) => item.date)
 
-    const calendar = result.calendarEvents?.earnings
-    const earningsDate =
-      calendar?.earningsDate?.[0]?.fmt || calendar?.earningsDate?.[0]?.raw
-    const trend =
-      (result.earningsTrend?.trend || []).find(
-        (item: any) => item.period === '0q' || item.period === '+1q'
-      ) || result.earningsTrend?.trend?.[0]
-    const history = (result.earningsHistory?.history || [])
-      .slice(-4)
-      .reverse()
-      .map((item: any): EarningsHistoryItem => {
-        const estimate = rawNumber(item.epsEstimate)
-        const actual = rawNumber(item.epsActual)
-        const surprise = rawNumber(item.surprise)
-        const surprisePercent = rawNumber(item.surprisePercent)
+        const financialData = result.financialData || {}
         return {
-          date: String(item.quarter?.fmt || item.quarter?.raw || ''),
-          epsEstimate: estimate,
-          epsActual: actual,
-          surprise,
-          surprisePercent:
-            surprisePercent !== undefined && Math.abs(surprisePercent) <= 1
-              ? surprisePercent * 100
-              : surprisePercent
+          symbol,
+          earningsDate: earningsDate ? String(earningsDate) : undefined,
+          session: 'unknown',
+          eps: consensusFromTrend(trend, 'eps'),
+          revenue: consensusFromTrend(trend, 'revenue'),
+          history,
+          priceTarget: {
+            currentPrice: rawNumber(financialData.currentPrice),
+            low: rawNumber(financialData.targetLowPrice),
+            high: rawNumber(financialData.targetHighPrice),
+            mean: rawNumber(financialData.targetMeanPrice),
+            median: rawNumber(financialData.targetMedianPrice)
+          },
+          source: {
+            title: `${yahooSymbol} Earnings 與分析師共識 - Yahoo Finance`,
+            url: `https://finance.yahoo.com/quote/${encodeURIComponent(yahooSymbol)}/analysis/`,
+            description: '財報日期、分析師共識、歷史 EPS surprise 與目標價資料。',
+            publisher: 'Yahoo Finance'
+          }
         }
-      })
-      .filter((item: EarningsHistoryItem) => item.date)
+      }
+    }
+  } catch {
+    // Fall back to standardized fundamentals
+  }
 
-    const financialData = result.financialData || {}
+  try {
+    const fundamentals = await fetchFinancialFundamentals(
+      symbol,
+      '最新財務數據與估值'
+    )
+    if (!fundamentals) return undefined
+    const facts = fundamentals.facts
+    const quarterlyEps = facts
+      .filter(f => f.key === 'DilutedEPS' && f.frequency === 'quarterly')
+      .sort((a, b) => a.date.localeCompare(b.date))
+    const quarterlyRev = facts
+      .filter(f => f.key === 'TotalRevenue' && f.frequency === 'quarterly')
+      .sort((a, b) => a.date.localeCompare(b.date))
+    const latestEps = quarterlyEps.at(-1)
+    const latestRev = quarterlyRev.at(-1)
+
+    let estimatedDate: string | undefined
+    if (latestEps?.date) {
+      const d = new Date(latestEps.date)
+      d.setMonth(d.getMonth() + 3)
+      estimatedDate = d.toISOString().slice(0, 10)
+    }
+
+    const history = quarterlyEps.slice(-4).map(f => ({
+      date: f.date,
+      epsActual: f.value
+    }))
+
+    const epsGrowth =
+      quarterlyEps.length >= 5 && quarterlyEps.at(-5)?.value
+        ? ((latestEps!.value / quarterlyEps.at(-5)!.value) - 1) * 100
+        : undefined
+    const revGrowth =
+      quarterlyRev.length >= 5 && quarterlyRev.at(-5)?.value
+        ? ((latestRev!.value / quarterlyRev.at(-5)!.value) - 1) * 100
+        : undefined
+
     return {
       symbol,
-      earningsDate: earningsDate ? String(earningsDate) : undefined,
+      earningsDate: estimatedDate,
       session: 'unknown',
-      eps: consensusFromTrend(trend, 'eps'),
-      revenue: consensusFromTrend(trend, 'revenue'),
-      history,
-      priceTarget: {
-        currentPrice: rawNumber(financialData.currentPrice),
-        low: rawNumber(financialData.targetLowPrice),
-        high: rawNumber(financialData.targetHighPrice),
-        mean: rawNumber(financialData.targetMeanPrice),
-        median: rawNumber(financialData.targetMedianPrice)
+      eps: {
+        average: latestEps?.value,
+        yearOverYearGrowth: epsGrowth
       },
-      source: {
-        title: `${yahooSymbol} Earnings 與分析師共識 - Yahoo Finance`,
-        url: `https://finance.yahoo.com/quote/${encodeURIComponent(yahooSymbol)}/analysis/`,
-        description: '財報日期、分析師共識、歷史 EPS surprise 與目標價資料。',
-        publisher: 'Yahoo Finance'
-      }
+      revenue: {
+        average: latestRev?.value,
+        yearOverYearGrowth: revGrowth
+      },
+      history,
+      priceTarget: {},
+      source: fundamentals.source
     }
   } catch (error: any) {
     console.warn(
-      `[Earnings Intelligence] Failed for ${yahooSymbol}:`,
+      `[Earnings Intelligence] Fallback failed for ${yahooSymbol}:`,
       error?.message || error
     )
     return undefined
