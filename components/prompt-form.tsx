@@ -19,6 +19,7 @@ import { nanoid } from 'nanoid'
 import { useRouter } from 'next/navigation'
 
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
+import { CHAT_NEW_EVENT } from '@/lib/chat-history'
 
 export function PromptForm({
   input,
@@ -78,7 +79,8 @@ export function PromptForm({
               size="icon"
               className="absolute left-0 top-[14px] size-8 rounded-full bg-background p-0 sm:left-4"
               onClick={() => {
-                router.push('/new')
+                window.dispatchEvent(new CustomEvent(CHAT_NEW_EVENT))
+                router.push('/')
               }}
             >
               <IconPlus />

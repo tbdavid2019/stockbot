@@ -66,14 +66,12 @@ function getProviderCandidates(): ProviderCandidate[] {
   //   PRIMARY_TOOL_MODEL (或 TOOL_MODEL) -> 專用於工具調用與意圖識別
   //   PRIMARY_MODEL      (或 MODEL)      -> 專用於伴隨說明文字與自然語言生成
   // --------------------------------------------------------------------------
-  const primaryKey =
-    process.env.PRIMARY_API_KEY ||
-    process.env.OPENAI_API_KEY
+  const primaryKey = process.env.PRIMARY_API_KEY || process.env.OPENAI_API_KEY
   const primaryBaseUrl =
     process.env.PRIMARY_BASE_URL ||
     process.env.OPENAI_BASE_URL ||
     'https://api.openai.com/v1'
-  
+
   let primaryModel =
     process.env.PRIMARY_MODEL ||
     process.env.MAIN_MODEL ||
@@ -81,9 +79,7 @@ function getProviderCandidates(): ProviderCandidate[] {
     'gpt-4o-mini'
 
   let primaryToolModel =
-    process.env.PRIMARY_TOOL_MODEL ||
-    process.env.TOOL_MODEL ||
-    primaryModel
+    process.env.PRIMARY_TOOL_MODEL || process.env.TOOL_MODEL || primaryModel
 
   if (primaryKey) {
     candidates.push({
@@ -139,8 +135,14 @@ function getProviderCandidates(): ProviderCandidate[] {
   // Groq 專屬配置 (GROQ_BASE_URL, GROQ_API_KEY, GROQ_TOOL_MODEL, GROQ_MODEL)
   const groqKey = process.env.GROQ_API_KEY || process.env.FALLBACK_API_KEY
   if (groqKey) {
-    const groqUrl = process.env.GROQ_BASE_URL || process.env.FALLBACK_BASE_URL || 'https://api.groq.com/openai/v1'
-    const groqModel = process.env.GROQ_MODEL || process.env.FALLBACK_MODEL || 'openai/gpt-oss-20b'
+    const groqUrl =
+      process.env.GROQ_BASE_URL ||
+      process.env.FALLBACK_BASE_URL ||
+      'https://api.groq.com/openai/v1'
+    const groqModel =
+      process.env.GROQ_MODEL ||
+      process.env.FALLBACK_MODEL ||
+      'openai/gpt-oss-20b'
     const groqToolModel = process.env.GROQ_TOOL_MODEL || groqModel
 
     candidates.push({
@@ -164,7 +166,9 @@ function getProviderCandidates(): ProviderCandidate[] {
   // Google Gemini (OpenAI 相容端點)
   const geminiKey = process.env.GEMINI_API_KEY
   if (geminiKey) {
-    const geminiUrl = process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta/openai/'
+    const geminiUrl =
+      process.env.GEMINI_BASE_URL ||
+      'https://generativelanguage.googleapis.com/v1beta/openai/'
     const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
     candidates.push({
       name: `Google Gemini [${geminiModel}]`,
@@ -192,9 +196,9 @@ function getProviderCandidates(): ProviderCandidate[] {
 }
 
 type ComparisonSymbolObject = {
-  symbol: string;
-  position: "SameScale";
-};
+  symbol: string
+  position: 'SameScale'
+}
 
 async function generateCaption(
   symbol: string,
@@ -203,9 +207,10 @@ async function generateCaption(
   aiState: MutableAIState,
   contextData?: string
 ): Promise<string> {
-  const stockString = comparisonSymbols.length === 0
-  ? symbol
-  : [symbol, ...comparisonSymbols.map(obj => obj.symbol)].join(', ');
+  const stockString =
+    comparisonSymbols.length === 0
+      ? symbol
+      : [symbol, ...comparisonSymbols.map(obj => obj.symbol)].join(', ')
 
   aiState.update({
     ...aiState.get(),
@@ -322,7 +327,10 @@ Besides the symbol, you cannot customize any of the screeners or graphics. Do no
           },
           ...aiState.get().messages.map((message: any) => ({
             role: message.role,
-            content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content),
+            content:
+              typeof message.content === 'string'
+                ? message.content
+                : JSON.stringify(message.content),
             name: message.name
           }))
         ]
@@ -387,9 +395,16 @@ For any cryptocurrency, append "USD" at the end of the ticker when using functio
 For Taiwan stocks, you must use one of these formats:
 1. The stock number directly (e.g., "2330" for TSMC) - will be converted to TWSE:2330
 2. The format "TWSE:XXXX" (e.g., "TWSE:2330")
-3. The format "TPE:XXXX" (e.g., "TPE:2330")
+3. The format "TPEX:XXXX" (e.g., "TPEX:6488")
 
-DO NOT use the format "XXXX.TW" as it is not supported by the system.
+DO NOT use the format "XXXX.TW" or "XXXX.TWO" in a tool call; normalize it to TWSE:XXXX or TPEX:XXXX first.
+
+### Company Name to Ticker Resolution
+Users may provide a Chinese name, English company name, brand name, or an incomplete ticker instead of a symbol.
+1. Never pass a company name directly to a chart, price, financials, news, or AI analysis tool.
+2. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
+3. For any unknown, new, private, or ambiguous company name, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
+4. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
 
 ### 🔄 15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)
 你是一個具備強大自主推理 (ReAct) 能力的 AI 投資分析大腦。你可以連續調用最多 15 輪工具鏈，完成深度複雜任務：
@@ -425,941 +440,961 @@ Example 4 (Wiki Publishing):
 User: 請幫我為 TSMC 寫一份深度的 Q3 投資研究報告並發布到 Wiki
 Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "publishToDavid888Wiki" }, "parameters": { "title": "TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告", "slug": "tsmc-2026-q3-report", "content": "# TSMC (2330) 2026 Q3 深度投資研究與競爭護城河報告\n\n> 執行摘要：台積電在全球先進製程保持領先地位...\n\n[TOC]\n\n## 1. 核心競爭優勢與製程進展\n...", "theme": "claude-canvas" } } }
     `,
-      messages: [
-        ...aiState.get().messages.map((message: any) => ({
-          role: message.role,
-          content: message.content,
-          name: message.name
-        }))
-      ],
-      text: ({ content, done, delta }) => {
-        if (!textStream) {
-          textStream = createStreamableValue('')
-          textNode = <BotMessage content={textStream.value} />
-        }
+        messages: [
+          ...aiState.get().messages.map((message: any) => ({
+            role: message.role,
+            content: message.content,
+            name: message.name
+          }))
+        ],
+        text: ({ content, done, delta }) => {
+          if (!textStream) {
+            textStream = createStreamableValue('')
+            textNode = <BotMessage content={textStream.value} />
+          }
 
-        if (done) {
-          textStream.done()
-          aiState.done({
-            ...aiState.get(),
-            messages: [
-              ...aiState.get().messages,
-              {
-                id: nanoid(),
-                role: 'assistant',
-                content
-              }
-            ]
-          })
-        } else {
-          textStream.update(delta)
-        }
+          if (done) {
+            textStream.done()
+            aiState.done({
+              ...aiState.get(),
+              messages: [
+                ...aiState.get().messages,
+                {
+                  id: nanoid(),
+                  role: 'assistant',
+                  content
+                }
+              ]
+            })
+          } else {
+            textStream.update(delta)
+          }
 
-        return textNode
-      },
-      tools: {
-        showStockChart: {
-          description:
-            'Show a stock chart of a given stock. Optionally show 2 or more stocks. Use this to show the chart to the user.',
-          parameters: z.object({
-            symbol: z
-              .string()
-              .describe(
-                'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
-              ),
-            comparisonSymbols: z.array(z.object({
-              symbol: z.string(),
-              position: z.literal("SameScale")
-            }))
-              .default([])
-              .describe(
-                'Optional list of symbols to compare. e.g. ["MSFT", "GOOGL"]'
+          return textNode
+        },
+        tools: {
+          showStockChart: {
+            description:
+              'Show a stock chart of a given stock. Optionally show 2 or more stocks. Use this to show the chart to the user. The symbol must be an exact ticker; resolve Chinese or company names with searchFinancialWeb first.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .describe(
+                  'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
+                ),
+              comparisonSymbols: z
+                .array(
+                  z.object({
+                    symbol: z.string(),
+                    position: z.literal('SameScale')
+                  })
+                )
+                .default([])
+                .describe(
+                  'Optional list of symbols to compare. e.g. ["MSFT", "GOOGL"]'
+                )
+            }),
+
+            generate: async function* ({ symbol, comparisonSymbols }) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
               )
-          }),
 
-          generate: async function* ({ symbol, comparisonSymbols }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showStockChart',
-                      toolCallId,
-                      args: { symbol, comparisonSymbols }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showStockChart',
-                      toolCallId,
-                      result: { symbol, comparisonSymbols }
-                    }
-                  ]
-                }
-              ]
-            })
-
-            const caption = await generateCaption(
-              symbol,
-              comparisonSymbols,
-              'showStockChart',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <StockChart symbol={symbol} comparisonSymbols={comparisonSymbols} />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showStockPrice: {
-          description:
-            'Show the price of a given stock. Use this to show the price and price history to the user.',
-          parameters: z.object({
-            symbol: z
-              .string()
-              .describe(
-                'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
+              const caption = await generateCaption(
+                symbol,
+                comparisonSymbols,
+                'showStockChart',
+                aiState
               )
-          }),
-          generate: async function* ({ symbol }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
 
-            const toolCallId = nanoid()
+              const toolCallId = nanoid()
 
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showStockPrice',
-                      toolCallId,
-                      args: { symbol }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showStockPrice',
-                      toolCallId,
-                      result: { symbol }
-                    }
-                  ]
-                }
-              ]
-            })
-            const caption = await generateCaption(
-              symbol,
-              [],
-              'showStockPrice',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <StockPrice props={symbol} />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showStockFinancials: {
-          description:
-            'Show the financials of a given stock. Use this to show the financials to the user.',
-          parameters: z.object({
-            symbol: z
-              .string()
-              .describe(
-                'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
-              )
-          }),
-          generate: async function* ({ symbol }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showStockFinancials',
-                      toolCallId,
-                      args: { symbol }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showStockFinancials',
-                      toolCallId,
-                      result: { symbol }
-                    }
-                  ]
-                }
-              ]
-            })
-
-            const caption = await generateCaption(
-              symbol,
-              [],
-              'StockFinancials',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <StockFinancials props={symbol} />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showStockNews: {
-          description:
-            'This tool shows the latest news and events for a stock or cryptocurrency.',
-          parameters: z.object({
-            symbol: z
-              .string()
-              .describe(
-                'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
-              )
-          }),
-          generate: async function* ({ symbol }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showStockNews',
-                      toolCallId,
-                      args: { symbol }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showStockNews',
-                      toolCallId,
-                      result: { symbol }
-                    }
-                  ]
-                }
-              ]
-            })
-
-            const caption = await generateCaption(
-              symbol,
-              [],
-              'showStockNews',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <StockNews props={symbol} />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showStockScreener: {
-          description:
-            'This tool shows a generic stock screener which can be used to find new stocks based on financial or technical parameters.',
-          parameters: z.object({}),
-          generate: async function* ({ }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showStockScreener',
-                      toolCallId,
-                      args: {}
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showStockScreener',
-                      toolCallId,
-                      result: {}
-                    }
-                  ]
-                }
-              ]
-            })
-            const caption = await generateCaption(
-              'Generic',
-              [],
-              'showStockScreener',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <StockScreener />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showMarketOverview: {
-          description: `This tool shows an overview of today's stock, futures, bond, and forex market performance including change values, Open, High, Low, and Close values.`,
-          parameters: z.object({}),
-          generate: async function* ({ }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showMarketOverview',
-                      toolCallId,
-                      args: {}
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showMarketOverview',
-                      toolCallId,
-                      result: {}
-                    }
-                  ]
-                }
-              ]
-            })
-            const caption = await generateCaption(
-              'Generic',
-              [],
-              'showMarketOverview',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <MarketOverview />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showMarketHeatmap: {
-          description: `This tool shows a heatmap of today's stock market performance across sectors (US / Taiwan / Taiwan 50 / Japan / Hong Kong / UK / Germany / France / Israel / Korea / China / Australia / India / Brazil / Canada). It is preferred over showMarketOverview if asked specifically about the stock market.`,
-          parameters: z.object({}),
-          generate: async function* ({ }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showMarketHeatmap',
-                      toolCallId,
-                      args: {}
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showMarketHeatmap',
-                      toolCallId,
-                      result: {}
-                    }
-                  ]
-                }
-              ]
-            })
-            const caption = await generateCaption(
-              'Generic',
-              [],
-              'showMarketHeatmap',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <MarketHeatmap />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showETFHeatmap: {
-          description: `This tool shows a heatmap of today's ETF performance across sectors and asset classes. It is preferred over showMarketOverview if asked specifically about the ETF market.`,
-          parameters: z.object({}),
-          generate: async function* ({ }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showETFHeatmap',
-                      toolCallId,
-                      args: {}
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showETFHeatmap',
-                      toolCallId,
-                      result: {}
-                    }
-                  ]
-                }
-              ]
-            })
-            const caption = await generateCaption(
-              'Generic',
-              [],
-              'showETFHeatmap',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <ETFHeatmap />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        showTrendingStocks: {
-          description: `This tool shows the daily top trending stocks including the top five gaining, losing, and most active stocks based on today's performance`,
-          parameters: z.object({}),
-          generate: async function* ({ }) {
-            yield (
-              <BotCard>
-                <></>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'showTrendingStocks',
-                      toolCallId,
-                      args: {}
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'showTrendingStocks',
-                      toolCallId,
-                      result: {}
-                    }
-                  ]
-                }
-              ]
-            })
-            const caption = await generateCaption(
-              'Generic',
-              [],
-              'showTrendingStocks',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <MarketTrending />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        analyzeStockWithAI: {
-          description:
-            'Provide professional AI investment analysis from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for professional analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議',
-          parameters: z.object({
-            symbol: z
-              .string()
-              .describe(
-                'The stock symbol to analyze. e.g. TSLA, AAPL, NVDA, GOOGL.'
-              )
-          }),
-          generate: async function* ({ symbol }) {
-            yield (
-              <BotCard>
-                <div className="flex items-center space-x-2 p-4">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-                  <span>🤖 正在呼叫 AI 投資分析師團隊分析 {symbol}...</span>
-                </div>
-              </BotCard>
-            )
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'analyzeStockWithAI',
-                      toolCallId,
-                      args: { symbol }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'analyzeStockWithAI',
-                      toolCallId,
-                      result: { symbol }
-                    }
-                  ]
-                }
-              ]
-            })
-
-            const caption = await generateCaption(
-              symbol,
-              [],
-              'analyzeStockWithAI',
-              aiState
-            )
-
-            return (
-              <BotCard>
-                <StockAnalysis symbol={symbol} />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        searchFinancialWeb: {
-          description:
-            'Search live financial news, company IPO status, ticker symbols, stock events, or general factual web information via 2MD Search. Use this whenever the user asks whether a company is public/listed, general market developments, or questions needing live web search.',
-          parameters: z.object({
-            query: z
-              .string()
-              .describe('The search query for live 2MD web search.')
-          }),
-          generate: async function* ({ query }) {
-            yield (
-              <BotCard>
-                <div className="flex items-center space-x-2 p-4">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-                  <span>🌐 正在透過 2MD 搜尋引擎檢索「{query}」...</span>
-                </div>
-              </BotCard>
-            )
-
-            const results = await searchWeb2MD(query, 5)
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'searchFinancialWeb',
-                      toolCallId,
-                      args: { query }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'searchFinancialWeb',
-                      toolCallId,
-                      result: { query, results }
-                    }
-                  ]
-                }
-              ]
-            })
-
-            const contextData = results
-              .map(
-                (r, idx) =>
-                  `[結果 ${idx + 1}] 標題: ${r.title} | 摘要: ${r.description} | 網址: ${r.url}`
-              )
-              .join('\n')
-
-            const caption = await generateCaption(
-              query,
-              [],
-              'searchFinancialWeb',
-              aiState,
-              contextData
-            )
-
-            return (
-              <BotCard>
-                <WebSearchResults query={query} results={results} />
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        readWebPage: {
-          description:
-            'Read full web page, online article, or financial news content and convert to clean markdown using 2MD Web Reader. Use this when the user supplies a specific URL, or when you need the complete text from a search result link to do deeper research.',
-          parameters: z.object({
-            url: z
-              .string()
-              .describe('The URL of the webpage or article to fetch and read.')
-          }),
-          generate: async function* ({ url }) {
-            yield (
-              <BotCard>
-                <div className="flex items-center space-x-2 p-4">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
-                  <span>📖 正在透過 2MD Web Reader 讀取網頁全文...</span>
-                </div>
-              </BotCard>
-            )
-
-            const text = await readUrl2MD(url)
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'readWebPage',
-                      toolCallId,
-                      args: { url }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'readWebPage',
-                      toolCallId,
-                      result: {
-                        url,
-                        content: text ? text.slice(0, 3000) : '無法讀取網頁內容'
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showStockChart',
+                        toolCallId,
+                        args: { symbol, comparisonSymbols }
                       }
-                    }
-                  ]
-                }
-              ]
-            })
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showStockChart',
+                        toolCallId,
+                        result: { symbol, comparisonSymbols, caption }
+                      }
+                    ]
+                  }
+                ]
+              })
 
-            const contextData = `【網頁全文擷取 (${url})】：\n${text ? text.slice(0, 2000) : '未獲取到內容'}`
-
-            const caption = await generateCaption(
-              url,
-              [],
-              'readWebPage',
-              aiState,
-              contextData
-            )
-
-            return (
-              <BotCard>
-                <div className="rounded-xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-2 text-xs">
-                  <div className="font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
-                    <span>🌐 2MD Web Reader 網頁全文讀取完成</span>
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 font-mono truncate">
-                    {url}
-                  </p>
-                </div>
-                {caption}
-              </BotCard>
-            )
-          }
-        },
-        publishToDavid888Wiki: {
-          description:
-            'Publish an in-depth financial research report, stock thesis, comprehensive valuation summary, or multi-chapter analysis to David888 Wiki (https://wiki.david888.com/api). This automatically creates a permanent public share link (shareUrl), 2D presentation deck (shareUrl + "/present"), and dual-pane eBook reader (shareUrl + "/book"). Always use this whenever an extensive report, investment thesis, or research document is ready to be published for the user.',
-          parameters: z.object({
-            title: z
-              .string()
-              .describe('The title of the report or research article.'),
-            slug: z
-              .string()
-              .optional()
-              .describe(
-                'URL slug for the note path, e.g. "tsmc-2026-q3-analysis" or "nvda-valuation-thesis".'
-              ),
-            content: z
-              .string()
-              .describe(
-                'Full markdown content of the report including sections, analysis, tables, mermaid charts, alerts, and footnotes.'
-              ),
-            theme: z
-              .enum([
-                'claude-canvas',
-                'retro',
-                'professional',
-                'notion-clean',
-                'tokyo-night',
-                'ayu-light',
-                'neo-brutalism',
-                'shopify-mint'
-              ])
-              .optional()
-              .default('claude-canvas')
-              .describe('Theme for the wiki page.')
-          }),
-          generate: async function* ({ title, slug, content, theme }) {
-            yield (
-              <BotCard>
-                <div className="flex items-center space-x-2 p-4">
-                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"></div>
-                  <span>📝 正在將深度研究報告發布至 David888 Wiki...</span>
-                </div>
-              </BotCard>
-            )
-
-            const result = await publishToWiki({
-              title,
-              slug,
-              markdown: content,
-              theme
-            })
-
-            const toolCallId = nanoid()
-
-            aiState.done({
-              ...aiState.get(),
-              messages: [
-                ...aiState.get().messages,
-                {
-                  id: nanoid(),
-                  role: 'assistant',
-                  content: [
-                    {
-                      type: 'tool-call',
-                      toolName: 'publishToDavid888Wiki',
-                      toolCallId,
-                      args: { title, slug, content, theme }
-                    }
-                  ]
-                },
-                {
-                  id: nanoid(),
-                  role: 'tool',
-                  content: [
-                    {
-                      type: 'tool-result',
-                      toolName: 'publishToDavid888Wiki',
-                      toolCallId,
-                      result
-                    }
-                  ]
-                }
-              ]
-            })
-
-            const contextData = result.success
-              ? `【Wiki 發布成功】：標題: ${title} | 公開分享網址 (shareUrl): ${result.shareUrl} | 簡報網址: ${result.presentUrl} | 電子書網址: ${result.bookUrl}`
-              : `【Wiki 發布失敗】：${result.error}`
-
-            const caption = await generateCaption(
-              title,
-              [],
-              'publishToDavid888Wiki',
-              aiState,
-              contextData
-            )
-
-            return (
-              <BotCard>
-                {result.success ? (
-                  <WikiPublishResultCard
-                    title={title}
-                    shareUrl={result.shareUrl!}
-                    presentUrl={result.presentUrl}
-                    bookUrl={result.bookUrl}
-                    theme={theme}
-                    path={result.path}
+              return (
+                <BotCard>
+                  <StockChart
+                    symbol={symbol}
+                    comparisonSymbols={comparisonSymbols}
                   />
-                ) : (
-                  <div className="p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 text-xs">
-                    ⚠️ Wiki 發布失敗：{result.error}
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showStockPrice: {
+            description:
+              'Show the price of a given stock. Use this to show the price and price history to the user. The symbol must be an exact exchange-qualified ticker; resolve company names with searchFinancialWeb first.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .describe(
+                  'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
+                )
+            }),
+            generate: async function* ({ symbol }) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                symbol,
+                [],
+                'showStockPrice',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showStockPrice',
+                        toolCallId,
+                        args: { symbol }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showStockPrice',
+                        toolCallId,
+                        result: { symbol, caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <StockPrice props={symbol} />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showStockFinancials: {
+            description:
+              'Show the financials of a given stock. Use this to show the financials to the user. The symbol must be an exact ticker; resolve company names with searchFinancialWeb first.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .describe(
+                  'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
+                )
+            }),
+            generate: async function* ({ symbol }) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                symbol,
+                [],
+                'StockFinancials',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showStockFinancials',
+                        toolCallId,
+                        args: { symbol }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showStockFinancials',
+                        toolCallId,
+                        result: { symbol, caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <StockFinancials props={symbol} />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showStockNews: {
+            description:
+              'This tool shows the latest news and events for a stock or cryptocurrency. Resolve a company name to an exact ticker with searchFinancialWeb first.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .describe(
+                  'The name or symbol of the stock or currency. e.g. DOGE/AAPL/USD.'
+                )
+            }),
+            generate: async function* ({ symbol }) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                symbol,
+                [],
+                'showStockNews',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showStockNews',
+                        toolCallId,
+                        args: { symbol }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showStockNews',
+                        toolCallId,
+                        result: { symbol, caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <StockNews props={symbol} />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showStockScreener: {
+            description:
+              'This tool shows a generic stock screener which can be used to find new stocks based on financial or technical parameters.',
+            parameters: z.object({}),
+            generate: async function* ({}) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                'Generic',
+                [],
+                'showStockScreener',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showStockScreener',
+                        toolCallId,
+                        args: {}
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showStockScreener',
+                        toolCallId,
+                        result: { caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <StockScreener />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showMarketOverview: {
+            description: `This tool shows an overview of today's stock, futures, bond, and forex market performance including change values, Open, High, Low, and Close values.`,
+            parameters: z.object({}),
+            generate: async function* ({}) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                'Generic',
+                [],
+                'showMarketOverview',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showMarketOverview',
+                        toolCallId,
+                        args: {}
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showMarketOverview',
+                        toolCallId,
+                        result: { caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <MarketOverview />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showMarketHeatmap: {
+            description: `This tool shows a heatmap of today's stock market performance across sectors (US / Taiwan / Taiwan 50 / Japan / Hong Kong / UK / Germany / France / Israel / Korea / China / Australia / India / Brazil / Canada). It is preferred over showMarketOverview if asked specifically about the stock market.`,
+            parameters: z.object({}),
+            generate: async function* ({}) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                'Generic',
+                [],
+                'showMarketHeatmap',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showMarketHeatmap',
+                        toolCallId,
+                        args: {}
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showMarketHeatmap',
+                        toolCallId,
+                        result: { caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <MarketHeatmap />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showETFHeatmap: {
+            description: `This tool shows a heatmap of today's ETF performance across sectors and asset classes. It is preferred over showMarketOverview if asked specifically about the ETF market.`,
+            parameters: z.object({}),
+            generate: async function* ({}) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                'Generic',
+                [],
+                'showETFHeatmap',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showETFHeatmap',
+                        toolCallId,
+                        args: {}
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showETFHeatmap',
+                        toolCallId,
+                        result: { caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <ETFHeatmap />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          showTrendingStocks: {
+            description: `This tool shows the daily top trending stocks including the top five gaining, losing, and most active stocks based on today's performance`,
+            parameters: z.object({}),
+            generate: async function* ({}) {
+              yield (
+                <BotCard>
+                  <></>
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                'Generic',
+                [],
+                'showTrendingStocks',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'showTrendingStocks',
+                        toolCallId,
+                        args: {}
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'showTrendingStocks',
+                        toolCallId,
+                        result: { caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <MarketTrending />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          analyzeStockWithAI: {
+            description:
+              'Provide professional AI investment analysis from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for professional analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議. Resolve company names to an exact ticker with searchFinancialWeb first.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .describe(
+                  'The stock symbol to analyze. e.g. TSLA, AAPL, NVDA, GOOGL.'
+                )
+            }),
+            generate: async function* ({ symbol }) {
+              yield (
+                <BotCard>
+                  <div className="flex items-center space-x-2 p-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                    <span>🤖 正在呼叫 AI 投資分析師團隊分析 {symbol}...</span>
                   </div>
-                )}
-                {caption}
-              </BotCard>
-            )
+                </BotCard>
+              )
+
+              const caption = await generateCaption(
+                symbol,
+                [],
+                'analyzeStockWithAI',
+                aiState
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'analyzeStockWithAI',
+                        toolCallId,
+                        args: { symbol }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'analyzeStockWithAI',
+                        toolCallId,
+                        result: { symbol, caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <StockAnalysis symbol={symbol} />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          searchFinancialWeb: {
+            description:
+              'Search live financial news, company IPO status, ticker symbols, stock events, or general factual web information via 2MD Search. Use this whenever the user asks whether a company is public/listed, general market developments, or questions needing live web search.',
+            parameters: z.object({
+              query: z
+                .string()
+                .describe('The search query for live 2MD web search.')
+            }),
+            generate: async function* ({ query }) {
+              yield (
+                <BotCard>
+                  <div className="flex items-center space-x-2 p-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                    <span>🌐 正在透過 2MD 搜尋引擎檢索「{query}」...</span>
+                  </div>
+                </BotCard>
+              )
+
+              const results = await searchWeb2MD(query, 5)
+              const contextData = results
+                .map(
+                  (r, idx) =>
+                    `[結果 ${idx + 1}] 標題: ${r.title} | 摘要: ${r.description} | 網址: ${r.url}`
+                )
+                .join('\n')
+
+              const caption = await generateCaption(
+                query,
+                [],
+                'searchFinancialWeb',
+                aiState,
+                contextData
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'searchFinancialWeb',
+                        toolCallId,
+                        args: { query }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'searchFinancialWeb',
+                        toolCallId,
+                        result: { query, results, caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <WebSearchResults query={query} results={results} />
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          readWebPage: {
+            description:
+              'Read full web page, online article, or financial news content and convert to clean markdown using 2MD Web Reader. Use this when the user supplies a specific URL, or when you need the complete text from a search result link to do deeper research.',
+            parameters: z.object({
+              url: z
+                .string()
+                .describe(
+                  'The URL of the webpage or article to fetch and read.'
+                )
+            }),
+            generate: async function* ({ url }) {
+              yield (
+                <BotCard>
+                  <div className="flex items-center space-x-2 p-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent"></div>
+                    <span>📖 正在透過 2MD Web Reader 讀取網頁全文...</span>
+                  </div>
+                </BotCard>
+              )
+
+              const text = await readUrl2MD(url)
+              const contextData = `【網頁全文擷取 (${url})】：\n${text ? text.slice(0, 2000) : '未獲取到內容'}`
+
+              const caption = await generateCaption(
+                url,
+                [],
+                'readWebPage',
+                aiState,
+                contextData
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'readWebPage',
+                        toolCallId,
+                        args: { url }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'readWebPage',
+                        toolCallId,
+                        result: {
+                          url,
+                          content: text
+                            ? text.slice(0, 3000)
+                            : '無法讀取網頁內容',
+                          caption
+                        }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  <div className="rounded-xl border border-blue-100 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-2 text-xs">
+                    <div className="font-semibold text-blue-900 dark:text-blue-300 flex items-center gap-1.5">
+                      <span>🌐 2MD Web Reader 網頁全文讀取完成</span>
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 font-mono truncate">
+                      {url}
+                    </p>
+                  </div>
+                  {caption}
+                </BotCard>
+              )
+            }
+          },
+          publishToDavid888Wiki: {
+            description:
+              'Publish an in-depth financial research report, stock thesis, comprehensive valuation summary, or multi-chapter analysis to David888 Wiki (https://wiki.david888.com/api). This automatically creates a permanent public share link (shareUrl), 2D presentation deck (shareUrl + "/present"), and dual-pane eBook reader (shareUrl + "/book"). Always use this whenever an extensive report, investment thesis, or research document is ready to be published for the user.',
+            parameters: z.object({
+              title: z
+                .string()
+                .describe('The title of the report or research article.'),
+              slug: z
+                .string()
+                .optional()
+                .describe(
+                  'URL slug for the note path, e.g. "tsmc-2026-q3-analysis" or "nvda-valuation-thesis".'
+                ),
+              content: z
+                .string()
+                .describe(
+                  'Full markdown content of the report including sections, analysis, tables, mermaid charts, alerts, and footnotes.'
+                ),
+              theme: z
+                .enum([
+                  'claude-canvas',
+                  'retro',
+                  'professional',
+                  'notion-clean',
+                  'tokyo-night',
+                  'ayu-light',
+                  'neo-brutalism',
+                  'shopify-mint'
+                ])
+                .optional()
+                .default('claude-canvas')
+                .describe('Theme for the wiki page.')
+            }),
+            generate: async function* ({ title, slug, content, theme }) {
+              yield (
+                <BotCard>
+                  <div className="flex items-center space-x-2 p-4">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"></div>
+                    <span>📝 正在將深度研究報告發布至 David888 Wiki...</span>
+                  </div>
+                </BotCard>
+              )
+
+              const result = await publishToWiki({
+                title,
+                slug,
+                markdown: content,
+                theme
+              })
+
+              const contextData = result.success
+                ? `【Wiki 發布成功】：標題: ${title} | 公開分享網址 (shareUrl): ${result.shareUrl} | 簡報網址: ${result.presentUrl} | 電子書網址: ${result.bookUrl}`
+                : `【Wiki 發布失敗】：${result.error}`
+
+              const caption = await generateCaption(
+                title,
+                [],
+                'publishToDavid888Wiki',
+                aiState,
+                contextData
+              )
+
+              const toolCallId = nanoid()
+
+              aiState.done({
+                ...aiState.get(),
+                messages: [
+                  ...aiState.get().messages,
+                  {
+                    id: nanoid(),
+                    role: 'assistant',
+                    content: [
+                      {
+                        type: 'tool-call',
+                        toolName: 'publishToDavid888Wiki',
+                        toolCallId,
+                        args: { title, slug, content, theme }
+                      }
+                    ]
+                  },
+                  {
+                    id: nanoid(),
+                    role: 'tool',
+                    content: [
+                      {
+                        type: 'tool-result',
+                        toolName: 'publishToDavid888Wiki',
+                        toolCallId,
+                        result: { ...result, caption }
+                      }
+                    ]
+                  }
+                ]
+              })
+
+              return (
+                <BotCard>
+                  {result.success ? (
+                    <WikiPublishResultCard
+                      title={title}
+                      shareUrl={result.shareUrl!}
+                      presentUrl={result.presentUrl}
+                      bookUrl={result.bookUrl}
+                      theme={theme}
+                      path={result.path}
+                    />
+                  ) : (
+                    <div className="p-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-300 text-xs">
+                      ⚠️ Wiki 發布失敗：{result.error}
+                    </div>
+                  )}
+                  {caption}
+                </BotCard>
+              )
+            }
           }
         }
-      }
-    })
+      })
 
       return {
         id: nanoid(),
         display: result.value
       }
     } catch (err: any) {
-      console.warn(`[StreamUI Fallback] ${candidate.name} failed:`, err?.message || err)
+      console.warn(
+        `[StreamUI Fallback] ${candidate.name} failed:`,
+        err?.message || err
+      )
       lastError = err
     }
   }
@@ -1370,10 +1405,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
     display: (
       <div className="rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-2">
         <div className="text-amber-800 dark:text-amber-300 font-semibold text-sm">
-          ⚠️ AI 對話模型服務暫時無法取得回應（{lastError?.message || '通道切換中'}）
+          ⚠️ AI 對話模型服務暫時無法取得回應（
+          {lastError?.message || '通道切換中'}）
         </div>
         <p className="text-xs text-amber-700 dark:text-amber-400">
-          已自動嘗試多個備用模型通道（DeepSeek、Qwen、Gemini 等）。請稍後重新發送訊息或重試。
+          已自動嘗試多個備用模型通道（DeepSeek、Qwen、Gemini
+          等）。請稍後重新發送訊息或重試。
         </p>
       </div>
     )

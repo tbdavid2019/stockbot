@@ -4,8 +4,7 @@ import { cn } from '@/lib/utils'
 import { ChatList } from '@/components/chat-list'
 import { ChatPanel } from '@/components/chat-panel'
 import { EmptyScreen } from '@/components/empty-screen'
-import { useLocalStorage } from '@/lib/hooks/use-local-storage'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useUIState, useAIState } from 'ai/rsc'
 import { Message, Session } from '@/lib/types'
 import { usePathname, useRouter } from 'next/navigation'
@@ -13,6 +12,15 @@ import { useScrollAnchor } from '@/lib/hooks/use-scroll-anchor'
 import { toast } from 'sonner'
 import { TickerTape } from '@/components/tradingview/ticker-tape'
 import { MissingApiKeyBanner } from '@/components/missing-api-key-banner'
+import {
+  getChatSession,
+  saveChatSession,
+  deriveChatTitle,
+  createUIStateFromStoredMessages,
+  CHAT_SELECT_EVENT,
+  CHAT_NEW_EVENT
+} from '@/lib/chat-history'
+import { nanoid } from 'nanoid'
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   initialMessages?: Message[]
@@ -25,31 +33,94 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
   const router = useRouter()
   const path = usePathname()
   const [input, setInput] = useState('')
-  const [messages] = useUIState()
-  const [aiState] = useAIState()
+  const [messages, setMessages] = useUIState()
+  const [aiState, setAIState] = useAIState()
+  const currentChatIdRef = useRef<string>(id || nanoid())
+  const hasHydratedRef = useRef(false)
 
-  const [_, setNewChatId] = useLocalStorage('newChatId', id)
-
+  // 1. Client-side hydration from localStorage on mount
   useEffect(() => {
-    if (session?.user) {
-      if (!path.includes('chat') && messages.length === 1) {
-        window.history.replaceState({}, '', `/chat/${id}`)
+    const targetId = id || currentChatIdRef.current
+    if (targetId) {
+      currentChatIdRef.current = targetId
+      const stored = getChatSession(targetId)
+      if (stored && stored.messages && stored.messages.length > 0) {
+        setAIState({
+          chatId: stored.id,
+          messages: stored.messages
+        })
+        setMessages(createUIStateFromStoredMessages(stored.messages))
       }
     }
-  }, [id, path, session?.user, messages])
+    hasHydratedRef.current = true
+  }, [id, setAIState, setMessages])
 
+  // 2. Persist chat session to localStorage whenever AI messages update
   useEffect(() => {
-    const messagesLength = aiState.messages?.length
-    if (messagesLength === 2) {
-      router.refresh()
+    if (!hasHydratedRef.current) return
+    const currentMessages = aiState?.messages || []
+    if (currentMessages.length > 0) {
+      const activeId = aiState.chatId || currentChatIdRef.current
+      const existing = getChatSession(activeId)
+      const title = existing?.title || deriveChatTitle(currentMessages)
+
+      saveChatSession({
+        id: activeId,
+        title,
+        createdAt: existing?.createdAt || Date.now(),
+        updatedAt: Date.now(),
+        messages: currentMessages
+      })
+
+      // Update URL without full refresh
+      if (typeof window !== 'undefined' && !window.location.pathname.includes(`/chat/${activeId}`)) {
+        window.history.replaceState({}, '', `/chat/${activeId}`)
+      }
     }
-    console.log('Value: ', aiState.messages)
-  }, [aiState.messages, router])
+  }, [aiState?.messages, aiState?.chatId])
 
+  // 3. Listen to external select chat and new chat events
   useEffect(() => {
-    setNewChatId(id)
-  })
+    const handleSelectChat = (e: any) => {
+      const selectedId = e.detail?.id
+      if (!selectedId) return
+      currentChatIdRef.current = selectedId
+      const target = getChatSession(selectedId)
+      if (target) {
+        setAIState({
+          chatId: target.id,
+          messages: target.messages || []
+        })
+        setMessages(createUIStateFromStoredMessages(target.messages || []))
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', `/chat/${target.id}`)
+        }
+      }
+    }
 
+    const handleNewChat = () => {
+      const newId = nanoid()
+      currentChatIdRef.current = newId
+      setAIState({
+        chatId: newId,
+        messages: []
+      })
+      setMessages([])
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', `/`)
+      }
+    }
+
+    window.addEventListener(CHAT_SELECT_EVENT, handleSelectChat)
+    window.addEventListener(CHAT_NEW_EVENT, handleNewChat)
+
+    return () => {
+      window.removeEventListener(CHAT_SELECT_EVENT, handleSelectChat)
+      window.removeEventListener(CHAT_NEW_EVENT, handleNewChat)
+    }
+  }, [setAIState, setMessages])
+
+  // 4. Missing API keys toast
   useEffect(() => {
     missingKeys.map(key => {
       toast.error(`Missing ${key} environment variable!`)
@@ -85,7 +156,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         <div className="w-full h-px" ref={visibilityRef} />
       </div>
       <ChatPanel
-        id={id}
+        id={aiState?.chatId || currentChatIdRef.current}
         input={input}
         setInput={setInput}
         isAtBottom={isAtBottom}

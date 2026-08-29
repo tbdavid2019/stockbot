@@ -115,18 +115,66 @@ export function formatStockSymbol(symbol: string): string {
   if (!symbol) return ''
   let trimmed = symbol.trim().toUpperCase()
 
+  // 常見公司名稱先轉成 TradingView 可辨識的交易所代號。
+  // 未命中的公司名稱仍應先透過 searchFinancialWeb 查證，不讓模型猜代號。
+  const stockAliases: Record<string, string> = {
+    台積電: 'TWSE:2330',
+    TSMC: 'TWSE:2330',
+    聯電: 'TWSE:2303',
+    鴻海: 'TWSE:2317',
+    富士康: 'TWSE:2317',
+    聯發科: 'TWSE:2454',
+    台光電: 'TWSE:2383',
+    華碩: 'TWSE:2357',
+    統一: 'TWSE:1216',
+    國泰金: 'TWSE:2882',
+    台灣大: 'TWSE:3045',
+    蘋果: 'NASDAQ:AAPL',
+    APPLE: 'NASDAQ:AAPL',
+    微軟: 'NASDAQ:MSFT',
+    MICROSOFT: 'NASDAQ:MSFT',
+    輝達: 'NASDAQ:NVDA',
+    NVIDIA: 'NASDAQ:NVDA',
+    特斯拉: 'NASDAQ:TSLA',
+    TESLA: 'NASDAQ:TSLA',
+    亞馬遜: 'NASDAQ:AMZN',
+    AMAZON: 'NASDAQ:AMZN',
+    谷歌: 'NASDAQ:GOOGL',
+    GOOGLE: 'NASDAQ:GOOGL',
+    臉書: 'NASDAQ:META',
+    META: 'NASDAQ:META',
+    波克夏: 'NYSE:BRK.B',
+    BERKSHIREHATHAWAY: 'NYSE:BRK.B',
+    摩根大通: 'NYSE:JPM',
+    JPMORGAN: 'NYSE:JPM',
+    VISA: 'NYSE:V',
+    VISA卡: 'NYSE:V'
+  }
+
+  if (stockAliases[trimmed]) {
+    return stockAliases[trimmed]
+  }
+
   // 轉換常見的美股特殊代號分隔符 (如 BRK-B, BRK/B -> BRK.B)
   trimmed = trimmed.replace(/[-/]/g, '.')
 
-  // 如果是純數字或以 .TW 結尾，就強制用 TWSE 前綴
-  const match = trimmed.match(/^(\d{4,})(\.TW)?$/)
-  if (match) {
-    return `TWSE:${match[1]}`
+  // 允許「台積電 2330」或「2330.TW」這類自然輸入。
+  const embeddedTaiwanSymbol = trimmed.match(
+    /(?:^|[^\d])(\d{4})(?:\.(TW|TWO))?(?:$|[^\d])/
+  )
+  if (embeddedTaiwanSymbol && !/^[A-Z]{2,}:/.test(trimmed)) {
+    return `${embeddedTaiwanSymbol[2] === 'TWO' ? 'TPEX' : 'TWSE'}:${embeddedTaiwanSymbol[1]}`
   }
 
-  // 如果是 TPE: 開頭也轉為 TWSE:
+  // 如果是純數字或以台股後綴結尾，就加上正確交易所前綴。
+  const match = trimmed.match(/^(\d{4,})(\.TW|\.TWO)?$/)
+  if (match) {
+    return `${match[2] === '.TWO' ? 'TPEX' : 'TWSE'}:${match[1]}`
+  }
+
+  // 舊格式 TPE: 代表上市櫃市場，改成 TradingView 使用的 TPEX:。
   if (trimmed.startsWith('TPE:')) {
-    return trimmed.replace('TPE:', 'TWSE:')
+    return trimmed.replace('TPE:', 'TPEX:')
   }
 
   // 如果已經是 TWSE: 就直接用
@@ -141,18 +189,55 @@ export function formatStockSymbol(symbol: string): string {
 
   // 常見美股主要交易所對應
   const nasdaqStocks = [
-    'TSLA', 'AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NFLX',
-    'NVDA', 'AMD', 'INTC', 'PYPL', 'ADBE', 'CRM', 'ORCL', 'QCOM', 'CSCO', 'AVGO', 'COST'
+    'TSLA',
+    'AAPL',
+    'MSFT',
+    'GOOGL',
+    'GOOG',
+    'AMZN',
+    'META',
+    'NFLX',
+    'NVDA',
+    'AMD',
+    'INTC',
+    'PYPL',
+    'ADBE',
+    'CRM',
+    'ORCL',
+    'QCOM',
+    'CSCO',
+    'AVGO',
+    'COST'
   ]
   const nyseStocks = [
-    'BRK.A', 'BRK.B', 'JPM', 'JNJ', 'V', 'WMT', 'PG', 'MA', 'UNH',
-    'HD', 'DIS', 'BAC', 'XOM', 'CVX', 'KO', 'MS', 'GS', 'C', 'IBM', 'BA', 'NKE', 'PFE'
+    'BRK.A',
+    'BRK.B',
+    'JPM',
+    'JNJ',
+    'V',
+    'WMT',
+    'PG',
+    'MA',
+    'UNH',
+    'HD',
+    'DIS',
+    'BAC',
+    'XOM',
+    'CVX',
+    'KO',
+    'MS',
+    'GS',
+    'C',
+    'IBM',
+    'BA',
+    'NKE',
+    'PFE'
   ]
-  
+
   if (nasdaqStocks.includes(trimmed)) {
     return `NASDAQ:${trimmed}`
   }
-  
+
   if (nyseStocks.includes(trimmed)) {
     return `NYSE:${trimmed}`
   }

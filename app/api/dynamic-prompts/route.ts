@@ -38,7 +38,7 @@ const PROXY_URLS = [
   'https://stock.david888.com/'
 ]
 
-// 簡易記憶體快取 (1小時快取)
+// 簡易記憶體快取 (5 分鐘快取，避免頁面顯示過期報價)
 let cachedData: {
   timestamp: number
   usStocks: StockItem[]
@@ -47,7 +47,7 @@ let cachedData: {
   promptsEn: ExamplePrompt[]
 } | null = null
 
-const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
+const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
 function parseStocks(content: string): {
   sp500: StockItem[]
@@ -79,26 +79,46 @@ function parseStocks(content: string): {
       currentCategory = 'TWMID'
     }
 
-    const twMatch = trimmed.match(/^(\d{4})(?:\.TW)?\s+([\u4e00-\u9fa5A-Za-z0-9]+)\s+([\d.]+)?/)
+    const twMatch = trimmed.match(
+      /^(\d{4})(?:\.TW)?\s+([\u4e00-\u9fa5A-Za-z0-9]+)\s+([\d.]+)?/
+    )
     if (twMatch) {
       const [, symbol, name, price] = twMatch
       const item = { symbol, name, price, raw: `${symbol} ${name}` }
       if (currentCategory === 'TW50' && !tw50.some(s => s.symbol === symbol)) {
         tw50.push(item)
-      } else if (currentCategory === 'TWMID' && !twMid.some(s => s.symbol === symbol)) {
+      } else if (
+        currentCategory === 'TWMID' &&
+        !twMid.some(s => s.symbol === symbol)
+      ) {
         twMid.push(item)
       }
       continue
     }
 
-    const usMatch = trimmed.match(/^([A-Z]{1,5}(?:-[A-Z]+)?)\s+([\d.]+)\s+[\d.-]+/i)
+    const usMatch = trimmed.match(
+      /^([A-Z]{1,5}(?:-[A-Z]+)?)\s+([\d.]+)\s+[\d.-]+/i
+    )
     if (usMatch) {
       const symbol = usMatch[1].toUpperCase()
       const price = usMatch[2]
-      const blacklist = ['PE', 'PB', 'EV', 'MA', 'CODE', 'DATE', 'PRICE', 'HIGH', 'LOW']
+      const blacklist = [
+        'PE',
+        'PB',
+        'EV',
+        'MA',
+        'CODE',
+        'DATE',
+        'PRICE',
+        'HIGH',
+        'LOW'
+      ]
       if (!blacklist.includes(symbol)) {
         const item = { symbol, name: symbol, price }
-        if (currentCategory === 'SP500' && !sp500.some(s => s.symbol === symbol)) {
+        if (
+          currentCategory === 'SP500' &&
+          !sp500.some(s => s.symbol === symbol)
+        ) {
           sp500.push(item)
         }
       }
@@ -112,7 +132,11 @@ function parseStocks(content: string): {
   }
 }
 
-function buildPrompts(sp500: StockItem[], tw50: StockItem[], twMid: StockItem[]) {
+function buildPrompts(
+  sp500: StockItem[],
+  tw50: StockItem[],
+  twMid: StockItem[]
+) {
   const twTop1 = tw50[0] || DEFAULT_TW_STOCKS[0]
   const twTop2 = tw50[1] || DEFAULT_TW_STOCKS[1]
   const twMid1 = twMid[0] || DEFAULT_TW_STOCKS[3]
@@ -196,7 +220,9 @@ export async function GET() {
 
   // 若快取有效則直接回傳
   if (cachedData && now - cachedData.timestamp < CACHE_TTL_MS) {
-    return NextResponse.json(cachedData)
+    return NextResponse.json(cachedData, {
+      headers: { 'Cache-Control': 'no-store' }
+    })
   }
 
   let rawContent = ''
@@ -208,7 +234,7 @@ export async function GET() {
           'User-Agent': 'Mozilla/5.0 (compatible; StockBot/1.0)'
         },
         signal: AbortSignal.timeout(5000),
-        next: { revalidate: 3600 }
+        cache: 'no-store'
       })
 
       if (res.ok) {
@@ -235,5 +261,7 @@ export async function GET() {
     promptsEn
   }
 
-  return NextResponse.json(cachedData)
+  return NextResponse.json(cachedData, {
+    headers: { 'Cache-Control': 'no-store' }
+  })
 }

@@ -39,8 +39,11 @@
 - ⚡ **Groq 驅動的性能**：利用 Groq 的尖端推理技術，實現近乎即時的響應和無縫用戶體驗
 - 🌐 **多資產市場覆蓋**：訪問股票、外匯、債券和加密貨幣的全面數據和分析
 - 🇹🇼 **台灣股票市場支持**：現已支援台灣股票市場查詢，包括台積電等台灣上市公司
-- 📈 **動態台股跑馬燈**：顯示每日精選台股與 API 回傳的最新價格，並支援 TWSE / TPEX 股票代碼
-- 📱 **手機版響應式介面**：Header、提示卡、輸入面板與跑馬燈適配小螢幕，避免內容互相遮住
+- 📈 **動態股票報價跑馬燈**：直接顯示 API 回傳的台股／美股最新價格，5 分鐘自動更新，不受 TradingView ticker iframe 對台股欄位限制影響
+- 🧭 **公司名稱自動轉代號**：支援常見中英文公司名稱與台股代號正規化；未知或模糊公司會先做即時金融搜尋，再交給 TradingView
+- 🗺️ **TradingView 熱力圖市場清單**：依官方 widget data source 補齊北美、南美、歐洲、中東非洲、亞洲與太平洋等市場，包含台灣全市場與台灣 50
+- 📜 **對話歷史紀錄與抽屜面板** (新功能)：點擊導覽列「📜 歷史紀錄」滑出左側面板，依今天、昨天、過去7天、更早以前清晰分組，支援標題搜尋、修改與單筆刪除
+- 🔒 **本機 LocalStorage 隱私存儲** (新功能)：對話、互動圖表、即時報價、AI 大師分析與 2MD 搜尋結果完全保存在瀏覽器本機，0 伺服器依賴、隱私安全無虞且隨點隨看
 - 🤖 **AI 投資分析** (新功能)：整合 AI Hedge Fund API，提供傳奇投資大師（巴菲特、葛拉漢、乾克曼等）的專業投資建議
 
 ## AI 投資分析功能
@@ -83,7 +86,7 @@ AI_HEDGE_FUND_PORT=6000
 | Description | Widget |
 |-------------|--------|
 | **AI Investment Analysis** (NEW)<br>Get professional investment advice and multi-round round table debates from legendary investors like Warren Buffett, Cathie Wood, Michael Burry, and more. | AI Hedge Fund API (dns.glsoft.ai:6000) |
-| **Heatmap of Daily Market Performance**<br>Visualize market trends at a glance with an interactive heatmap. Supported markets: US (S&P 500), Germany, Australia, Brazil, Canada, Israel. | ![Heatmap of Daily Market Performance](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e) |
+| **Heatmap of Daily Market Performance**<br>Visualize market trends at a glance with an interactive heatmap. Supported markets include the TradingView widget data sources for North America, South America, Europe, Middle East & Africa, and Asia-Pacific, including Taiwan (AllTW / TW50). | ![Heatmap of Daily Market Performance](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e) |
 | **Breakdown of Financial Data for Stocks**<br>Get detailed financial metrics and key performance indicators for any stock. | ![Breakdown of Financial Data for Stocks](https://github.com/user-attachments/assets/c1c32dac-8295-4efb-ac1e-2eea8a89e7db) |
 | **Price History of Stock**<br>Track the historical price movement of stocks with customizable date ranges. | ![Price History of Stock](https://github.com/user-attachments/assets/f588068e-4d95-4188-96fd-866d355c993e) |
 | **Candlestick Stock Charts for Specific Assets**<br>Analyze price patterns and trends with detailed candlestick charts. | ![Candlestick Stock Charts for Specific Assets](https://github.com/user-attachments/assets/ce9ea4a8-a1fe-4ce7-be60-3f5d64d50ced) |

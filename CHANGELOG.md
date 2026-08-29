@@ -4,6 +4,24 @@
 
 ---
 
+## [2026-08-29] - 對話歷史紀錄抽屜 (Chat History Drawer)、本機 LocalStorage 持久化與無縫回顧切換
+
+### ✨ 新增 (Added)
+- **對話歷史紀錄抽屜 (Chat History Drawer)**：
+  - 新增 [`components/chat-history-sheet.tsx`](components/chat-history-sheet.tsx)，於頂部導覽列左側提供「📜 歷史紀錄」按鈕與動態對話數量徽章。
+  - **智慧時間分組**：自動將對話依「今天 (Today)」、「昨天 (Yesterday)」、「過去 7 天 (Last 7 Days)」與「更早以前 (Older)」分組呈現。
+  - **即時搜尋過濾**：搜尋框支援即時過濾歷史對話標題與文字關鍵字。
+  - **對話管理能力**：支援自訂修改標題 (✏️)、單筆對話刪除 (🗑️)、以及清除所有對話歷史（附帶二次確認防誤觸視窗）。
+- **完整 LocalStorage 本機對話持久化與狀態還原**：
+  - 新增 [`lib/chat-history.tsx`](lib/chat-history.tsx)，每次對話與工具執行（包括 TradingView 走勢圖、即時報價、大師 AI 分析、2MD 搜尋、Wiki 發布結果）皆自動同步保存於本機 `localStorage` (`stockbot_chat_sessions_v1`)。
+  - **全組件 UI State 還原器 (`createUIStateFromStoredMessages`)**：點擊歷史對話時即時將序列化狀態還原為對應的 React Financial Cards 組件與 AI 對話上下文，無須重新向 LLM 發送請求即可回顧完整圖表。
+- **動態對話路由支援**：
+  - 新增 [`app/(chat)/chat/[id]/page.tsx`](app/(chat)/chat/[id]/page.tsx)，支援直接透過 URL 分享或重新載入特定歷史對話。
+- **工具伴隨總結文字持久化 (Caption Persistence)**：
+  - 於 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 更新 13 個工具調用，在寫入 `aiState.done` 前先生成 `caption` 並存放於 `result.caption`，確保歷史回顧時所有伴隨解說文字完好無損。
+
+---
+
 ## [2026-08-29] - 台股跑馬燈價格修復與介面清理
 
 ### 🐛 修復 (Fixed)
@@ -16,6 +34,14 @@
 - 移除右上角 GitHub 按鈕與 GitHub icon。
 - Footer 新增「技術提供 david888.com」。
 - 優化手機版 Header、提示卡與底部輸入面板，避免內容遮住或產生橫向溢出。
+
+### ✨ 新增 (Added)
+- **完整 TradingView Stock Heatmap 市場清單**：加入官方 widget data source 可用的北美、南美、歐洲、中東非洲、亞洲與太平洋市場，並以分區下拉選單呈現，手機版不再被大量按鈕推爆。
+- **公司名稱轉股票代號**：常見中英文公司名稱可直接正規化為交易所代號；未知名稱要求先經 `searchFinancialWeb` 即時查證後再呼叫股票工具。
+
+### 🐛 修復 (Fixed)
+- **修正報價快取過久**：動態股票 API 改為 5 分鐘記憶體快取、上游請求使用 `no-store`，前端每 5 分鐘刷新。
+- **修正台股價格被 TradingView iframe 隱藏**：跑馬燈改由 `/api/dynamic-prompts` 直接渲染台股／美股價格，避免 iframe 對台股標的只顯示名稱或錯誤圖示。
 
 ## [2026-08-28] - 15 輪多輪自主工具循環、David888 WikiPublisher 自主發布器與 2MD Web Reader
 
