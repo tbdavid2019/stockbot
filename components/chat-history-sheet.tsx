@@ -327,12 +327,12 @@ export function ChatHistorySheet({
                     <span>清除全部</span>
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent>
+                <AlertDialogContent aria-describedby="clear-chat-description">
                   <AlertDialogHeader>
                     <AlertDialogTitle>
                       確定要清除所有對話紀錄嗎？
                     </AlertDialogTitle>
-                    <AlertDialogDescription>
+                    <AlertDialogDescription id="clear-chat-description">
                       此操作將永久刪除儲存在本機瀏覽器中的所有對話紀錄，無法復原。
                     </AlertDialogDescription>
                   </AlertDialogHeader>

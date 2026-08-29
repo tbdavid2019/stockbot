@@ -48,6 +48,7 @@ let cachedData: {
 } | null = null
 
 const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const UPSTREAM_TIMEOUT_MS = 3500
 
 function parseStocks(content: string): {
   sp500: StockItem[]
@@ -227,27 +228,32 @@ export async function GET() {
 
   let rawContent = ''
 
-  for (const url of PROXY_URLS) {
-    try {
+  // Probe all upstreams in parallel. Sequential 5s retries can exceed the
+  // serverless request window and turn a recoverable upstream failure into a
+  // 504 for the entire homepage.
+  const upstreamResults = await Promise.allSettled(
+    PROXY_URLS.map(async url => {
       const res = await fetch(url, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; StockBot/1.0)'
         },
-        signal: AbortSignal.timeout(5000),
+        signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
         cache: 'no-store'
       })
 
-      if (res.ok) {
-        const text = await res.text()
-        if (text && text.length > 200) {
-          rawContent = text
-          break
-        }
-      }
-    } catch (e) {
-      // 嘗試下一個代理
-      continue
-    }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const text = await res.text()
+      if (!text || text.length <= 200)
+        throw new Error('Empty upstream response')
+      return text
+    })
+  )
+
+  const firstSuccessfulResult = upstreamResults.find(
+    result => result.status === 'fulfilled'
+  )
+  if (firstSuccessfulResult?.status === 'fulfilled') {
+    rawContent = firstSuccessfulResult.value
   }
 
   const { sp500, tw50, twMid } = parseStocks(rawContent)

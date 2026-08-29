@@ -4,6 +4,16 @@
 
 ---
 
+## [2026-08-29] - 報價 API 與 React Hydration 穩定性修復
+
+### 🐛 修復 (Fixed)
+
+- 報價上游改為並行短 timeout；即使外部來源 504，也會快速回傳備援資料。
+- 第二跑馬燈改為先顯示備援報價，避免 API 失敗時整列消失。
+- 修正 `useLocalStorage` 在首屏直接讀取瀏覽器資料造成的 React hydration mismatch。
+
+---
+
 ## [2026-08-29] - TradingView 跑馬燈自適應高度
 
 ### 🐛 修復 (Fixed)
