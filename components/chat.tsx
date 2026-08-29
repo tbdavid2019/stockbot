@@ -35,13 +35,13 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useUIState()
   const [aiState, setAIState] = useAIState()
-  const [wideMode, setWideMode] = useState(false)
+  const [wideMode, setWideMode] = useState(true)
   const currentChatIdRef = useRef<string>(id || nanoid())
   const hasHydratedRef = useRef(false)
 
   useEffect(() => {
     const syncLayoutMode = () => {
-      setWideMode(localStorage.getItem('stockbot_layout_mode') === '"wide"')
+      setWideMode(localStorage.getItem('stockbot_layout_mode') !== '"narrow"')
     }
 
     syncLayoutMode()
@@ -154,11 +154,8 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
       className="group min-w-0 w-full overflow-auto overflow-x-hidden pl-0 peer-[[data-state=open]]:lg:pl-[250px] peer-[[data-state=open]]:xl:pl-[300px]"
       ref={scrollRef}
     >
-      {messages.length ? (
-        <MissingApiKeyBanner missingKeys={missingKeys} />
-      ) : (
-        <TickerTape />
-      )}
+      <TickerTape />
+      {messages.length > 0 && <MissingApiKeyBanner missingKeys={missingKeys} />}
 
       <div
         className={cn(

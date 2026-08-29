@@ -43,10 +43,10 @@ export function TickerTape() {
   }, [resolvedTheme])
 
   return (
-    <div className="w-full min-w-0 max-w-full overflow-hidden border-b border-border bg-background">
+    <div className="sticky top-0 z-40 w-full min-w-0 max-w-full overflow-hidden border-b border-border bg-background/95 shadow-sm backdrop-blur-xl">
       <div
         ref={tradingViewContainer}
-        className="min-h-20 min-w-0 overflow-hidden bg-background"
+        className="min-h-14 min-w-0 overflow-hidden bg-background sm:min-h-20"
       />
       <MarketQuotes />
     </div>

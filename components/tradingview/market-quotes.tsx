@@ -80,7 +80,7 @@ export function MarketQuotes({
           <button
             type="button"
             key={`${quote.market}-${quote.symbol}-${index}`}
-            className="flex shrink-0 items-center gap-2 border-r border-border px-4 text-left text-sm transition-colors hover:bg-muted/60"
+            className="flex shrink-0 items-center gap-1.5 border-r border-border px-3 text-left text-xs transition-colors hover:bg-muted/60 sm:gap-2 sm:px-4 sm:text-sm"
             aria-hidden={index >= quotes.length}
             tabIndex={index >= quotes.length ? -1 : 0}
             onClick={() => {

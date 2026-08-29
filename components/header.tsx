@@ -15,7 +15,7 @@ export function Header() {
   const [lang, setLang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const [layoutMode, setLayoutMode] = useLocalStorage<'narrow' | 'wide'>(
     'stockbot_layout_mode',
-    'narrow'
+    'wide'
   )
 
   const handleNewChat = (e: React.MouseEvent) => {
