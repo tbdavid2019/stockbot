@@ -16,7 +16,7 @@ interface DynamicPromptsResponse {
 }
 
 interface TradingViewSymbol {
-  proName?: string
+  proName: string
   title?: string
   description?: string
 }
@@ -25,19 +25,26 @@ const DEFAULT_SYMBOLS: TradingViewSymbol[] = [
   { proName: 'FOREXCOM:SPXUSD', title: 'S&P 500' },
   { proName: 'FOREXCOM:NSXUSD', title: 'Nasdaq 100' },
   { proName: 'BITSTAMP:BTCUSD', title: 'Bitcoin' },
-  { description: '台積電 (2330)', proName: 'TWSE:2330' },
-  { description: '鴻海 (2317)', proName: 'TWSE:2317' },
-  { description: '聯發科 (2454)', proName: 'TWSE:2454' },
-  { description: 'Apple (AAPL)', proName: 'NASDAQ:AAPL' },
-  { description: 'NVIDIA (NVDA)', proName: 'NASDAQ:NVDA' },
-  { description: 'Tesla (TSLA)', proName: 'NASDAQ:TSLA' }
+  { title: '台積電 (2330)', proName: 'TWSE:2330' },
+  { title: '鴻海 (2317)', proName: 'TWSE:2317' },
+  { title: '聯發科 (2454)', proName: 'TWSE:2454' },
+  { title: 'Apple (AAPL)', proName: 'NASDAQ:AAPL' },
+  { title: 'NVIDIA (NVDA)', proName: 'NASDAQ:NVDA' },
+  { title: 'Tesla (TSLA)', proName: 'NASDAQ:TSLA' }
 ]
 
 function formatProName(symbol: string): string {
-  const clean = symbol.trim().toUpperCase().replace(/\.TW$/, '')
-  // 台股四碼 (如 2330, 1216, 1229)
-  if (/^\d{4}$/.test(clean)) {
-    return `TWSE:${clean}`
+  const clean = symbol.trim().toUpperCase()
+
+  // 保留已經完整指定的台股交易所，並支援上市櫃代碼後綴。
+  if (/^(TWSE|TPEX):\d{4}$/.test(clean)) {
+    return clean
+  }
+  if (/^\d{4}\.TWO$/.test(clean)) {
+    return `TPEX:${clean.slice(0, 4)}`
+  }
+  if (/^\d{4}(?:\.TW)?$/.test(clean)) {
+    return `TWSE:${clean.slice(0, 4)}`
   }
   // 美股特殊代碼
   if (clean === 'BRK-B' || clean === 'BRK/B' || clean === 'BRK.B') {
@@ -114,7 +121,8 @@ export function TickerTape() {
           if (Array.isArray(data.twStocks) && data.twStocks.length > 0) {
             data.twStocks.slice(0, 6).forEach(stk => {
               dynamicList.push({
-                description: `${stk.name} (${stk.symbol})`,
+                title: `${stk.name} (${stk.symbol})`,
+                description: `${stk.name} (${stk.symbol})${stk.price ? ` · NT$${stk.price}` : ''}`,
                 proName: formatProName(stk.symbol)
               })
             })
@@ -124,6 +132,7 @@ export function TickerTape() {
           if (Array.isArray(data.usStocks) && data.usStocks.length > 0) {
             data.usStocks.slice(0, 6).forEach(stk => {
               dynamicList.push({
+                title: stk.symbol,
                 description: stk.symbol,
                 proName: formatProName(stk.symbol)
               })
@@ -158,7 +167,8 @@ export function TickerTape() {
     widgetDiv.className = 'tradingview-widget-container__widget'
     currentContainer.appendChild(widgetDiv)
 
-    const colorTheme = resolvedTheme === 'dark' || theme === 'dark' ? 'dark' : 'light'
+    const colorTheme =
+      resolvedTheme === 'dark' || theme === 'dark' ? 'dark' : 'light'
 
     const script = document.createElement('script')
     script.src =

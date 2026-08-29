@@ -1,21 +1,17 @@
 import * as React from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
 
+import { buttonVariants } from '@/components/ui/button'
+import { IconGroq, IconSeparator, IconVercel } from '@/components/ui/icons'
 import { cn } from '@/lib/utils'
-import { Button, buttonVariants } from '@/components/ui/button'
-import {
-  IconGitHub,
-  IconGroq,
-  IconSeparator,
-  IconVercel
-} from '@/components/ui/icons'
 import { Session } from '@/lib/types'
 
 async function UserOrLogin() {
   return (
     <div className="flex items-center space-x-2 font-semibold">
-      <a href="/new" className="flex items-center gap-1.5 text-base font-bold text-slate-900 dark:text-slate-100 hover:opacity-80 transition-opacity">
+      <a
+        href="/new"
+        className="flex items-center gap-1.5 text-base font-bold text-slate-900 dark:text-slate-100 hover:opacity-80 transition-opacity"
+      >
         <span className="text-xl">📈</span>
         <span>888 StockBot</span>
       </a>
@@ -50,18 +46,6 @@ export function Header() {
             className="underline hover:text-orange-700"
           >
             https://t.me/oli_billion_bot
-          </a>
-        </div>
-        <div className="flex items-center justify-end space-x-2">
-          <a
-            target="_blank"
-            href="https://github.com/tbdavid2019/stockbot"
-            rel="noopener noreferrer"
-            className={cn(buttonVariants({ variant: 'outline' }))}
-            style={{ borderRadius: 0 }}
-          >
-            <IconGitHub />
-            <span className="hidden ml-2 md:flex">GitHub</span>
           </a>
         </div>
       </div>

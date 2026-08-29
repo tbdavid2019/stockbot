@@ -39,6 +39,7 @@
 - ⚡ **Groq 驅動的性能**：利用 Groq 的尖端推理技術，實現近乎即時的響應和無縫用戶體驗
 - 🌐 **多資產市場覆蓋**：訪問股票、外匯、債券和加密貨幣的全面數據和分析
 - 🇹🇼 **台灣股票市場支持**：現已支援台灣股票市場查詢，包括台積電等台灣上市公司
+- 📈 **動態台股跑馬燈**：顯示每日精選台股與 API 回傳的最新價格，並支援 TWSE / TPEX 股票代碼
 - 🤖 **AI 投資分析** (新功能)：整合 AI Hedge Fund API，提供傳奇投資大師（巴菲特、葛拉漢、乾克曼等）的專業投資建議
 
 ## AI 投資分析功能
@@ -152,3 +153,5 @@ Your app should now be running on [localhost:3000](http://localhost:3000/).
 ## Credits
 
 This app was originally developed by [Benjamin Klieger](https://x.com/benjaminklieger) at [Groq](https://groq.com) and uses the AI Chatbot template created by Vercel: [Github Repository](https://github.com/vercel/ai-chatbot). Taiwan stock market support was added by [tbdavid2019](https://github.com/tbdavid2019).
+
+技術提供：[david888.com](https://david888.com)

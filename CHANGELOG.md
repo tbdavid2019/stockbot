@@ -4,6 +4,18 @@
 
 ---
 
+## [2026-08-29] - 台股跑馬燈價格修復與介面清理
+
+### 🐛 修復 (Fixed)
+- **修正台股跑馬燈不顯示股價**：
+  - 將 `/api/dynamic-prompts` 回傳的台股價格顯示於 TradingView 跑馬燈。
+  - 強化 `TWSE`、`TPEX` 與 `.TW` / `.TWO` 股票代碼正規化。
+
+### 🧹 介面調整 (Changed)
+- 移除首頁的 AI Function Calling / Vercel AI SDK / TradingView Widgets 介紹段落。
+- 移除右上角 GitHub 按鈕與 GitHub icon。
+- Footer 新增「技術提供 david888.com」。
+
 ## [2026-08-28] - 15 輪多輪自主工具循環、David888 WikiPublisher 自主發布器與 2MD Web Reader
 
 ### ✨ 新增 (Added)
