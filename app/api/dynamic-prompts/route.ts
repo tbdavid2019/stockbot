@@ -161,7 +161,7 @@ function buildPrompts(
     {
       heading: `大師分析 ${usTop2.symbol} 值得買嗎？`,
       subheading: `由巴菲特等大師多輪圓桌委員會評估`,
-      message: `${usTop2.symbol} 值得買嗎？請用多位大師進行 AI 投資分析`
+      message: `${usTop2.symbol} 值得買嗎？請用多位投資大師進行圓桌分析`
     },
     {
       heading: `${usTop3.symbol} 最新財務數據`,
@@ -177,6 +177,26 @@ function buildPrompts(
       heading: '今日美股/台股市場熱力圖',
       subheading: '查看各產業板塊漲跌與篩選新標的',
       message: '今天股票市場各產業表現如何？'
+    },
+    {
+      heading: `${twTop2.name} (${twTop2.symbol}) 強弱如何？`,
+      subheading: '用波段、均線與成交量拆解走勢',
+      message: `${twTop2.name}（${twTop2.symbol}）目前趨勢、支撐與壓力如何？`
+    },
+    {
+      heading: `${twTop1.name} 供應鏈地圖`,
+      subheading: '找出上下游與同產業連動標的',
+      message: `請整理 ${twTop1.name}（${twTop1.symbol}）的供應鏈與相關概念股`
+    },
+    {
+      heading: '盤前新聞濃縮包',
+      subheading: '整理可能影響台股與美股的財經重點',
+      message: '請整理今天最重要的台股、美股與總經新聞'
+    },
+    {
+      heading: `雙軌策略：${twMid1.name} (${twMid1.symbol})`,
+      subheading: '基本面、估值與波段條件一次看',
+      message: `${twMid1.name}（${twMid1.symbol}）適合怎麼觀察？請整理基本面與波段條件`
     }
   ]
 
@@ -210,6 +230,27 @@ function buildPrompts(
       heading: 'Market Overview by Sector',
       subheading: `Today's performance heatmap`,
       message: 'How is the stock market performing today by sector?'
+    },
+    {
+      heading: `${usTop4.symbol} technical check`,
+      subheading: 'Trend, volume, support & resistance',
+      message: `Analyze the trend, volume, support and resistance for ${usTop4.symbol}`
+    },
+    {
+      heading: `${twTop1.name} supply chain map`,
+      subheading: 'Related companies and industry links',
+      message: `Map the supply chain and related companies for TSMC (${twTop1.symbol})`
+    },
+    {
+      heading: 'Pre-market news brief',
+      subheading: 'The stories moving Taiwan and US markets',
+      message:
+        'Summarize the most important Taiwan, US and macro market news today'
+    },
+    {
+      heading: `Dual-track view: ${twMid1.name}`,
+      subheading: 'Fundamentals, valuation & price action',
+      message: `Give me a dual-track analysis of ${twMid1.name} (${twMid1.symbol})`
     }
   ]
 

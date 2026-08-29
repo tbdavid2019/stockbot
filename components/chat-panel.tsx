@@ -28,6 +28,26 @@ interface ExampleMessage {
   message: string
 }
 
+const promptLabelsZh = [
+  '💡 今天想先看哪個市場？',
+  '📈 挑一張卡，直接問！',
+  '🔥 盤前先掃一輪？',
+  '🧭 從行情到財報，隨手挑一題',
+  '⚡ 今日市場靈感，換你出題'
+]
+
+const promptLabelsEn = [
+  '💡 What should we check first?',
+  '📈 Pick a card and ask away!',
+  '🔥 Ready for a market scan?',
+  '🧭 From price action to financials',
+  '⚡ Market inspiration for today'
+]
+
+function shufflePrompts(prompts: ExampleMessage[]) {
+  return [...prompts].sort(() => Math.random() - 0.5).slice(0, 6)
+}
+
 const exampleMessagesZh: ExampleMessage[] = [
   {
     heading: '台積電 (2330) 現價',
@@ -118,7 +138,9 @@ export function ChatPanel({
     ExampleMessage[]
   >('stockbot_cached_prompts_en', exampleMessagesEn)
 
-  const [isDynamicLoaded, setIsDynamicLoaded] = useState(false)
+  const [visibleExamples, setVisibleExamples] =
+    useState<ExampleMessage[]>(exampleMessagesZh)
+  const [promptLabelIndex, setPromptLabelIndex] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -134,7 +156,6 @@ export function ChatPanel({
             if (data.promptsEn && data.promptsEn.length > 0) {
               setCachedPromptsEn(data.promptsEn)
             }
-            setIsDynamicLoaded(true)
           }
         }
       } catch (err) {
@@ -148,6 +169,12 @@ export function ChatPanel({
   }, [])
 
   const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
+  const promptLabels = lang === 'zh' ? promptLabelsZh : promptLabelsEn
+
+  useEffect(() => {
+    setVisibleExamples(shufflePrompts(currentExamples))
+    setPromptLabelIndex(Math.floor(Math.random() * promptLabels.length))
+  }, [currentExamples, promptLabels.length])
 
   const handleMarketQuoteSelect = useCallback(
     async (quote: MarketQuote) => {
@@ -196,20 +223,36 @@ export function ChatPanel({
       >
         {messages.length === 0 && (
           <div className="mb-4 px-3 sm:px-0">
-            <div className="mb-2 flex items-center">
+            <div className="mb-2 flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                 <span className="text-sm font-medium text-muted-foreground">
-                  {lang === 'zh'
-                    ? '💡 建議提示語（點擊直接發問）：'
-                    : '💡 Starter Prompts (Click to ask):'}
+                  {promptLabels[promptLabelIndex]}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-950/60 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:text-orange-300">
-                  🔥 {lang === 'zh' ? '今日動態標的' : 'Daily Picks'}
-                </span>
+                <a
+                  href="https://stock.david888.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 transition-colors hover:bg-orange-200 dark:bg-orange-950/60 dark:text-orange-300 dark:hover:bg-orange-900/70"
+                >
+                  📡 stock.david888.com 模板
+                </a>
               </div>
+              <button
+                type="button"
+                className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                onClick={() => {
+                  setVisibleExamples(shufflePrompts(currentExamples))
+                  setPromptLabelIndex(
+                    Math.floor(Math.random() * promptLabels.length)
+                  )
+                }}
+                aria-label={lang === 'zh' ? '換一批提示' : 'Show new prompts'}
+              >
+                ↻ {lang === 'zh' ? '換一批' : 'Shuffle'}
+              </button>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {currentExamples.map((example, index) => (
+              {visibleExamples.map((example, index) => (
                 <div
                   key={`${lang}-${example.heading}-${index}`}
                   className="cursor-pointer rounded-lg border bg-white p-2.5 shadow-2xs transition-all hover:border-blue-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900 sm:p-3.5"
