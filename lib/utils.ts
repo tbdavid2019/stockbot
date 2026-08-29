@@ -113,10 +113,10 @@ export const getMessageFromCode = (resultCode: string) => {
 // }
 export function formatStockSymbol(symbol: string): string {
   if (!symbol) return ''
-  let trimmed = symbol.trim().toUpperCase()
+  // 移除所有內部與兩端空格
+  let trimmed = symbol.replace(/\s+/g, '').toUpperCase()
 
   // 常見公司名稱先轉成 TradingView 可辨識的交易所代號。
-  // 未命中的公司名稱仍應先透過 searchFinancialWeb 查證，不讓模型猜代號。
   const stockAliases: Record<string, string> = {
     台積電: 'TWSE:2330',
     TSMC: 'TWSE:2330',
@@ -129,6 +129,20 @@ export function formatStockSymbol(symbol: string): string {
     統一: 'TWSE:1216',
     國泰金: 'TWSE:2882',
     台灣大: 'TWSE:3045',
+    小米: 'HKEX:1810',
+    小米集團: 'HKEX:1810',
+    騰訊: 'HKEX:700',
+    騰訊控股: 'HKEX:700',
+    阿里巴巴: 'HKEX:9988',
+    美團: 'HKEX:3690',
+    比亞迪: 'HKEX:1211',
+    網易: 'HKEX:9999',
+    百度: 'HKEX:9888',
+    快手: 'HKEX:1024',
+    中芯國際: 'HKEX:981',
+    貴州茅台: 'SSE:600519',
+    茅台: 'SSE:600519',
+    寧德時代: 'SZSE:300750',
     蘋果: 'NASDAQ:AAPL',
     APPLE: 'NASDAQ:AAPL',
     微軟: 'NASDAQ:MSFT',
@@ -158,7 +172,50 @@ export function formatStockSymbol(symbol: string): string {
   // 轉換常見的美股特殊代號分隔符 (如 BRK-B, BRK/B -> BRK.B)
   trimmed = trimmed.replace(/[-/]/g, '.')
 
-  // 允許「台積電 2330」或「2330.TW」這類自然輸入。
+  // 1. 港股前綴與後綴正規化 (HKG:1810, HK:1810, 1810.HK, 01810.HK -> HKEX:1810)
+  if (/^(HKG|HK|HKE):/i.test(trimmed)) {
+    const code = trimmed.replace(/^(HKG|HK|HKE):/i, '').replace(/^0+/, '') || '700'
+    return `HKEX:${code}`
+  }
+  if (trimmed.startsWith('HKEX:')) {
+    const code = trimmed.replace(/^HKEX:/i, '').replace(/^0+/, '') || '700'
+    return `HKEX:${code}`
+  }
+  const hkPostfixMatch = trimmed.match(/^0*(\d{1,5})\.HK$/i)
+  if (hkPostfixMatch) {
+    return `HKEX:${hkPostfixMatch[1]}`
+  }
+
+  // 2. 陸股前綴與後綴正規化 (上證 SSE:600519 / 深證 SZSE:000001)
+  if (/^(SHA|SH):/i.test(trimmed)) {
+    return `SSE:${trimmed.replace(/^(SHA|SH):/i, '')}`
+  }
+  if (/^(SHE|SZ):/i.test(trimmed)) {
+    return `SZSE:${trimmed.replace(/^(SHE|SZ):/i, '')}`
+  }
+  const ssMatch = trimmed.match(/^(\d{6})\.(SS|SH)$/i)
+  if (ssMatch) {
+    return `SSE:${ssMatch[1]}`
+  }
+  const szMatch = trimmed.match(/^(\d{6})\.SZ$/i)
+  if (szMatch) {
+    return `SZSE:${szMatch[1]}`
+  }
+
+  // 3. 日韓前綴與後綴正規化 (東證 TSE:7203 / 韓股 KRX:005930)
+  if (/^TYO:/i.test(trimmed)) {
+    return `TSE:${trimmed.replace(/^TYO:/i, '')}`
+  }
+  const tyoMatch = trimmed.match(/^(\d{4})\.T$/i)
+  if (tyoMatch) {
+    return `TSE:${tyoMatch[1]}`
+  }
+  const krxMatch = trimmed.match(/^(\d{6})\.KS$/i)
+  if (krxMatch) {
+    return `KRX:${krxMatch[1]}`
+  }
+
+  // 4. 台股正規化 (2330, 2330.TW, 6488.TWO, TWSE:2330, TPEX:6488)
   const embeddedTaiwanSymbol = trimmed.match(
     /(?:^|[^\d])(\d{4})(?:\.(TW|TWO))?(?:$|[^\d])/
   )
@@ -166,28 +223,25 @@ export function formatStockSymbol(symbol: string): string {
     return `${embeddedTaiwanSymbol[2] === 'TWO' ? 'TPEX' : 'TWSE'}:${embeddedTaiwanSymbol[1]}`
   }
 
-  // 如果是純數字或以台股後綴結尾，就加上正確交易所前綴。
   const match = trimmed.match(/^(\d{4,})(\.TW|\.TWO)?$/)
   if (match) {
     return `${match[2] === '.TWO' ? 'TPEX' : 'TWSE'}:${match[1]}`
   }
 
-  // 舊格式 TPE: 代表上市櫃市場，改成 TradingView 使用的 TPEX:。
   if (trimmed.startsWith('TPE:')) {
     return trimmed.replace('TPE:', 'TPEX:')
   }
 
-  // 如果已經是 TWSE: 就直接用
-  if (trimmed.startsWith('TWSE:')) {
+  if (trimmed.startsWith('TWSE:') || trimmed.startsWith('TPEX:')) {
     return trimmed
   }
 
-  // 如果已經包含交易所前綴（如 NASDAQ:、NYSE: 等），直接返回
+  // 5. 如果已經包含正確交易所前綴（如 NASDAQ:、NYSE:、AMEX:、SSE:、SZSE:、TSE: 等），直接返回
   if (trimmed.includes(':')) {
     return trimmed
   }
 
-  // 常見美股主要交易所對應
+  // 6. 常見美股主要交易所對應
   const nasdaqStocks = [
     'TSLA',
     'AAPL',

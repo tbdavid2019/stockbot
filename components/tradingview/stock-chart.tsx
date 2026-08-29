@@ -8,19 +8,26 @@ type ComparisonSymbolObject = {
   position: "SameScale";
 };
 
-export function StockChart({ symbol, comparisonSymbols }: { symbol: string, comparisonSymbols: ComparisonSymbolObject[] }) {
+export function StockChart({
+  symbol,
+  comparisonSymbols = []
+}: {
+  symbol: string
+  comparisonSymbols?: ComparisonSymbolObject[]
+}) {
   const container = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!container.current) return
-    // 格式化股票代號，特別處理台灣股票代號
     const formattedSymbol = formatStockSymbol(symbol)
-    // 格式化比較股票代號
-    const formattedComparisonSymbols = comparisonSymbols.map(s => ({
+    const validComparisons = Array.isArray(comparisonSymbols)
+      ? comparisonSymbols
+      : []
+    const formattedComparisonSymbols = validComparisons.map(s => ({
       ...s,
       symbol: formatStockSymbol(s.symbol)
     }))
-    
+
     const script = document.createElement('script')
     script.src =
       'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js'
@@ -32,13 +39,13 @@ export function StockChart({ symbol, comparisonSymbols }: { symbol: string, comp
       interval: 'D',
       timezone: 'Asia/Taipei',
       theme: 'light',
-      style: comparisonSymbols.length === 0 ? '1' : '2',
-      hide_volume: comparisonSymbols.length === 0 ? false : true,
+      style: validComparisons.length === 0 ? '1' : '2',
+      hide_volume: validComparisons.length === 0 ? false : true,
       locale: 'zh_TW',
       backgroundColor: 'rgba(255, 255, 255, 1)',
       gridColor: 'rgba(247, 247, 247, 1)',
       withdateranges: true,
-      hide_side_toolbar: comparisonSymbols.length > 0 ? true : false,
+      hide_side_toolbar: validComparisons.length > 0 ? true : false,
       allow_symbol_change: true,
       compareSymbols: formattedComparisonSymbols,
       calendar: false,

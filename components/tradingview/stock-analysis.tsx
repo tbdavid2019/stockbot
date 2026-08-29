@@ -193,7 +193,19 @@ function normalizeTickerForBackend(sym: string): string {
   let cleaned = sym.trim().toUpperCase()
   cleaned = cleaned.replace(/^(TWSE:|TPEX:|TPE:|ROCO:)/i, '')
   cleaned = cleaned.replace(/^(NASDAQ:|NYSE:|AMEX:|BATS:|ARCA:|INDEX:)/i, '')
-  if (/^\d{4,6}$/.test(cleaned)) {
+
+  // Hong Kong stock normalization
+  if (/^(HKEX|HKG|HK|HKE):/i.test(cleaned)) {
+    const code = cleaned.replace(/^(HKEX|HKG|HK|HKE):/i, '').replace(/^0+/, '') || '700'
+    return `${code.padStart(4, '0')}.HK`
+  }
+  const hkMatch = cleaned.match(/^0*(\d{1,5})\.HK$/i)
+  if (hkMatch) {
+    return `${hkMatch[1].padStart(4, '0')}.HK`
+  }
+
+  // Taiwan stock: 4-digit number like 1216, 2330 -> 1216.TW
+  if (/^\d{4}$/.test(cleaned)) {
     return `${cleaned}.TW`
   }
   return cleaned

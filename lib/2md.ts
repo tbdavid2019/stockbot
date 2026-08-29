@@ -237,6 +237,7 @@ export async function batchReadUrls2MD(urls: string[]): Promise<{ url: string; c
 
 const SYMBOL_NAMES: Record<string, string> = {
   '2330': '台積電 TSMC 2330',
+  '1216': '統一 1216',
   '2317': '鴻海 Foxconn 2317',
   '2454': '聯發科 MediaTek 2454',
   '2308': '台達電 Delta 2308',
@@ -244,6 +245,17 @@ const SYMBOL_NAMES: Record<string, string> = {
   '3008': '大立光 Largan 3008',
   '2303': '聯電 UMC 2303',
   '2603': '長榮 Evergreen 2603',
+  '1810': '小米集團 1810 港股 HKEX',
+  '01810': '小米集團 1810 港股 HKEX',
+  '700': '騰訊控股 700 港股 HKEX',
+  '0700': '騰訊控股 700 港股 HKEX',
+  '9988': '阿里巴巴 9988 港股 HKEX',
+  '3690': '美團 3690 港股 HKEX',
+  '1211': '比亞迪股份 1211 港股 HKEX',
+  '9999': '網易 9999 港股 HKEX',
+  '9888': '百度集團 9888 港股 HKEX',
+  '600519': '貴州茅台 600519 上證',
+  '300750': '寧德時代 300750 創業板',
   'AAPL': 'Apple 蘋果 AAPL',
   'NVDA': 'NVIDIA 輝達 NVDA',
   'TSLA': 'Tesla 特斯拉 TSLA',
@@ -261,8 +273,11 @@ const SYMBOL_NAMES: Record<string, string> = {
 export async function fetchLiveStockContext(query: string): Promise<string> {
   if (!query || !query.trim()) return ''
   try {
-    const rawClean = query.replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:)/i, '').trim()
-    const cleanQuery = SYMBOL_NAMES[rawClean.toUpperCase()] || rawClean
+    const rawClean = query
+      .replace(/^(TWSE:|TPEX:|NASDAQ:|NYSE:|HKEX:|HKG:|SSE:|SZSE:|TSE:|KRX:)/i, '')
+      .replace(/\s+/g, '')
+      .trim()
+    const cleanQuery = SYMBOL_NAMES[rawClean.toUpperCase()] || query
     const results = await searchWeb2MD(cleanQuery, 4)
     if (!results || results.length === 0) return ''
     return results
