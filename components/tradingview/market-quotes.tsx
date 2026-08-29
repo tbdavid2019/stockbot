@@ -28,6 +28,10 @@ function shuffleQuotes(quotes: MarketQuote[]) {
   return shuffled
 }
 
+function pickRandomQuotes(quotes: MarketQuote[], limit: number) {
+  return shuffleQuotes(quotes).slice(0, limit)
+}
+
 export function MarketQuotes({
   onSelect
 }: {
@@ -49,17 +53,18 @@ export function MarketQuotes({
         const twQuotes = Array.isArray(data.twStocks)
           ? data.twStocks
               .filter(stock => stock.price)
-              .slice(0, 12)
               .map(stock => ({ ...stock, market: 'TW' as const }))
           : []
         const usQuotes = Array.isArray(data.usStocks)
           ? data.usStocks
               .filter(stock => stock.price)
-              .slice(0, 12)
               .map(stock => ({ ...stock, market: 'US' as const }))
           : []
 
-        const nextQuotes = shuffleQuotes([...twQuotes, ...usQuotes])
+        const nextQuotes = [
+          ...pickRandomQuotes(twQuotes, 12),
+          ...pickRandomQuotes(usQuotes, 12)
+        ]
         setQuotes(nextQuotes)
       } catch (error) {
         console.warn('[MarketQuotes] Failed to load live quotes:', error)

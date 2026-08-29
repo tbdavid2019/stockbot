@@ -88,74 +88,6 @@ function shufflePrompts(
   return nextBatch
 }
 
-const fallbackPromptsZh: ExampleMessage[] = [
-  {
-    heading: '查一檔即時股價',
-    subheading: '輸入公司名稱或代號，取得最新行情',
-    message: '請查詢我指定公司的最新股價'
-  },
-  {
-    heading: '看一張股票走勢圖',
-    subheading: '輸入任一台股或美股標的',
-    message: '請顯示我指定標的的股票走勢圖'
-  },
-  {
-    heading: '多位投資大師觀點',
-    subheading: '輸入標的，查看多角度投資評估',
-    message: '請用多位投資大師分析我指定標的的投資價值'
-  },
-  {
-    heading: '拆解最新財務數據',
-    subheading: '營收、獲利、毛利率與估值一次看',
-    message: '請整理我指定公司的最新財務數據與估值'
-  },
-  {
-    heading: '找出產業鏈標的',
-    subheading: '從公司往上游、下游與同業延伸',
-    message: '請整理我指定公司的供應鏈與相關概念股'
-  },
-  {
-    heading: '今日市場熱力圖',
-    subheading: '查看美股、台股與各產業板塊表現',
-    message: '請分析今天台股、美股與各產業板塊的表現'
-  }
-]
-
-const fallbackPromptsEn: ExampleMessage[] = [
-  {
-    heading: 'Check a live stock price',
-    subheading: 'Enter any company name or ticker',
-    message: 'Check the latest price for the company I specify'
-  },
-  {
-    heading: 'Show me a stock chart',
-    subheading: 'For any Taiwan or US ticker',
-    message: 'Show me a stock chart for the ticker I specify'
-  },
-  {
-    heading: 'Multi-analyst investor view',
-    subheading: 'Enter a ticker for a full investment review',
-    message: 'Give me a multi-analyst investment view of the ticker I specify'
-  },
-  {
-    heading: 'Break down the latest financials',
-    subheading: 'Revenue, earnings, margins and valuation',
-    message:
-      'Summarize the latest financials and valuation for the company I specify'
-  },
-  {
-    heading: 'Map the supply chain',
-    subheading: 'Find peers, suppliers and related companies',
-    message:
-      'Map the supply chain and related companies for the ticker I specify'
-  },
-  {
-    heading: 'Market heatmap today',
-    subheading: 'Taiwan, US and sector performance',
-    message: "Analyze today's Taiwan, US and sector market performance"
-  }
-]
-
 export function ChatPanel({
   id,
   title,
@@ -170,12 +102,12 @@ export function ChatPanel({
   const { submitUserMessage } = useActions()
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
-  const [cachedPromptsZh, setCachedPromptsZh] = useState(fallbackPromptsZh)
-  const [cachedPromptsEn, setCachedPromptsEn] = useState(fallbackPromptsEn)
+  const [cachedPromptsZh, setCachedPromptsZh] = useState<ExampleMessage[]>([])
+  const [cachedPromptsEn, setCachedPromptsEn] = useState<ExampleMessage[]>([])
 
-  const [visibleExamples, setVisibleExamples] =
-    useState<ExampleMessage[]>(fallbackPromptsZh)
+  const [visibleExamples, setVisibleExamples] = useState<ExampleMessage[]>([])
   const [promptLabelIndex, setPromptLabelIndex] = useState(0)
+  const [isLoadingPrompts, setIsLoadingPrompts] = useState(true)
 
   useEffect(() => {
     let isMounted = true
@@ -191,10 +123,14 @@ export function ChatPanel({
             if (data.promptsEn && data.promptsEn.length > 0) {
               setCachedPromptsEn(data.promptsEn)
             }
+            setIsLoadingPrompts(false)
           }
+        } else if (isMounted) {
+          setIsLoadingPrompts(false)
         }
       } catch (err) {
         console.error('Failed to load dynamic prompts:', err)
+        if (isMounted) setIsLoadingPrompts(false)
       }
     }
     loadDynamicPrompts()
@@ -284,38 +220,52 @@ export function ChatPanel({
                 ↻ {lang === 'zh' ? '換一批' : 'Shuffle'}
               </button>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {visibleExamples.map((example, index) => (
-                <div
-                  key={`${lang}-${example.heading}-${index}`}
-                  className="cursor-pointer rounded-lg border bg-white p-2.5 shadow-2xs transition-all hover:border-blue-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900 sm:p-3.5"
-                  onClick={async () => {
-                    setMessages(currentMessages => [
-                      ...currentMessages,
-                      {
-                        id: nanoid(),
-                        display: <UserMessage>{example.message}</UserMessage>
-                      }
-                    ])
+            {isLoadingPrompts ? (
+              <div className="rounded-lg border border-dashed bg-background/50 px-3 py-4 text-sm text-muted-foreground">
+                {lang === 'zh'
+                  ? '正在載入最新市場標的…'
+                  : 'Loading the latest market symbols…'}
+              </div>
+            ) : visibleExamples.length > 0 ? (
+              <div className="grid grid-cols-2 gap-2">
+                {visibleExamples.map((example, index) => (
+                  <div
+                    key={`${lang}-${example.heading}-${index}`}
+                    className="cursor-pointer rounded-lg border bg-white p-2.5 shadow-2xs transition-all hover:border-blue-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900 sm:p-3.5"
+                    onClick={async () => {
+                      setMessages(currentMessages => [
+                        ...currentMessages,
+                        {
+                          id: nanoid(),
+                          display: <UserMessage>{example.message}</UserMessage>
+                        }
+                      ])
 
-                    const responseMessage = await submitUserMessage(
-                      example.message
-                    )
-                    setMessages(currentMessages => [
-                      ...currentMessages,
-                      responseMessage
-                    ])
-                  }}
-                >
-                  <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base">
-                    {example.heading}
+                      const responseMessage = await submitUserMessage(
+                        example.message
+                      )
+                      setMessages(currentMessages => [
+                        ...currentMessages,
+                        responseMessage
+                      ])
+                    }}
+                  >
+                    <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base">
+                      {example.heading}
+                    </div>
+                    <div className="mt-0.5 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
+                      {example.subheading}
+                    </div>
                   </div>
-                  <div className="mt-0.5 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
-                    {example.subheading}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed bg-background/50 px-3 py-4 text-sm text-muted-foreground">
+                {lang === 'zh'
+                  ? '目前無法取得即時標的，請稍後重新整理。'
+                  : 'Live market symbols are unavailable. Please refresh shortly.'}
+              </div>
+            )}
           </div>
         )}
 
