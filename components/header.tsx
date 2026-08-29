@@ -27,11 +27,6 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 flex h-12 min-w-0 items-center justify-between gap-2 border-b bg-gradient-to-b from-background/10 via-background/50 to-background/80 px-3 backdrop-blur-xl sm:h-14 sm:px-5">
       <div className="flex min-w-0 items-center space-x-1.5 font-semibold sm:space-x-2">
-        {/* Chat History Drawer Trigger */}
-        <ChatHistorySheet />
-
-        <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
-
         {/* Logo */}
         <a
           href="/"
@@ -59,6 +54,11 @@ export function Header() {
           <span className="hidden sm:inline">Start New Chat</span>
           <span className="sm:hidden">New</span>
         </button>
+
+        <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
+
+        {/* Chat History Drawer Trigger */}
+        <ChatHistorySheet />
       </div>
 
       <div className="flex min-w-0 shrink items-center gap-1.5 text-right text-xs sm:gap-2">
