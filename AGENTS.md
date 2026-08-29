@@ -54,8 +54,10 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - **Batch 3 (5位價值成長大師)**：~26 秒回傳，補齊全維度分析。
 - 徹底根絕單次請求超時引發的 504 Gateway Timeout。
 
-### 4. 🔄 15 輪多步自主推理與發布執行器 (15-Round ReAct Loop & WikiPublisher)
-- 支援最多 15 輪工具連續調用鏈（搜尋 ➔ 網頁深讀 ➔ 大師分析 ➔ 線圖呈現 ➔ 發布 Wiki 報告）。
+### 4. 🔄 確定性工具路由與多輪上下文 (Deterministic Tool Routing)
+- 明確包含 ticker 的股價、圖表、財務、新聞與大師分析請求，由 [`lib/chat/routing.ts`](lib/chat/routing.ts) 強制選擇對應工具，避免弱模型誤選 2MD 搜尋。
+- 未包含 ticker 的未知公司名稱才交由 `searchFinancialWeb` 查證；後續追問會從 AI State 的最近工具參數繼承標的。
+- 目前使用的 AI SDK `streamUI` 每次 Server Action 執行一個主要工具；跨工具研究流程透過多輪對話與續問按鈕銜接，不宣稱不存在的單次 15-step 執行。
 - **`publishToDavid888Wiki`**：串接 `https://wiki.david888.com/api`，產出 Markdown 深度報告並自動回傳 `shareUrl`、`/present` 簡報與 `/book` 電子書。
 - **`readWebPage`**：透過 2MD Web Reader 萃取線上新聞/網址全文。
 
@@ -63,7 +65,7 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - **零後端純本機存儲**：透過 [`lib/chat-history.tsx`](lib/chat-history.tsx) 將所有對話（包含文字、TradingView 走勢圖、即時報價、大師 AI 分析、2MD 搜尋、Wiki 發布結果）持久化於瀏覽器 `localStorage` (`stockbot_chat_sessions_v1`)。
 - **全組件 UI State 還原機制 (`createUIStateFromStoredMessages`)**：
   - 將序列化對話與工具呼叫結果還原為原生 React Financial Cards，並保留 AI 對話上下文。
-  - 13 個工具調用均在 `aiState.done` 前先生成 `caption` 並保存至 `result.caption`，保證歷史回顧時說明文字與圖表同步還原。
+  - 13 個工具調用均在 `aiState.done` 前生成純文字 `caption` 並保存至 `result.caption`；卡片不再嵌套第二層 RSC stream，避免 Vercel `Connection closed.`。
 - **事件驅動架構 (Event-Driven Architecture)**：
   - `stockbot-chat-history-updated`：跨組件同步歷史紀錄更新。
   - `stockbot-select-chat`：即時切換指定歷史對話。

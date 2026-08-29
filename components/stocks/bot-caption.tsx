@@ -8,19 +8,15 @@ import { CodeBlock } from '@/components/ui/codeblock'
 import { FollowupPrompts } from './followup-prompts'
 import { CopyButton } from '@/components/copy-button'
 
-import { StreamableValue } from 'ai/rsc'
-import { useStreamableText } from '@/lib/hooks/use-streamable-text'
-
 interface BotCaptionProps {
-  content: string | StreamableValue<string>
+  content: string
 }
 
 export function BotCaption({ content }: BotCaptionProps) {
-  const text = useStreamableText(content)
-  if (!text) return null
+  if (!content) return null
 
   // Check if caption contains suggested follow-ups delimiter
-  const parts = text.split(
+  const parts = content.split(
     /---SUGGESTIONS---|===SUGGESTIONS===|【自主續問建議】|【續問建議】/i
   )
 
@@ -44,13 +40,17 @@ export function BotCaption({ content }: BotCaptionProps) {
             remarkPlugins={[remarkGfm, remarkMath]}
             components={{
               p({ children }) {
-                return <p className="mb-2.5 last:mb-0 leading-relaxed">{children}</p>
+                return (
+                  <p className="mb-2.5 last:mb-0 leading-relaxed">{children}</p>
+                )
               },
               code({ node, inline, className, children, ...props }) {
                 if (children.length) {
                   if (children[0] == '▍') {
                     return (
-                      <span className="mt-1 animate-pulse cursor-default">▍</span>
+                      <span className="mt-1 animate-pulse cursor-default">
+                        ▍
+                      </span>
                     )
                   }
                   children[0] = (children[0] as string).replace('`▍`', '▍')

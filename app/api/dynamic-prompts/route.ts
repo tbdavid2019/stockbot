@@ -257,7 +257,7 @@ function buildPrompts(
         {
           heading: `${label} 大師觀點`,
           subheading: '多位投資大師圓桌分析',
-          message: `請用多位投資大師分析${label}的投資價值`
+          message: `請用多位投資大師分析股票代號 ${stock.symbol}（${stock.name}）的投資價值`
         },
         {
           heading: `${label} 強弱如何？`,
@@ -322,7 +322,7 @@ function buildPrompts(
         {
           heading: `${label} investor view`,
           subheading: 'Multi-analyst investment perspective',
-          message: `Give me a multi-analyst investment view of ${label}`
+          message: `Give me a multi-analyst investment view of ticker ${stock.symbol} (${stock.name})`
         },
         {
           heading: `${label} technical check`,

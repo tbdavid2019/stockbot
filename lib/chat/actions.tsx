@@ -1,6 +1,6 @@
 import 'server-only'
 
-import { generateText, streamText } from 'ai'
+import { generateText } from 'ai'
 import {
   createAI,
   getMutableAIState,
@@ -39,6 +39,10 @@ import {
 } from '@/lib/2md'
 import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
+import {
+  inferDeterministicTool,
+  resolveTickerFromMessages
+} from '@/lib/chat/routing'
 
 export type AIState = {
   chatId: string
@@ -249,13 +253,12 @@ type ComparisonSymbolObject = {
   position: 'SameScale'
 }
 
-async function streamCaption(
+async function generateCaptionWithProvider(
   symbol: string,
   comparisonSymbols: ComparisonSymbolObject[],
   toolName: string,
   aiState: MutableAIState,
-  contextData: string | undefined,
-  captionStream: ReturnType<typeof createStreamableValue<string>>
+  contextData: string | undefined
 ): Promise<string> {
   const stockString =
     comparisonSymbols.length === 0
@@ -355,7 +358,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
     }
   ]
 
-  const candidates = getProviderCandidates().slice(0, 3)
+  const candidates = getProviderCandidates().slice(0, 2)
 
   for (const candidate of candidates) {
     try {
@@ -363,38 +366,25 @@ Language: reply in the same language the user used most recently. If Chinese, re
         baseURL: candidate.baseURL,
         apiKey: candidate.apiKey
       })
-      const result = await streamText({
+      const result = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(8000),
+        abortSignal: AbortSignal.timeout(4500),
         messages: messagesToModel
       })
 
-      let accumulatedText = ''
-      for await (const delta of result.textStream) {
-        accumulatedText += delta
-        try {
-          captionStream.update(delta)
-        } catch (e) {}
-      }
-
-      if (accumulatedText.trim().length > 0) {
-        try {
-          captionStream.done()
-        } catch (e) {}
-        return accumulatedText
+      if (result.text && result.text.trim().length > 0) {
+        return result.text
       }
     } catch (err: any) {
-      console.warn(`[Caption Stream Fallback] ${candidate.name} failed:`, err?.message || err)
+      console.warn(
+        `[Caption Fallback] ${candidate.name} failed:`,
+        err?.message || err
+      )
     }
   }
 
   // Fallback
-  const fallback = getSmartFallbackCaption(symbol)
-  try {
-    captionStream.update(fallback)
-    captionStream.done()
-  } catch (e) {}
-  return fallback
+  return getSmartFallbackCaption(symbol)
 }
 
 function getSmartFallbackCaption(symbol: string): string {
@@ -404,31 +394,27 @@ function getSmartFallbackCaption(symbol: string): string {
     : `Above is the live market data and intelligence for ${symbol}.\n\n---SUGGESTIONS---\n- 🧠 Run 13 Legendary Investor valuation and moat analysis on ${symbol}\n- ⛓️ Analyze ${symbol} key supply chain partners and industry peers\n- 🏦 Assess impact of 10Y Treasury yields and interest rate cycle on ${symbol}\n- 📑 Breakdown ${symbol} latest quarterly financials, margins and cash flow`
 }
 
-async function safeStreamCaption(
+async function safeGenerateCaption(
   symbol: string,
   comparisonSymbols: ComparisonSymbolObject[],
   toolName: string,
   aiState: MutableAIState,
-  contextData: string | undefined,
-  captionStream: ReturnType<typeof createStreamableValue<string>>
+  contextData: string | undefined
 ): Promise<string> {
   try {
-    return await streamCaption(
+    return await generateCaptionWithProvider(
       symbol,
       comparisonSymbols,
       toolName,
       aiState,
-      contextData,
-      captionStream
+      contextData
     )
   } catch (err: any) {
-    console.warn(`[safeStreamCaption] Error in ${toolName} for ${symbol}:`, err?.message || err)
-    const fallback = getSmartFallbackCaption(symbol)
-    try {
-      captionStream.update(fallback)
-      captionStream.done()
-    } catch (e) {}
-    return fallback
+    console.warn(
+      `[safeGenerateCaption] Error in ${toolName} for ${symbol}:`,
+      err?.message || err
+    )
+    return getSmartFallbackCaption(symbol)
   }
 }
 
@@ -439,8 +425,13 @@ async function generateCaption(
   aiState: MutableAIState,
   contextData?: string
 ): Promise<string> {
-  const dummyStream = createStreamableValue('')
-  return safeStreamCaption(symbol, comparisonSymbols, toolName, aiState, contextData, dummyStream)
+  return safeGenerateCaption(
+    symbol,
+    comparisonSymbols,
+    toolName,
+    aiState,
+    contextData
+  )
 }
 
 async function submitUserMessage(content: string, userApiKey?: string) {
@@ -464,7 +455,8 @@ async function submitUserMessage(content: string, userApiKey?: string) {
   let textNode: undefined | React.ReactNode
 
   const rawAiMessages = aiState.get().messages || []
-  const sanitizedMessages: { role: 'user' | 'assistant'; content: string }[] = []
+  const sanitizedMessages: { role: 'user' | 'assistant'; content: string }[] =
+    []
 
   for (const message of rawAiMessages) {
     if (message.role === 'user') {
@@ -527,6 +519,16 @@ async function submitUserMessage(content: string, userApiKey?: string) {
     }
   }
 
+  const resolvedTicker = resolveTickerFromMessages(content, rawAiMessages)
+  const deterministicTool = inferDeterministicTool(content, resolvedTicker)
+
+  if (deterministicTool && sanitizedMessages.length > 0) {
+    const lastMessage = sanitizedMessages[sanitizedMessages.length - 1]
+    if (lastMessage.role === 'user') {
+      lastMessage.content += `\n\n[ROUTING DIRECTIVE: Call ${deterministicTool} directly${resolvedTicker ? ` with resolved ticker ${resolvedTicker}` : ''}. Do not substitute another tool.]`
+    }
+  }
+
   const candidates = getProviderCandidates(userApiKey)
   let lastError: any = null
 
@@ -541,6 +543,9 @@ async function submitUserMessage(content: string, userApiKey?: string) {
         model: client(candidate.toolModel),
         initial: <SpinnerMessage />,
         maxRetries: 0,
+        toolChoice: deterministicTool
+          ? ({ type: 'tool', toolName: deterministicTool } as any)
+          : 'auto',
         system: `\
 You are an elite, institutional-grade AI Financial Analyst, Macro Strategist, and Global Investment Intelligence Mentor.
 You provide deep, data-grounded, and high-conviction financial analysis across stocks, macroeconomics, interest rates, supply chains, and industry news.
@@ -574,18 +579,19 @@ For any cryptocurrency, append "USD" at the end of the ticker when using functio
 
 ### Company Name to Ticker Resolution
 Users may provide a Chinese name, English company name, brand name, or an incomplete ticker instead of a symbol.
-1. Never pass a raw unregistered company name directly to a chart, price, financials, news, or analysis tool without resolving its exact ticker first.
-2. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 小米 -> HKEX:1810, 騰訊 -> HKEX:700, 阿里 -> HKEX:9988, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
-3. For any unknown, new, private, or ambiguous company name, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
-4. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
+1. If the user message already contains an explicit ticker, including a ticker in parentheses such as "Advanced Micro Devices Inc (AMD)" or "Paramount Skydance Corp (PSKY)", the symbol is already resolved. Call the requested chart, price, financials, news, or analysis tool directly. **Do not call searchFinancialWeb merely to resolve it again.**
+2. Never pass a raw unregistered company name directly to a chart, price, financials, news, or analysis tool when no ticker is present.
+3. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 小米 -> HKEX:1810, 騰訊 -> HKEX:700, 阿里 -> HKEX:9988, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
+4. Only for an unknown, new, private, or ambiguous company name with no explicit ticker, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
+5. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
 
 ### 🧠 多輪續問與標的繼承 (Multi-Turn Context & Symbol Resolution)
 1. 當使用者在多輪對話中進行追問（例如點擊或輸入「啟動 13 位傳奇大師多維投資價值評估」、「多位大師進行投資分析」、「查看走勢圖」、「財務狀況如何」、「相關概念股」、「該買嗎」），而當前提問未指明股票名稱/代碼時：
    - 必須自主從上方對話歷史 (Conversation History) 中提取最新討論的標的代碼（例如上一輪若在詢問「小米 HKEX:1810」或「統一 1216」，此處自動推導 symbol 為 "HKEX:1810" 或 "TWSE:1216"）。
    - 絕不能調用失敗或返回未知，請精確繼承上下文標的並調用對應工具（如 analyzeStockWithAI、showStockChart、showStockFinancials、searchFinancialWeb 等）。
 
-### 🔄 15 輪多輪自主工具循環 (Autonomous 15-Round Multi-Step ReAct Loop)
-你是一個具備強大自主推理 (ReAct) 能力的頂級機構級投資研調大腦。你可以連續調用最多 15 輪工具鏈，完成深度複雜任務：
+### 🔄 工具路由與多輪對話 (Tool Routing & Multi-Turn Context)
+每次請求必須選擇最符合使用者當前意圖的主要工具。不得用搜尋卡片取代使用者明確要求的圖表、股價、財務、新聞或大師分析卡片；後續追問必須繼承上一輪標的。
 1. **🌐 2MD 全維度金融研調大腦 (Universal Macro & Financial Intelligence)**：
    - 2MD 是你的核心研調武器。你可以自主調用 searchFinancialWeb、readWebPage、readFinancialReport 檢索以下全維度情報：
      - **📈 個股即時行情與估值**：即時報價、歷史本益比、殖利率、營收動能。
@@ -605,6 +611,7 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
 
 ### Legendary Master & Multi-Analyst Valuation
 When the user asks whether a stock is worth buying, whether to invest, wants professional analysis, or asks questions like "should I buy TSLA?", "is NVDA a good investment?", "分析一下特斯拉", "AAPL值得買嗎", "多位大師進行投資分析", "啟動 13 位大師評估", you MUST use the analyzeStockWithAI tool to provide multi-master valuation and strategy analysis from legendary investors.
+If that request already includes a ticker, call analyzeStockWithAI immediately. A search result card is not a substitute for the requested multi-master analysis card.
 
 ### Guidelines:
 
@@ -664,7 +671,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
         tools: {
           showStockChart: {
             description:
-              'Show a stock chart of a given stock. Optionally show 2 or more stocks. Use this to show the chart to the user. The symbol must be an exact ticker; resolve Chinese or company names with searchFinancialWeb first.',
+              'Show a stock chart for one or more stocks. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
             parameters: z.object({
               symbol: z
                 .string()
@@ -718,7 +725,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   }[])
                 : []
 
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
@@ -726,7 +733,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     symbol={formattedSymbol}
                     comparisonSymbols={normalizedComparison}
                   />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
@@ -734,16 +741,18 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               try {
                 liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
-                console.warn('[showStockChart] fetchLiveStockContext failed:', e)
+                console.warn(
+                  '[showStockChart] fetchLiveStockContext failed:',
+                  e
+                )
               }
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 formattedSymbol,
                 normalizedComparison,
                 'showStockChart',
                 aiState,
-                liveContext,
-                captionStream
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -796,14 +805,14 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     symbol={formattedSymbol}
                     comparisonSymbols={normalizedComparison}
                   />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
           },
           showStockPrice: {
             description:
-              'Show the price of a given stock. Use this to show the price and price history to the user. The symbol must be an exact exchange-qualified ticker; resolve company names with searchFinancialWeb first.',
+              'Show the current price and price history of a stock. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
             parameters: z.object({
               symbol: z
                 .string()
@@ -813,12 +822,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             }),
             generate: async function* ({ symbol }) {
               const formattedSymbol = formatStockSymbol(symbol)
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <StockPrice props={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
@@ -826,16 +835,18 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               try {
                 liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
-                console.warn('[showStockPrice] fetchLiveStockContext failed:', e)
+                console.warn(
+                  '[showStockPrice] fetchLiveStockContext failed:',
+                  e
+                )
               }
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'showStockPrice',
                 aiState,
-                liveContext,
-                captionStream
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -878,14 +889,14 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockPrice props={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
           },
           showStockFinancials: {
             description:
-              'Show the financials of a given stock. Use this to show the financials to the user. The symbol must be an exact ticker; resolve company names with searchFinancialWeb first.',
+              'Show the financial statements and metrics of a stock. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
             parameters: z.object({
               symbol: z
                 .string()
@@ -895,12 +906,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             }),
             generate: async function* ({ symbol }) {
               const formattedSymbol = formatStockSymbol(symbol)
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <NativeFinancialsCard symbol={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
@@ -908,16 +919,18 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               try {
                 liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
-                console.warn('[showStockFinancials] fetchLiveStockContext failed:', e)
+                console.warn(
+                  '[showStockFinancials] fetchLiveStockContext failed:',
+                  e
+                )
               }
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'StockFinancials',
                 aiState,
-                liveContext,
-                captionStream
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -960,14 +973,14 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <NativeFinancialsCard symbol={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
           },
           showStockNews: {
             description:
-              'This tool shows the latest news and events for a stock or cryptocurrency. Resolve a company name to an exact ticker with searchFinancialWeb first.',
+              'Show the latest news and events for a stock or cryptocurrency. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
             parameters: z.object({
               symbol: z
                 .string()
@@ -977,12 +990,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             }),
             generate: async function* ({ symbol }) {
               const formattedSymbol = formatStockSymbol(symbol)
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <NativeStockNewsCard symbol={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
@@ -993,13 +1006,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 console.warn('[showStockNews] fetchLiveStockContext failed:', e)
               }
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'showStockNews',
                 aiState,
-                liveContext,
-                captionStream
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -1042,7 +1054,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <NativeStockNewsCard symbol={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1052,22 +1064,21 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               'This tool shows a generic stock screener which can be used to find new stocks based on financial or technical parameters.',
             parameters: z.object({}),
             generate: async function* ({}) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <StockScreener />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 '全球精選股票',
                 [],
                 'showStockScreener',
                 aiState,
-                undefined,
-                captionStream
+                undefined
               )
 
               const toolCallId = nanoid()
@@ -1110,7 +1121,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockScreener />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1119,22 +1130,21 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows an overview of today's stock, futures, bond, and forex market performance including change values, Open, High, Low, and Close values.`,
             parameters: z.object({}),
             generate: async function* ({}) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <MarketOverview />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 '全球市場總覽',
                 [],
                 'showMarketOverview',
                 aiState,
-                undefined,
-                captionStream
+                undefined
               )
 
               const toolCallId = nanoid()
@@ -1177,7 +1187,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketOverview />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1186,22 +1196,21 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows a heatmap of today's stock market performance across sectors (US / Taiwan / Taiwan 50 / Japan / Hong Kong / UK / Germany / France / Israel / Korea / China / Australia / India / Brazil / Canada). It is preferred over showMarketOverview if asked specifically about the stock market.`,
             parameters: z.object({}),
             generate: async function* ({}) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <MarketHeatmap />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 '全球股市熱力圖',
                 [],
                 'showMarketHeatmap',
                 aiState,
-                undefined,
-                captionStream
+                undefined
               )
 
               const toolCallId = nanoid()
@@ -1244,7 +1253,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketHeatmap />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1253,22 +1262,21 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows a heatmap of today's ETF performance across sectors and asset classes. It is preferred over showMarketOverview if asked specifically about the ETF market.`,
             parameters: z.object({}),
             generate: async function* ({}) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <ETFHeatmap />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 '全球 ETF 熱力圖',
                 [],
                 'showETFHeatmap',
                 aiState,
-                undefined,
-                captionStream
+                undefined
               )
 
               const toolCallId = nanoid()
@@ -1311,7 +1319,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <ETFHeatmap />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1320,22 +1328,21 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             description: `This tool shows the daily top trending stocks including the top five gaining, losing, and most active stocks based on today's performance`,
             parameters: z.object({}),
             generate: async function* ({}) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <MarketTrending />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 '今日熱門股排行榜',
                 [],
                 'showTrendingStocks',
                 aiState,
-                undefined,
-                captionStream
+                undefined
               )
 
               const toolCallId = nanoid()
@@ -1378,14 +1385,14 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MarketTrending />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
           },
           analyzeStockWithAI: {
             description:
-              'Provide comprehensive legendary investor strategy evaluation and multi-master valuation from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for multi-master analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議, 大師分析, 13位大師, 評估. Resolve company names to an exact ticker with searchFinancialWeb first or inherit the active ticker from conversation history.',
+              'Provide comprehensive legendary investor strategy evaluation and multi-master valuation from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for multi-master analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議, 大師分析, 13位大師, 評估. If the request contains an explicit ticker, including a ticker in parentheses after a company name, call this tool directly and do not search again. Search only when no ticker can be resolved, or inherit the active ticker from conversation history.',
             parameters: z.object({
               symbol: z
                 .string()
@@ -1395,12 +1402,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             }),
             generate: async function* ({ symbol }) {
               const formattedSymbol = formatStockSymbol(symbol)
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               yield (
                 <BotCard>
                   <StockAnalysis symbol={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
@@ -1408,16 +1415,18 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               try {
                 liveContext = await fetchLiveStockContext(formattedSymbol)
               } catch (e) {
-                console.warn('[analyzeStockWithAI] fetchLiveStockContext failed:', e)
+                console.warn(
+                  '[analyzeStockWithAI] fetchLiveStockContext failed:',
+                  e
+                )
               }
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'analyzeStockWithAI',
                 aiState,
-                liveContext,
-                captionStream
+                liveContext
               )
 
               const toolCallId = nanoid()
@@ -1460,7 +1469,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockAnalysis symbol={formattedSymbol} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1474,7 +1483,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 .describe('The search query for live 2MD web search.')
             }),
             generate: async function* ({ query }) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               let results: any[] = []
               try {
@@ -1486,7 +1495,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               yield (
                 <BotCard>
                   <WebSearchResults query={query} results={results} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
@@ -1497,13 +1506,12 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
                 .join('\n')
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 query,
                 [],
                 'searchFinancialWeb',
                 aiState,
-                contextData,
-                captionStream
+                contextData
               )
 
               const toolCallId = nanoid()
@@ -1546,7 +1554,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <WebSearchResults query={query} results={results} />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1562,7 +1570,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 )
             }),
             generate: async function* ({ url }) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               let text = ''
               try {
@@ -1581,19 +1589,18 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       {url}
                     </p>
                   </div>
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
               const contextData = `【網頁全文擷取 (${url})】：\n${text ? text.slice(0, 2000) : '未獲取到內容'}`
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 url,
                 [],
                 'readWebPage',
                 aiState,
-                contextData,
-                captionStream
+                contextData
               )
 
               const toolCallId = nanoid()
@@ -1649,7 +1656,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                       {url}
                     </p>
                   </div>
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }
@@ -1808,7 +1815,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 .describe('The optional stock symbol or company name.')
             }),
             generate: async function* ({ url, symbol }) {
-              const captionStream = createStreamableValue('')
+              let caption = ''
 
               let text = ''
               try {
@@ -1827,19 +1834,18 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     }
                     fullContent={text}
                   />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
 
               const contextData = `【財報/年報/PDF 全文解析 (${url})】：\n${text ? text.slice(0, 4000) : '未獲取到內容'}`
 
-              const caption = await safeStreamCaption(
+              caption = await generateCaption(
                 symbol || url,
                 [],
                 'readFinancialReport',
                 aiState,
-                contextData,
-                captionStream
+                contextData
               )
 
               const toolCallId = nanoid()
@@ -1872,7 +1878,9 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                           result: {
                             url,
                             symbol,
-                            content: text ? text.slice(0, 5000) : '無法讀取財報內容',
+                            content: text
+                              ? text.slice(0, 5000)
+                              : '無法讀取財報內容',
                             caption
                           }
                         }
@@ -1894,7 +1902,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                     }
                     fullContent={text}
                   />
-                  <BotCaption content={captionStream.value} />
+                  <BotCaption content={caption} />
                 </BotCard>
               )
             }

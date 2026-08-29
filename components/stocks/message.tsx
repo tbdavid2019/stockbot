@@ -7,7 +7,7 @@ import { CodeBlock } from '../ui/codeblock'
 import { MemoizedReactMarkdown } from '../markdown'
 import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
-import { StreamableValue, useStreamableValue } from 'ai/rsc'
+import { StreamableValue } from 'ai/rsc'
 import { useStreamableText } from '@/lib/hooks/use-streamable-text'
 import { FollowupPrompts } from './followup-prompts'
 import { CopyButton } from '@/components/copy-button'
@@ -80,7 +80,9 @@ export function BotMessage({
                 if (children.length) {
                   if (children[0] == '▍') {
                     return (
-                      <span className="mt-1 animate-pulse cursor-default">▍</span>
+                      <span className="mt-1 animate-pulse cursor-default">
+                        ▍
+                      </span>
                     )
                   }
 

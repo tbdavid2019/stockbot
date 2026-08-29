@@ -243,7 +243,8 @@ export function ChatPanel({
                       ])
 
                       const responseMessage = await submitUserMessage(
-                        example.message
+                        example.message,
+                        apiKey
                       )
                       setMessages(currentMessages => [
                         ...currentMessages,
