@@ -15,6 +15,7 @@
 - 移除首頁的 AI Function Calling / Vercel AI SDK / TradingView Widgets 介紹段落。
 - 移除右上角 GitHub 按鈕與 GitHub icon。
 - Footer 新增「技術提供 david888.com」。
+- 優化手機版 Header、提示卡與底部輸入面板，避免內容遮住或產生橫向溢出。
 
 ## [2026-08-28] - 15 輪多輪自主工具循環、David888 WikiPublisher 自主發布器與 2MD Web Reader
 
