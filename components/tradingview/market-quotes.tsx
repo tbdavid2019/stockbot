@@ -20,7 +20,7 @@ export interface MarketQuote extends StockItem {
 export function MarketQuotes({
   onSelect
 }: {
-  onSelect: (quote: MarketQuote) => void
+  onSelect?: (quote: MarketQuote) => void
 }) {
   const [quotes, setQuotes] = useState<MarketQuote[]>([])
 
@@ -64,7 +64,7 @@ export function MarketQuotes({
   if (quotes.length === 0) return null
 
   return (
-    <div className="w-full overflow-hidden border-t border-border pt-2">
+    <div className="w-full overflow-hidden border-t border-border">
       <div className="ticker-track flex min-w-max shrink-0 items-center hover:[animation-play-state:paused]">
         {[...quotes, ...quotes].map((quote, index) => (
           <button
@@ -72,7 +72,17 @@ export function MarketQuotes({
             key={`${quote.market}-${quote.symbol}-${index}`}
             className="flex shrink-0 items-center gap-2 border-r border-border px-4 text-left text-sm transition-colors hover:bg-muted/60"
             aria-hidden={index >= quotes.length}
-            onClick={() => onSelect(quote)}
+            onClick={() => {
+              if (onSelect) {
+                onSelect(quote)
+              } else {
+                window.dispatchEvent(
+                  new CustomEvent<MarketQuote>('stockbot-market-quote', {
+                    detail: quote
+                  })
+                )
+              }
+            }}
             title={`${quote.name} (${quote.symbol}) 最新財務數據`}
           >
             <span className="font-medium text-muted-foreground">

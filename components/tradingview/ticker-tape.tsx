@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
+import { MarketQuotes } from '@/components/tradingview/market-quotes'
 
 const INDEX_SYMBOLS = [
   { proName: 'FOREXCOM:SPXUSD', title: 'S&P 500' },
@@ -45,8 +46,9 @@ export function TickerTape() {
     <div className="w-full min-w-0 max-w-full overflow-hidden border-b border-border bg-background">
       <div
         ref={tradingViewContainer}
-        className="min-h-12 min-w-0 overflow-hidden bg-background"
+        className="min-h-20 min-w-0 overflow-hidden bg-background"
       />
+      <MarketQuotes />
     </div>
   )
 }
