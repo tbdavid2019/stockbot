@@ -30,7 +30,9 @@ export function TickerTape() {
     script.innerHTML = JSON.stringify({
       symbols: INDEX_SYMBOLS,
       showSymbolLogo: true,
-      isTransparent: true,
+      // Let TradingView paint its own themed surface. A transparent iframe
+      // can fall back to a white canvas in dark mode.
+      isTransparent: false,
       displayMode: 'compact',
       colorTheme: resolvedTheme === 'dark' ? 'dark' : 'light',
       locale: 'zh_TW'
