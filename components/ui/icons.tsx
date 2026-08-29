@@ -104,30 +104,24 @@ function IconOpenAI({ className, ...props }: React.ComponentProps<'svg'>) {
   )
 }
 
-function IconGroq({ className, ...props }: React.ComponentProps<'svg'>) {
+function IconStockBot8({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
-      width="24"
-      height="24"
+      fill="none"
       className={cn('size-4', className)}
       {...props}
     >
-      <defs>
-        <style> {`.cls-1{fill:#f55036;}.cls-2{fill:#fff;}`} </style>
-      </defs>
-      <title>groq_endicon</title>
-      <g id="Layer_1" data-name="Layer 1">
-        <rect className="cls-1" width="24" height="24" />
-        <path
-          className="cls-2"
-          d="M12,4.85a5.03,5.03,0,1,0,0,10.05h1.65V12.83H12a3.14,3.14,0,1,1,3.14-3.14h0v4.63h0a3.1,3.1,0,0,1-4.87,2.51L8.51,17.87A5.01,5.01,0,0,0,12,19.34h.07a5.04,5.04,0,0,0,5-5.02V9.56A5.04,5.04,0,0,0,12,4.85Z"
-        />
-      </g>
+      <path
+        d="M12 2C8.686 2 6 4.462 6 7.5c0 1.852 1 3.493 2.549 4.46C6.732 12.987 5.5 14.846 5.5 17c0 3.314 2.91 6 6.5 6s6.5-2.686 6.5-6c0-2.154-1.232-4.013-3.049-5.04C16.999 10.993 18 9.352 18 7.5 18 4.462 15.314 2 12 2zm0 3c1.933 0 3.5 1.343 3.5 3s-1.567 3-3.5 3-3.5-1.343-3.5-3 1.567-3 3.5-3zm0 8.5c2.485 0 4.5 1.791 4.5 4s-2.015 3.5-4.5 3.5-4.5-1.291-4.5-3.5 2.015-4 4.5-4z"
+        fill="currentColor"
+      />
     </svg>
   )
 }
+
+const IconGroq = IconStockBot8
 
 function IconVercel({ className, ...props }: React.ComponentProps<'svg'>) {
   return (
