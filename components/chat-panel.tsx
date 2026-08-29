@@ -10,6 +10,10 @@ import type { AI } from '@/lib/chat/actions'
 import { nanoid } from 'nanoid'
 import { UserMessage } from './stocks/message'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
+import {
+  MarketQuotes,
+  type MarketQuote
+} from '@/components/tradingview/market-quotes'
 
 export interface ChatPanelProps {
   id?: string
@@ -148,6 +152,24 @@ export function ChatPanel({
 
   const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
 
+  const handleMarketQuoteSelect = async (quote: MarketQuote) => {
+    const prompt =
+      lang === 'en'
+        ? `What are the latest financial results and key metrics for ${quote.name} (${quote.symbol})?`
+        : `${quote.name}（${quote.symbol}）最新財務數據如何？`
+
+    setMessages(currentMessages => [
+      ...currentMessages,
+      {
+        id: nanoid(),
+        display: <UserMessage>{prompt}</UserMessage>
+      }
+    ])
+
+    const responseMessage = await submitUserMessage(prompt)
+    setMessages(currentMessages => [...currentMessages, responseMessage])
+  }
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 max-h-[85dvh] w-full overflow-x-hidden overflow-y-auto bg-gradient-to-b from-muted/30 from-0% to-muted/30 to-50% pb-[env(safe-area-inset-bottom)] duration-300 ease-in-out animate-in dark:from-background/10 dark:from-10% dark:to-background/80 peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]">
       <ButtonScrollToBottom
@@ -210,6 +232,7 @@ export function ChatPanel({
         <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:border md:py-4">
           <PromptForm input={input} setInput={setInput} />
           <FooterText className="hidden sm:block" />
+          <MarketQuotes onSelect={handleMarketQuoteSelect} />
         </div>
       </div>
     </div>
