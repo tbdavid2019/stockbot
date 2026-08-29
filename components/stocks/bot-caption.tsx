@@ -7,6 +7,7 @@ import { MemoizedReactMarkdown } from '@/components/markdown'
 import { CodeBlock } from '@/components/ui/codeblock'
 import { FollowupPrompts } from './followup-prompts'
 import { CopyButton } from '@/components/copy-button'
+import { isActionableFollowup } from '@/lib/followup-suggestions'
 
 interface BotCaptionProps {
   content: string
@@ -28,7 +29,7 @@ export function BotCaption({ content }: BotCaptionProps) {
     suggestions = suggestionsText
       .split('\n')
       .map(line => line.replace(/^[0-9]+[\.\)]\s*|^[•\-\*]\s*/, '').trim())
-      .filter(line => line.length > 2 && !line.startsWith('#'))
+      .filter(line => !line.startsWith('#') && isActionableFollowup(line))
   }
 
   return (

@@ -10,6 +10,7 @@ import remarkMath from 'remark-math'
 import { StreamableValue } from 'ai/rsc'
 import { useStreamableText } from '@/lib/hooks/use-streamable-text'
 import { FollowupPrompts } from './followup-prompts'
+import { isActionableFollowup } from '@/lib/followup-suggestions'
 import { CopyButton } from '@/components/copy-button'
 
 // Different types of message bubbles.
@@ -57,7 +58,7 @@ export function BotMessage({
     suggestions = suggestionsText
       .split('\n')
       .map(line => line.replace(/^[0-9]+[\.\)]\s*|^[•\-\*]\s*/, '').trim())
-      .filter(line => line.length > 2 && !line.startsWith('#'))
+      .filter(line => !line.startsWith('#') && isActionableFollowup(line))
   }
 
   const displayText = mainText || text

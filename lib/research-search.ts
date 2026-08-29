@@ -108,6 +108,7 @@ export async function searchResearchEvidence({
   const queries =
     mode === 'financial'
       ? [
+          `${subject} ${cleanedQuestion} financial statement`,
           `${subject} 最新財報 營收 EPS 毛利率 營業利益率 自由現金流 本益比`,
           `${subject} 季報 財務報告 現金流 負債 估值 investor relations`,
           `${subject} latest quarterly annual financial results revenue margins EPS EBITDA cash flow valuation`

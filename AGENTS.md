@@ -110,7 +110,9 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - 系統已全面升級為原生 React 金融情報卡片：
   - **`showStockFinancials` ➔ `<NativeFinancialsCard />`**：串接量化分析 API 的結構化指標（P/E, P/B, P/S, ROE, 淨利率, 營業利益率, 流動比, 負債比, 營收年增率, DCF 內在價值）；實際可用欄位依上游市場與標的覆蓋為準。
   - **`answerFinancialMetric` ➔ `<FinancialMetricCard />` + `<BotCaption />`**：即時搜尋僅作為後端證據；上方卡片呈現來源，下方文字直接回答指標、財報期間、幣別與 reported/adjusted/estimate 口徑；不能核實時明確拒絕猜值。
+  - `answerFinancialMetric` 優先透過 [`lib/financial-fundamentals.ts`](lib/financial-fundamentals.ts) 讀取 Yahoo Finance Fundamentals 的年度、季度與 TTM 結構化序列。精準科目直接計算最新季度、同比、TTM、完整年度與 CAGR；結構化來源無資料時才退回 2MD 證據搜尋與 LLM 合成。
   - `answerFinancialMetric` 同時處理「最新財務數據與估值」等多指標摘要。台股代號先由 AnswerBook Market Data 解析公司名，再以公司名、純代號與財務意圖執行多查詢 2MD 搜尋；禁止直接把 `TWSE:` 前綴、emoji 或整句 UI 樣板當成唯一 query。
+  - 續問建議只能是可直接執行的研究問題；禁止輸出「有興趣嗎」、「想深入了解嗎」或 `Would you like...` 等把決策丟回使用者的邀請式句子。
   - **禁止假財務預設值**：上游未提供的指標一律顯示 `—` 或「待確認」，不得用展示用數字或固定判斷取代真實資料。
   - **`showStockNews` ➔ `<NativeStockNewsCard />`**：由 2MD 全網情報大腦即時檢索最新重大快訊、法說會動態與新聞外鏈，無任何交易所限制。
   - **全局錯誤邊界 (`SafeCardErrorBoundary`)**：所有訊息與卡片均包裹安全邊界，單一異常絕不拖垮整場對話。

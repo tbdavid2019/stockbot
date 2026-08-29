@@ -34,6 +34,7 @@ import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 import { BotCaption } from '@/components/stocks/bot-caption'
 import { readUrl2MD } from '@/lib/2md'
 import { searchResearchEvidence } from '@/lib/research-search'
+import { fetchFinancialFundamentals } from '@/lib/financial-fundamentals'
 import { publishToWiki } from '@/lib/wiki'
 import { toast } from 'sonner'
 import {
@@ -295,6 +296,7 @@ Rules:
 - Refer to the evidence as "上方搜尋結果" or "上方資料" because the source card is above the answer.
 - Answer in the same language as the user's latest question. Chinese must use Traditional Chinese.
 - Keep the main answer focused and useful.${isFocusedMetric ? ' Return plain text only; do not add markdown headings or follow-up suggestions.' : ' End with 2 concrete follow-up questions under a standalone ---SUGGESTIONS--- marker.'}
+- Follow-up suggestions must be executable research questions. Never ask whether the user is interested, whether they want to learn more, or whether they would like to continue.
 `
 
   const captionSystemMessage = isResearchSynthesis
@@ -1004,32 +1006,66 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               )
 
               let results: any[] = []
+              let structuredEvidence = ''
+              let directAnswer = ''
               try {
-                const evidence = await searchResearchEvidence({
-                  question,
-                  symbol: formattedSymbol,
-                  mode: 'financial',
-                  limit: 6
-                })
-                results = evidence.results
+                const fundamentals = await fetchFinancialFundamentals(
+                  formattedSymbol,
+                  question
+                )
+                if (fundamentals) {
+                  structuredEvidence = fundamentals.evidence
+                  directAnswer = fundamentals.directAnswer || ''
+                  results.push(fundamentals.source)
+                }
               } catch (error) {
-                console.warn('[answerFinancialMetric] Search failed:', error)
+                console.warn(
+                  '[answerFinancialMetric] Fundamentals failed:',
+                  error
+                )
               }
 
-              const contextData = results
+              if (!directAnswer) {
+                try {
+                  const evidence = await searchResearchEvidence({
+                    question,
+                    symbol: formattedSymbol,
+                    mode: 'financial',
+                    limit: 6
+                  })
+                  const existingUrls = new Set(
+                    results.map(result => String(result.url || ''))
+                  )
+                  results.push(
+                    ...evidence.results.filter(
+                      result => !existingUrls.has(String(result.url || ''))
+                    )
+                  )
+                } catch (error) {
+                  console.warn('[answerFinancialMetric] Search failed:', error)
+                }
+              }
+
+              const searchEvidence = results
                 .map(
                   (result, index) =>
                     `[來源 ${index + 1}] 標題: ${result.title} | 摘要: ${result.description} | 網址: ${result.url}`
                 )
                 .join('\n')
 
-              caption = await generateCaption(
-                formattedSymbol,
-                [],
-                'answerFinancialMetric',
-                aiState,
-                contextData
-              )
+              const contextData = [structuredEvidence, searchEvidence]
+                .filter(Boolean)
+                .join('\n\n')
+
+              caption =
+                directAnswer ||
+                (await generateCaption(
+                  formattedSymbol,
+                  [],
+                  'answerFinancialMetric',
+                  aiState,
+                  contextData
+                ))
               const toolCallId = nanoid()
 
               try {
