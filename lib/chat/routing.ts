@@ -16,6 +16,8 @@ export type DeterministicToolName =
   | 'simulateOptionsPayoff'
   | 'analyzeEtfPremium'
   | 'analyzeStockLiquidity'
+  | 'showTransmissionChain'
+  | 'trackInvestmentSignal'
 
 const NON_TICKER_WORDS = new Set([
   'AI',
@@ -117,6 +119,20 @@ export function inferDeterministicTool(
   }
   if (/市場概況|market overview|總經市場/i.test(content) && !resolvedTicker) {
     return 'showMarketOverview'
+  }
+  if (
+    /傳導鏈|傳導分析|連鎖反應|產業鏈傳導|事件傳導|宏觀傳導|transmission\s*(?:chain)?/i.test(
+      content
+    )
+  ) {
+    return 'showTransmissionChain'
+  }
+  if (
+    /訊號追蹤|訊號演化|邏輯證偽|證偽|論點驗證|signal\s*track(?:er)?|thesis\s*validation/i.test(
+      content
+    )
+  ) {
+    return 'trackInvestmentSignal'
   }
 
   if (!resolvedTicker) return undefined

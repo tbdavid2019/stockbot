@@ -64,6 +64,12 @@ import { EarningsBriefingCard } from '@/components/stocks/earnings-briefing-card
 import { OptionsPayoffCard } from '@/components/stocks/options-payoff-card'
 import { StockLiquidityCard } from '@/components/stocks/stock-liquidity-card'
 import { EtfPremiumCard } from '@/components/stocks/etf-premium-card'
+import { TransmissionChainCard } from '@/components/stocks/transmission-chain-card'
+import {
+  SignalTrackerCard,
+  type SignalTrackerData
+} from '@/components/stocks/signal-tracker-card'
+import { buildTransmissionAnalysis } from '@/lib/deepear'
 import { toast } from 'sonner'
 import {
   extractExplicitTicker,
@@ -2355,6 +2361,149 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <StockLiquidityCard symbol={formattedSymbol} data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          showTransmissionChain: {
+            description:
+              'Analyze multi-tier financial transmission chains (Event -> 1st Order Impact -> 2nd Order Impact -> 3rd Order Stock Impact) using DeepEar Lite intelligence and quantitative causal mapping. Use this whenever the user asks about macro events, supply chain shocks, transmission chains, or sector ripple effects.',
+            parameters: z.object({
+              topic: z
+                .string()
+                .describe(
+                  'The topic, macro event, or stock to trace transmission chain for.'
+                ),
+              symbol: z
+                .string()
+                .optional()
+                .describe('Optional relevant stock ticker.')
+            }),
+            generate: async function* ({ topic, symbol }) {
+              const targetSymbol = formatStockSymbol(
+                resolvedTicker || symbol || ''
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在透過 DeepEar Lite 引擎構建「{topic}」金融邏輯傳導鏈…
+                  </div>
+                </BotCard>
+              )
+
+              const data = await buildTransmissionAnalysis(
+                topic,
+                targetSymbol || undefined
+              )
+              const context = JSON.stringify({
+                topic: data.topic,
+                status: data.signalStatus,
+                sentiment: data.sentimentScore,
+                steps: data.chain.map(
+                  c => `${c.step}.${c.node}: ${c.impactLabel} (${c.logic})`
+                ),
+                falsification: data.falsificationCriteria
+              })
+
+              const caption = await generateCaption(
+                targetSymbol || topic,
+                [],
+                'showTransmissionChain',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'showTransmissionChain',
+                { topic, symbol: targetSymbol },
+                { topic, symbol: targetSymbol, data },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  <TransmissionChainCard data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          trackInvestmentSignal: {
+            description:
+              'Track and evaluate investment signal evolution across 4 states (Strengthened, Weakened, Falsified, Unchanged) and explicit falsification triggers. Use this when the user asks whether an investment thesis or signal is invalidated/falsified, strengthened, or needs validation.',
+            parameters: z.object({
+              symbol: z.string().describe('The stock ticker to evaluate.'),
+              hypothesis: z
+                .string()
+                .optional()
+                .describe(
+                  'Optional specific investment hypothesis or bull/bear thesis.'
+                )
+            }),
+            generate: async function* ({ symbol, hypothesis }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在追蹤與驗證 {formattedSymbol} 投資訊號演化與證偽條件…
+                  </div>
+                </BotCard>
+              )
+
+              const transmission = await buildTransmissionAnalysis(
+                hypothesis || formattedSymbol,
+                formattedSymbol
+              )
+              const trackerData: SignalTrackerData = {
+                symbol: formattedSymbol,
+                hypothesis:
+                  hypothesis ||
+                  `${formattedSymbol} 核心營運成長與產業龍頭溢價假說`,
+                status: transmission.signalStatus,
+                statusLabel: transmission.statusLabel,
+                evidence: [
+                  `最新宏觀與產業傳導狀態評估為「${transmission.chain[0]?.node || '總經流動性穩定'}」，一階傳導影響為 ${transmission.chain[0]?.impactLabel || '中性'}。`,
+                  `產業鏈環節：${transmission.chain[1]?.logic || '供需格局平穩，龍頭企業維持定價主導權。'}`,
+                  `企業現金流與獲利節奏：${transmission.chain[2]?.logic || '自由現金流與成長動能符合原先推演。'}`
+                ],
+                falsificationTriggers: transmission.falsificationCriteria,
+                suggestedAction:
+                  transmission.signalStatus === 'Falsified'
+                    ? '立即停損出場，原投資論點已被實質證偽'
+                    : transmission.signalStatus === 'Strengthened'
+                    ? '可順應動能加碼或持有，基本面超預期強化'
+                    : transmission.signalStatus === 'Weakened'
+                    ? '提高警戒，適度獲利了結或收緊移動停利'
+                    : '維持部位觀察，持續監控關鍵財務與技術指標',
+                sentimentScore: transmission.sentimentScore,
+                confidence: transmission.confidence
+              }
+
+              const context = JSON.stringify(trackerData)
+
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'trackInvestmentSignal',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'trackInvestmentSignal',
+                { symbol: formattedSymbol, hypothesis },
+                { symbol: formattedSymbol, data: trackerData },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  <SignalTrackerCard data={trackerData} />
                   <BotCaption content={caption} />
                 </BotCard>
               )

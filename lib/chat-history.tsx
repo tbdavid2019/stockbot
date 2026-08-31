@@ -26,6 +26,8 @@ import { EarningsBriefingCard } from '@/components/stocks/earnings-briefing-card
 import { OptionsPayoffCard } from '@/components/stocks/options-payoff-card'
 import { StockLiquidityCard } from '@/components/stocks/stock-liquidity-card'
 import { EtfPremiumCard } from '@/components/stocks/etf-premium-card'
+import { TransmissionChainCard } from '@/components/stocks/transmission-chain-card'
+import { SignalTrackerCard } from '@/components/stocks/signal-tracker-card'
 
 export const CHAT_STORAGE_KEY = 'stockbot_chat_sessions_v1'
 export const CHAT_HISTORY_EVENT = 'stockbot-chat-history-updated'
@@ -405,6 +407,18 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                     ⚠️ Wiki 發布失敗：{result?.error || '未知錯誤'}
                   </div>
                 )
+                break
+
+              case 'showTransmissionChain':
+                cardContent = result?.data ? (
+                  <TransmissionChainCard data={result.data} />
+                ) : null
+                break
+
+              case 'trackInvestmentSignal':
+                cardContent = result?.data ? (
+                  <SignalTrackerCard data={result.data} />
+                ) : null
                 break
 
               default:

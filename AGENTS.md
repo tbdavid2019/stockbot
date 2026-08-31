@@ -127,6 +127,12 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - `lib/quant/microstructure.ts` 提供 Amihud、年化 float turnover、平方根市場衝擊與 ETF NAV divergence。上游缺少資料時卡片顯示 `—` 或「待確認」，禁止使用展示用財務數字。
 - 新工具透過 `lib/chat/routing.ts` 確定性路由至 `lib/chat/actions.tsx`，並由 `lib/chat-history.tsx` 以純 JSON 結果還原；所有量化卡片必須渲染在伴隨 caption 上方。
 
+### 10. ⛓️ DeepEar 宏觀邏輯傳導鏈與 AlphaEar 訊號證偽機制 (Transmission Chains & Signal Tracking)
+
+- **`showTransmissionChain` ➔ `<TransmissionChainCard />`**：串接 `https://deepear.vercel.app/latest.json` 與因果傳導引擎，分析「一階總經/事件觸發 ➔ 二階產業鏈傳導 ➔ 三階企業獲利兌現」多層級連鎖反應，包含利好/利空/中性衝擊標籤與情緒/信心度打分。
+- **`trackInvestmentSignal` ➔ `<SignalTrackerCard />`**：實作 4 態投資假說演化（🟢 **Strengthened** / 🟡 **Weakened** / 🔴 **Falsified** / ⚪ **Unchanged**），並嚴格列出 **核心論點證偽判定點 (Falsification Triggers)**，提供動態部位調整指引。
+- 支援透過 `lib/chat/routing.ts` 確定性路由與對話上下文標的繼承，並以純 JSON 持久化至瀏覽器 `localStorage`。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)

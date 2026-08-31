@@ -4,6 +4,22 @@
 
 ---
 
+## [2026-08-31] - DeepEar 宏觀邏輯傳導鏈與 AlphaEar 投資訊號證偽追蹤器 (DeepEar Transmission & Signal Tracker)
+
+### ✨ 新增 (Added)
+
+- **DeepEar 即時宏觀事件與多層級傳導鏈工具 (`showTransmissionChain`)**：
+  - 串接 [`deepear.vercel.app/latest.json`](lib/deepear.ts) 高頻金融訊號與因果傳導鏈，支援「一階總經/事件觸發 ➔ 二階產業鏈傳導 ➔ 三階企業獲利兌現」多層級結構化分析。
+  - 新增原生卡片 [`TransmissionChainCard`](components/stocks/transmission-chain-card.tsx)，即時渲染多層傳導節點、利好/利空/中性衝擊標籤、情緒評分 (-1.0 ~ +1.0) 與信心度指標。
+- **AlphaEar 4 態投資訊號演化與證偽判定追蹤器 (`trackInvestmentSignal`)**：
+  - 實作機構級投資論點 4 態演化機制（🟢 **Strengthened 強化** / 🟡 **Weakened 弱化** / 🔴 **Falsified 證偽** / ⚪ **Unchanged 維持**）。
+  - 新增原生卡片 [`SignalTrackerCard`](components/stocks/signal-tracker-card.tsx)，明確列出 **核心論點證偽條件 (Invalidation Triggers)** 與動態風險控管操作建議，避免主觀死扛。
+- **確定性工具路由與對話歷史支援**：
+  - 更新 [`lib/chat/routing.ts`](lib/chat/routing.ts)，支援「傳導鏈/連鎖反應/產業鏈衝擊」與「訊號追蹤/證偽/論點驗證」語義確定性分流。
+  - 更新 [`lib/chat-history.tsx`](lib/chat-history.tsx)，確保傳導鏈與訊號追蹤卡片完整持久化於本機對話紀錄並無損還原。
+
+---
+
 ## [2026-08-30] - 量化估值模型與 DCF 數據管線修復 (Quant Valuation Pipeline Fix)
 
 ### 🐛 修復 (Fixed)
