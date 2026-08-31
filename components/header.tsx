@@ -75,10 +75,10 @@ export function Header() {
             oli-™股靈精怪 Stock
           </a>
         </div>
-        <div className="whitespace-nowrap text-[9px] leading-tight text-orange-600 sm:hidden">
+        <div className="max-w-[140px] truncate text-[9px] leading-tight text-orange-600 sm:hidden">
           {lang === 'en'
-            ? 'For reference only · Advice: '
-            : '僅供參考；投資建議：'}
+            ? 'Reference only · Advice: '
+            : '僅供參考；建議：'}
           <a
             href="https://t.me/oli_billion_bot"
             target="_blank"

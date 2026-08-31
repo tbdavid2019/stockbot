@@ -8,20 +8,31 @@ const pct = (value?: number) =>
     : `${value >= 0 ? '+' : ''}${value.toFixed(1)}%`
 
 export function EarningsBriefingCard({ data }: { data: EarningsIntelligence }) {
-  const beats = data.history.filter(
-    item =>
-      item.epsActual !== undefined &&
-      item.epsEstimate !== undefined &&
-      item.epsActual > item.epsEstimate
+  const quartersWithEstimate = data.history.filter(
+    item => item.epsActual !== undefined && item.epsEstimate !== undefined
+  )
+  const beats = quartersWithEstimate.filter(
+    item => item.epsActual! > item.epsEstimate!
   ).length
-  const averageSurprise = data.history.length
-    ? data.history.reduce((sum, item) => sum + (item.surprisePercent || 0), 0) /
-      data.history.length
+  const quartersWithSurprise = data.history.filter(
+    item => item.surprisePercent !== undefined && Number.isFinite(item.surprisePercent)
+  )
+  const averageSurprise = quartersWithSurprise.length
+    ? quartersWithSurprise.reduce((sum, item) => sum + item.surprisePercent!, 0) /
+      quartersWithSurprise.length
     : undefined
   const targetUpside =
     data.priceTarget.currentPrice && data.priceTarget.mean
       ? (data.priceTarget.mean / data.priceTarget.currentPrice - 1) * 100
       : undefined
+
+  const hasPriceTarget =
+    data.priceTarget.currentPrice !== undefined ||
+    data.priceTarget.mean !== undefined ||
+    data.priceTarget.median !== undefined ||
+    data.priceTarget.low !== undefined ||
+    data.priceTarget.high !== undefined
+
   return (
     <section className="w-full rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-5">
       <header className="mb-4 flex items-start justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
@@ -61,14 +72,20 @@ export function EarningsBriefingCard({ data }: { data: EarningsIntelligence }) {
         </div>
         <div className="rounded-xl bg-slate-50 p-3 text-xs dark:bg-zinc-900">
           <p className="mb-2 font-semibold">分析師目標價</p>
-          <div className="grid grid-cols-2 gap-1">
-            <span>目前 {n(data.priceTarget.currentPrice)}</span>
-            <span>中位數 {n(data.priceTarget.median)}</span>
-            <span>
-              低 / 高 {n(data.priceTarget.low)} / {n(data.priceTarget.high)}
-            </span>
-            <span>平均潛在報酬 {pct(targetUpside)}</span>
-          </div>
+          {hasPriceTarget ? (
+            <div className="grid grid-cols-2 gap-1">
+              <span>目前 {n(data.priceTarget.currentPrice)}</span>
+              <span>中位數 {n(data.priceTarget.median)}</span>
+              <span>
+                低 / 高 {n(data.priceTarget.low)} / {n(data.priceTarget.high)}
+              </span>
+              <span>平均潛在報酬 {pct(targetUpside)}</span>
+            </div>
+          ) : (
+            <div className="py-2 text-[11px] text-muted-foreground">
+              待分析師發布最新目標價與潛在評等
+            </div>
+          )}
         </div>
       </div>
       <div className="mt-4 overflow-x-auto">
@@ -93,7 +110,7 @@ export function EarningsBriefingCard({ data }: { data: EarningsIntelligence }) {
                 <td>
                   {item.epsActual === undefined ||
                   item.epsEstimate === undefined
-                    ? '待確認'
+                    ? '—'
                     : item.epsActual > item.epsEstimate
                       ? 'Beat'
                       : 'Miss'}
@@ -103,8 +120,11 @@ export function EarningsBriefingCard({ data }: { data: EarningsIntelligence }) {
           </tbody>
         </table>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Beat {beats}/{data.history.length || 0} · 平均 surprise{' '}
-          {pct(averageSurprise)}
+          {quartersWithEstimate.length > 0
+            ? `Beat ${beats}/${quartersWithEstimate.length} · 平均 surprise ${pct(averageSurprise)}`
+            : data.history.length > 0
+              ? '歷史實際 EPS 已列出；共識預估與 Surprise 待新財報季公布前更新'
+              : '暫無歷史季度 EPS 數據'}
         </p>
       </div>
     </section>

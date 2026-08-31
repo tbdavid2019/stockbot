@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { IconGroq, IconUser } from '@/components/ui/icons'
 import { cn } from '@/lib/utils'
 import { spinner } from './spinner'
@@ -66,24 +67,25 @@ export function BotMessage({
                 return <p className="mb-2 last:mb-0">{children}</p>
               },
               code({ node, inline, className, children, ...props }) {
-                if (children.length) {
-                  if (children[0] == '▍') {
-                    return (
-                      <span className="mt-1 animate-pulse cursor-default">
-                        ▍
-                      </span>
-                    )
-                  }
-
-                  children[0] = (children[0] as string).replace('`▍`', '▍')
+                const childList = React.Children.toArray(children)
+                if (childList.length > 0 && childList[0] === '▍') {
+                  return (
+                    <span className="mt-1 animate-pulse cursor-default">
+                      ▍
+                    </span>
+                  )
                 }
+
+                const cleanChildren = childList.map(child =>
+                  typeof child === 'string' ? child.replace('`▍`', '▍') : child
+                )
 
                 const match = /language-(\w+)/.exec(className || '')
 
                 if (inline) {
                   return (
                     <code className={className} {...props}>
-                      {children}
+                      {cleanChildren}
                     </code>
                   )
                 }

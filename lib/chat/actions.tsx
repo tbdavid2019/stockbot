@@ -540,23 +540,28 @@ async function generateCaption(
   aiState: MutableAIState,
   contextData?: string
 ): Promise<string> {
-  const answer = await safeGenerateCaption(
-    symbol,
-    comparisonSymbols,
-    toolName,
-    aiState,
-    contextData
-  )
-  return appendContextualFollowups(
-    answer,
-    {
+  try {
+    const answer = await safeGenerateCaption(
       symbol,
+      comparisonSymbols,
       toolName,
-      question: getLatestUserQuestion(aiState) || symbol,
-      resultContext: contextData
-    },
-    aiState
-  )
+      aiState,
+      contextData
+    )
+    return await appendContextualFollowups(
+      answer,
+      {
+        symbol,
+        toolName,
+        question: getLatestUserQuestion(aiState) || symbol,
+        resultContext: contextData
+      },
+      aiState
+    )
+  } catch (error) {
+    console.warn(`[generateCaption] Failed for ${toolName} on ${symbol}:`, error)
+    return getSmartFallbackCaption(symbol, toolName)
+  }
 }
 
 function getLatestUserQuestion(aiState: MutableAIState): string {
