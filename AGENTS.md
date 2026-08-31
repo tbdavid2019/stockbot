@@ -133,6 +133,11 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - **`trackInvestmentSignal` ➔ `<SignalTrackerCard />`**：實作 4 態投資假說演化（🟢 **Strengthened** / 🟡 **Weakened** / 🔴 **Falsified** / ⚪ **Unchanged**），並嚴格列出 **核心論點證偽判定點 (Falsification Triggers)**，提供動態部位調整指引。
 - 支援透過 `lib/chat/routing.ts` 確定性路由與對話上下文標的繼承，並以純 JSON 持久化至瀏覽器 `localStorage`。
 
+### 11. 📦 voidful/tw_stocker 台股歷史庫與 voidful/us_fddk 20年資產配置 (Factor Baselines & TW Historical Data)
+
+- **`voidful/tw_stocker` ([`lib/quant/tw-stocker.ts`](lib/quant/tw-stocker.ts))**：提供全市場台股與 ETF 歷史 OHLCV 靜態數據庫備援，當 Yahoo Finance 無法取得或缺漏時，自動自 `raw.githubusercontent.com/voidful/tw_stocker` 聚合還原日 K 線與均線計算。
+- **`showMacroFactorRegime` ➔ `<MacroFactorRegimeCard />` ([`lib/quant/us-fddk.ts`](lib/quant/us-fddk.ts))**：串接 `voidful/us_fddk` 20 年可稽核歷史凍結數據與 Fama-French 多因子模型，提供包含扣除 10/50 bps 滑價成本之跨資產 ETF（SPY, QQQ, 80/20 VUG/SHY, 60/40）策略回測對照與 LIVE Paper 實績。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)

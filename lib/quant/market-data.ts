@@ -4,6 +4,7 @@ import {
   type FinancialFundamentalsResult
 } from '@/lib/financial-fundamentals'
 import type { OHLCVPoint } from '@/lib/quant/sepa'
+import { fetchTwStockerDailyPrices } from '@/lib/quant/tw-stocker'
 
 export interface QuantMarketSnapshot {
   symbol: string
@@ -102,6 +103,19 @@ export async function fetchQuantMarketSnapshot(
         toNumber(chart?.meta?.previousClose) ?? prices.at(-2)?.close
     } catch {
       prices = []
+    }
+  }
+
+  if (prices.length === 0) {
+    try {
+      const twPrices = await fetchTwStockerDailyPrices(symbol)
+      if (twPrices.length > 0) {
+        prices = twPrices
+        price = price ?? prices.at(-1)?.close
+        previousClose = previousClose ?? prices.at(-2)?.close
+      }
+    } catch {
+      // ignore tw_stocker fallback failure
     }
   }
 

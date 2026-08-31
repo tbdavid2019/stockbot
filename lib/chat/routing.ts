@@ -18,6 +18,7 @@ export type DeterministicToolName =
   | 'analyzeStockLiquidity'
   | 'showTransmissionChain'
   | 'trackInvestmentSignal'
+  | 'showMacroFactorRegime'
 
 const NON_TICKER_WORDS = new Set([
   'AI',
@@ -133,6 +134,13 @@ export function inferDeterministicTool(
     )
   ) {
     return 'trackInvestmentSignal'
+  }
+  if (
+    /因子|風格輪動|資產配置|80\/20|60\/40|股債平衡|雙動能|fama[- ]french|factor\s*regime|asset\s*allocation/i.test(
+      content
+    )
+  ) {
+    return 'showMacroFactorRegime'
   }
 
   if (!resolvedTicker) return undefined

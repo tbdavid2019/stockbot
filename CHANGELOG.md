@@ -4,6 +4,22 @@
 
 ---
 
+## [2026-08-31] - 整合 voidful/tw_stocker 台股歷史資料庫與 voidful/us_fddk 20年因子配置研究
+
+### ✨ 新增 (Added)
+
+- **`voidful/tw_stocker` 台股歷史 K 線與高可用備援適配器 ([`lib/quant/tw-stocker.ts`](lib/quant/tw-stocker.ts))**：
+  - 串接 `voidful/tw_stocker` 開源台股歷史 OHLCV 靜態數據庫，為全台股與 ETF 提供零 API Key、零成本之高可用備援數據源。
+  - 在 [`lib/quant/market-data.ts`](lib/quant/market-data.ts) 中無縫接入，當 Yahoo Finance 無法取得台股行情或歷史長度不足時，自動自 `tw_stocker` 聚合還原日 K 線與均線計算。
+- **`voidful/us_fddk` 美股 20 年多因子風格輪動與資產配置工具 (`showMacroFactorRegime`)**：
+  - 串接 `voidful/us_fddk` 20 年可稽核歷史凍結數據、Fama-French 多因子模型與扣除 10/50 bps 滑價成本之跨資產 ETF 策略回測。
+  - 新增原生卡片 [`MacroFactorRegimeCard`](components/stocks/macro-factor-regime-card.tsx)，即時對比 SPY、QQQ、80/20 VUG/SHY、60/40 股債平衡之 20 年 CAGR、夏普比率、最大回撤與下跌捕獲率。
+- **確定性分流與對話歷史支援**：
+  - 更新 [`lib/chat/routing.ts`](lib/chat/routing.ts)，支援「因子/風格輪動/資產配置/80/20/股債平衡/雙動能/Fama-French」語義確定性分流。
+  - 更新 [`lib/chat-history.tsx`](lib/chat-history.tsx)，確保多因子資產配置卡片完整持久化於本機對話紀錄。
+
+---
+
 ## [2026-08-31] - DeepEar 宏觀邏輯傳導鏈與 AlphaEar 投資訊號證偽追蹤器 (DeepEar Transmission & Signal Tracker)
 
 ### ✨ 新增 (Added)

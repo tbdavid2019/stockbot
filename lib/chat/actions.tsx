@@ -69,7 +69,9 @@ import {
   SignalTrackerCard,
   type SignalTrackerData
 } from '@/components/stocks/signal-tracker-card'
+import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
 import { buildTransmissionAnalysis } from '@/lib/deepear'
+import { fetchMacroFactorRegime } from '@/lib/quant/us-fddk'
 import { toast } from 'sonner'
 import {
   extractExplicitTicker,
@@ -2504,6 +2506,63 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <SignalTrackerCard data={trackerData} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          showMacroFactorRegime: {
+            description:
+              'Analyze 20-year US factor regimes, multi-factor exposures (Momentum, Growth, Value, Volatility), and institutional ETF asset allocation baselines (SPY, QQQ, 80/20 VUG/SHY, 60/40) using audited US FDDK quantitative benchmarks.',
+            parameters: z.object({
+              query: z
+                .string()
+                .optional()
+                .describe(
+                  'Optional query context such as factor preference or asset allocation.'
+                )
+            }),
+            generate: async function* ({ query }) {
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在載入 US FDDK 20 年多因子基準與跨資產 ETF 配置實證…
+                  </div>
+                </BotCard>
+              )
+
+              const data = await fetchMacroFactorRegime()
+              const context = JSON.stringify({
+                strategy: data.activeStrategy.name,
+                cagr: data.activeStrategy.cagr,
+                sharpe: data.activeStrategy.sharpe,
+                maxDrawdown: data.activeStrategy.maxDrawdown,
+                baselines: data.baselines.map(
+                  b =>
+                    `${b.label}: CAGR ${(b.cagr * 100).toFixed(1)}%, Sharpe ${b.sharpe.toFixed(2)}, MaxDD ${(b.maxDrawdown * 100).toFixed(1)}%`
+                ),
+                insights: data.institutionalInsights
+              })
+
+              const caption = await generateCaption(
+                'US-FDDK-REGIME',
+                [],
+                'showMacroFactorRegime',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'showMacroFactorRegime',
+                { query },
+                { data },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  <MacroFactorRegimeCard data={data} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
