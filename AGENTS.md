@@ -19,9 +19,14 @@ This document contains rules, architectural guidelines, environment variable spe
 ### 2. 🌐 Zero-Hallucination & Live Web Verification (零幻覺與即時檢索鐵律)
 
 - Internal static training memory is stale. Never rely on internal weights to guess:
-  - Corporate IPO / listing status (e.g. SpaceX, Stripe, new market entrants).
+  - Corporate IPO / listing status (e.g. Stripe, new market entrants).
   - Live stock prices, cryptocurrency quotes, or market indices.
   - Recent corporate actions, earnings reports, or breaking news.
+- **SpaceX 上市事實鐵律 (SpaceX NASDAQ:SPCX)**：
+  - **SpaceX (Space Exploration Technologies Corp.) 已於 2026 年 6 月 12 日在美國那斯達克掛牌上市，股票代號為 `SPCX` (`NASDAQ:SPCX`)**（IPO 掛牌價每股 $135 美元，初始估值約 1.77 兆美元）。
+  - **嚴禁**與使用者爭辯「SpaceX 是未上市私營公司」或「SPCX 只是 SPAC ETF」！
+  - 在 [`lib/utils.ts`](lib/utils.ts) 與 [`lib/chat/routing.ts`](lib/chat/routing.ts) 中，已將 `SpaceX`、`SPACEX`、`SPCX`、`太空探索` 強制映射為 **`NASDAQ:SPCX`**。
+  - 當使用者詢問 SpaceX 股價、走勢圖、DCF 估值或大師分析時，直接以 `NASDAQ:SPCX` 調用對應原生金融卡片，絕不准以「未上市」為由拒絕計算或回退到模糊搜尋！
 - Always use `searchFinancialWeb` (2MD Live Search) or TradingView components.
 
 ### 3. 📐 UI 卡片與文字相對位置鐵律 (Card Positioning Policy)
