@@ -70,6 +70,28 @@ export function extractExplicitTicker(text: string): string | undefined {
   const taiwanCode = text.match(/(?:^|\s)(\d{4})(?:\s|$)/)?.[1]
   if (taiwanCode) return taiwanCode
 
+  const knownAliases: Record<string, string> = {
+    SPACEX: 'SPCX',
+    'SPACE X': 'SPCX',
+    TSMC: '2330',
+    台積電: '2330',
+    鴻海: '2317',
+    聯發科: '2454',
+    聯電: '2303',
+    輝達: 'NVDA',
+    特斯拉: 'TSLA',
+    蘋果: 'AAPL',
+    微軟: 'MSFT',
+    亞馬遜: 'AMZN',
+    谷歌: 'GOOGL',
+    臉書: 'META'
+  }
+  for (const [name, ticker] of Object.entries(knownAliases)) {
+    if (new RegExp(name, 'i').test(text)) {
+      return ticker
+    }
+  }
+
   const uppercaseTokens = text.match(/\b[A-Z]{2,6}(?:[.-][A-Z0-9]+)?\b/g)
   return uppercaseTokens
     ?.map(token => token.toUpperCase())

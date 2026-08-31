@@ -173,7 +173,10 @@ export function formatStockSymbol(symbol: string): string {
     摩根大通: 'NYSE:JPM',
     JPMORGAN: 'NYSE:JPM',
     VISA: 'NYSE:V',
-    VISA卡: 'NYSE:V'
+    VISA卡: 'NYSE:V',
+    SPACEX: 'NASDAQ:SPCX',
+    SPCX: 'NASDAQ:SPCX',
+    太空探索: 'NASDAQ:SPCX'
   }
 
   if (stockAliases[trimmed]) {

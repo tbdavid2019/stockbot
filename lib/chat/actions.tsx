@@ -867,7 +867,7 @@ For any cryptocurrency, append "USD" at the end of the ticker when using functio
 Users may provide a Chinese name, English company name, brand name, or an incomplete ticker instead of a symbol.
 1. If the user message already contains an explicit ticker, including a ticker in parentheses such as "Advanced Micro Devices Inc (AMD)" or "Paramount Skydance Corp (PSKY)", the symbol is already resolved. Call the requested chart, price, financials, news, or analysis tool directly. **Do not call searchFinancialWeb merely to resolve it again.**
 2. Never pass a raw unregistered company name directly to a chart, price, financials, news, or analysis tool when no ticker is present.
-3. For a known alias, convert it to the exact exchange-qualified symbol (for example 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 小米 -> HKEX:1810, 騰訊 -> HKEX:700, 阿里 -> HKEX:9988, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
+3. For a known alias, convert it to the exact exchange-qualified symbol (for example SpaceX/SPCX -> NASDAQ:SPCX, 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 小米 -> HKEX:1810, 騰訊 -> HKEX:700, 阿里 -> HKEX:9988, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
 4. Only for an unknown, new, private, or ambiguous company name with no explicit ticker, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
 5. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
 6. If an explicit ticker is present and the user asks for a financial summary, valuation, any financial-statement line item, ratio, growth comparison, valuation multiple, or accounting term (including unfamiliar ones), call answerFinancialMetric. Do not expose a raw search-results card for a financial question.
@@ -916,8 +916,8 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
 Example 3:
 
-User: SpaceX 股價
-Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "searchFinancialWeb" }, "parameters": { "query": "SpaceX 股價 SPCX 上市" } } }
+User: SpaceX 股價走勢
+Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function": { "name": "showStockChart" }, "parameters": { "symbol": "NASDAQ:SPCX" } } }
 
 Example 4 (Wiki Publishing):
 
