@@ -97,7 +97,10 @@ function dcfSharePrice(
   if (!shares || !finitePositive(shares)) return undefined
 
   let fcf = input.freeCashFlow
-  if (!Number.isFinite(fcf) || fcf === 0) {
+  // When historical FCF is negative or zero (e.g. high-capex growth expansion like SpaceX),
+  // compounding negative FCF makes cash burn explode into impossible negative stock prices.
+  // We normalize to a steady-state 15% FCF margin against revenue.
+  if (!Number.isFinite(fcf) || fcf <= 0) {
     if (finitePositive(input.revenue)) {
       fcf = input.revenue * 0.15
     } else {
@@ -122,7 +125,7 @@ function dcfSharePrice(
   const terminalValue =
     (projected[4] * (1 + terminalGrowth)) / (wacc - terminalGrowth)
   const enterpriseValue = presentValue + terminalValue / Math.pow(1 + wacc, 5)
-  const equityValue = enterpriseValue + (input.cash || 0) - (input.debt || 0)
+  const equityValue = Math.max(0, enterpriseValue + (input.cash || 0) - (input.debt || 0))
   return equityValue / shares
 }
 
