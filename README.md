@@ -99,20 +99,40 @@ AI_HEDGE_FUND_PORT=6000
 - `lib/quant/valuation.ts`、`lib/quant/sepa.ts`、`lib/quant/black-scholes.ts`、`lib/quant/microstructure.ts` - 純 TypeScript 量化引擎
 - `components/stocks/company-valuation-card.tsx`、`sepa-strategy-card.tsx`、`earnings-briefing-card.tsx`、`options-payoff-card.tsx`、`stock-liquidity-card.tsx`、`etf-premium-card.tsx` - 原生量化卡片
 
-## Interfaces
+## 📊 原生金融情報與量化分析卡片一覽 (15 Financial Cards Reference)
 
-| Description                                                                                                                                                                                                                                                                                  | Widget                                                                                                                           |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| **AI Investment Analysis** (NEW)<br>Get professional investment advice and multi-round round table debates from legendary investors like Warren Buffett, Cathie Wood, Michael Burry, and more.                                                                                               | AI Hedge Fund API (dns.glsoft.ai:6000)                                                                                           |
-| **Heatmap of Daily Market Performance**<br>Visualize market trends at a glance with an interactive heatmap. Supported markets include the TradingView widget data sources for North America, South America, Europe, Middle East & Africa, and Asia-Pacific, including Taiwan (AllTW / TW50). | ![Heatmap of Daily Market Performance](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e)          |
-| **Breakdown of Financial Data for Stocks**<br>Get detailed financial metrics and key performance indicators for any stock.                                                                                                                                                                   | ![Breakdown of Financial Data for Stocks](https://github.com/user-attachments/assets/c1c32dac-8295-4efb-ac1e-2eea8a89e7db)       |
-| **Price History of Stock**<br>Track the historical price movement of stocks with customizable date ranges.                                                                                                                                                                                   | ![Price History of Stock](https://github.com/user-attachments/assets/f588068e-4d95-4188-96fd-866d355c993e)                       |
-| **Candlestick Stock Charts for Specific Assets**<br>Analyze price patterns and trends with detailed candlestick charts.                                                                                                                                                                      | ![Candlestick Stock Charts for Specific Assets](https://github.com/user-attachments/assets/ce9ea4a8-a1fe-4ce7-be60-3f5d64d50ced) |
-| **Top Stories for Specific Stock**<br>Stay informed with the latest news and headlines affecting specific companies.                                                                                                                                                                         | ![Top Stories for Specific Stock](https://github.com/user-attachments/assets/fa0693f4-8eca-4d5c-90e7-42afda0d8acc)               |
-| **Market Overview**<br>Shows an overview of today's stock, futures, bond, and forex market performance including change values, Open, High, Low, and Close values.                                                                                                                           | ![Market Overview](https://github.com/user-attachments/assets/79048f3b-9153-41f9-8de5-6b3d45f331dd)                              |
-| **Stock Screener to Find New Stocks and ETFs**<br>Discover new companies with a stock screening tool.                                                                                                                                                                                        | ![Stock Screener to Find New Stocks and ETFs](https://github.com/user-attachments/assets/8ecadec9-69a1-4e18-a9fe-7b30df9f6ff5)   |
-| **Trending Stocks**<br>Shows the top five gaining, losing, and most active stocks for the day.                                                                                                                                                                                               | ![Trending Stocks](https://github.com/user-attachments/assets/848c1ebf-7828-4116-a041-6f0ba7156bd5)                              |
-| **ETF Heatmap**<br>Shows a heatmap of today's ETF market performance across sectors and asset classes.                                                                                                                                                                                       | ![ETF Heatmap](https://github.com/user-attachments/assets/cb2b29d9-acb7-4c8f-90c7-0390e72907f6)                                  |
+StockBot 內建 15 套機構級原生 React 金融視覺化卡片，所有卡片均遵循現代金融終端 Design System 規範，支援高清晰字體層級、自適應響應式佈局，並具備純本機 `localStorage` 狀態還原機制：
+
+| # | 卡片名稱 / 組件 | 調用工具 | 資料來源與核心功能 | 提問範例 |
+| :- | :--- | :--- | :--- | :--- |
+| **1** | **🏛️ 三大法人籌碼情報卡**<br>`<InstitutionalFlowCard />` | `showInstitutionalFlow` | 直連 **TWSE 證交所 (T86/MI_QFIIS)** 與 **TPEX 櫃買中心** 官方 API。提供外資、投信、自營商（自行買賣+避險）今日買賣超**張數**、5 日累計、外資持股比率 %、連買連賣天數與四大籌碼訊號（🟢 土洋同買、⚔️ 土洋對作、🚀 投信連買認養、🔴 三大法人同步賣超）。 | `2330 法人買賣超`<br>`聯發科投信連買幾天？` |
+| **2** | **📈 量化 DCF 估值合理價卡**<br>`<CompanyValuationCard />` | `calculateCompanyValuation` | 採用 5 年 FCFF 現金流折現、CAPM/WACC 資本成本計算，結合同業 P/E、EV/EBITDA、EV/Sales 倍數加權中位數，並提供 **WACC × 終值成長率 5×5 敏感度分析矩陣**。針對負現金流擴張期企業套用標準化利潤率平滑。 | `NVDA 合理價是多少？`<br>`特斯拉 DCF 估值` |
+| **3** | **📊 核心財務報表指標卡**<br>`<NativeFinancialsCard />` | `showStockFinancials` | 整合 4 大維度指標矩陣：(1) 估值倍數 (P/E, P/B, P/S)、(2) 獲利能力 (ROE, 淨利率, 營業利益率)、(3) 財務體質 (流動比率, 負債權益比)、(4) 成長動能 (營收 YoY, 獲利 YoY) 與 DCF 內在價值摘要。 | `台積電財務報表`<br>`AAPL 財務指標分析` |
+| **4** | **📌 財務數據即時核實卡**<br>`<FinancialMetricCard />` | `answerFinancialMetric` | 針對特定財報科目、會計比率、成長率等問題，優先檢索結構化財報時間序列計算精確數值、期間與口徑，並在上方卡片直接標註核實之官方文件來源外鏈。 | `NVDA 最新一季 EBITDA 是多少？`<br>`台積電近三年營收 CAGR` |
+| **5** | **🎯 Minervini SEPA 趨勢動能卡**<br>`<SepaStrategyCard />` | `analyzeSepaStrategy` | 嚴格檢驗 Mark Minervini 8 項 Trend Template 趨勢模板、Stage 1–4 階段判定、RS 強度評級、VCP 波動收縮型態、Pivot 關鍵買點、5% 買入區、停損點與**風險部位股數計算機**。 | `TSLA SEPA 趨勢分析`<br>`2330 符合 SEPA 買點嗎？` |
+| **6** | **📅 財報前瞻與分析師共識卡**<br>`<EarningsBriefingCard />` | `previewEarnings` | 揭示預計公布日期（盤前/盤後）、華爾街分析師 EPS 與營收共識區間、分析師平均目標價與潛在空間，並提供過去四季實際 EPS vs 預估值之 Beat/Miss Surprise 驚喜度實績表。 | `NVDA 什麼時候公布財報？`<br>`微軟財報預期與目標價` |
+| **7** | **📊 US FDDK 20 年多因子資產配置卡**<br>`<MacroFactorRegimeCard />` | `showMacroFactorRegime` | 串接 `voidful/us_fddk` 20 年可稽核歷史凍結數據與 Fama-French 多因子模型。提供扣除 10/50 bps 滑價成本之跨資產 ETF 策略回測，即時對比 SPY、QQQ、80/20 VUG/SHY、60/40 股債平衡之 CAGR、夏普比率、最大回撤與下跌捕獲率。 | `20年資產配置回測`<br>`80/20 股債平衡策略績效` |
+| **8** | **⛓️ DeepEar 宏觀邏輯傳導鏈卡**<br>`<TransmissionChainCard />` | `showTransmissionChain` | 串接因果傳導引擎，深度剖析「一階總經/事件觸發 ➔ 二階產業鏈傳導 ➔ 三階企業獲利兌現」連鎖反應，標註利好/利空衝擊、情緒評分、信心度與**核心論點證偽判定點 (Falsification Criteria)**。 | `降息對科技股的傳導鏈`<br>`地緣政治對半導體的連鎖衝擊` |
+| **9** | **🔍 AlphaEar 投資訊號演化追蹤卡**<br>`<SignalTrackerCard />` | `trackInvestmentSignal` | 實作投資假說 4 態演化（🟢 **Strengthened** / 🟡 **Weakened** / 🔴 **Falsified** / ⚪ **Unchanged**），列出最新佐證數據、關鍵證偽條件與動態風險控管部位調整建議。 | `追蹤 NVDA 投資假說`<br>`特斯拉多頭論點是否被證偽？` |
+| **10** | **⚡ Black-Scholes 期權損益模擬卡**<br>`<OptionsPayoffCard />` | `simulateOptionsPayoff` | 提供 Black-Scholes 定價模型互動式多腿選擇權損益圖。支援即時調整現價 (Spot)、履約價 (Strike)、到期天數 (DTE) 與隱含波動率 (IV)，動態繪製到期損益 (Expiry) 與現值理論曲線 (Current) 及損益兩平點。 | `AAPL 選擇權損益模擬`<br>`NVDA 跨式期權策略曲線` |
+| **11** | **💧 市場微結構流動性分析卡**<br>`<StockLiquidityCard />` | `analyzeStockLiquidity` | 計算 Amihud 非流動性指標、年化自由流通股週轉率 (Float Turnover)、流通盤出清天數 (Days to Liquidate) 與 Square-Root Market Impact 平方根市場衝擊曲線，精準估算大單進出場滑價成本 (bps)。 | `2330 流動性分析`<br>`買進 5 萬股 NVDA 滑價衝擊` |
+| **12** | **🏷️ ETF 淨值溢折價監控卡**<br>`<EtfPremiumCard />` | `analyzeEtfPremium` | 即時監控 ETF 市價與基金淨值 (NAV) 之溢價 (Premium) / 折價 (Discount) 幅度、Dealer GEX 伽瑪暴露狀態、買賣價差 (Bid-Ask Spread) 與同類 ETF 中位數對照。 | `0050 溢折價查詢`<br>`SPY NAV 淨值與 GEX 狀態` |
+| **13** | **🌐 2MD 即時連網研調來源卡**<br>`<WebSearchResults />` | `searchFinancialWeb` | 由 2MD 全網情報大腦並發檢索最新重大快訊、供應鏈上下游、法說會動態與總經環境，以摺疊清單呈現可信來源標題、網址與內文摘要。 | `SpaceX 最新上市估值與新聞`<br>`全球人形機器人供應鏈` |
+| **14** | **📑 AnyDoc 財報文件解析卡**<br>`<FinancialReportCard />` | `readFinancialReport` | 支援線上財報網址或本機上傳之 PDF、Excel、Word、PPT 文件（最大 25MB）。秒級萃取三大報表、管理層指引與風險因子，支援一鍵複製與全文展開。 | `閱讀這份台積電法說會簡報`<br>`分析上傳的財報 PDF` |
+| **15** | **🏛️ 傳奇大師多維度研調卡**<br>`<StockAnalysis />` | `analyzeStockWithAI` | 整合 AI Hedge Fund API，由 13 位傳奇投資大師（巴菲特、葛拉漢、蒙格、木頭姐等）分為 3 批次漸進式研調，呈現各分析師多空訊號、圓桌委員會辯論對話過程與投資委員會綜合決策判讀。 | `台積電值得買嗎？`<br>`13位大師分析 NVDA` |
+
+---
+
+## 📈 TradingView 互動組件 (TradingView Interactive Widgets)
+
+| 組件名稱 | 說明 | 預覽截圖 |
+| :--- | :--- | :--- |
+| **互動式即時走勢圖** (`StockChart`) | 支援 Candlestick K 線、成交量與多週期指標分析。 | ![Candlestick Stock Charts](https://github.com/user-attachments/assets/ce9ea4a8-a1fe-4ce7-be60-3f5d64d50ced) |
+| **全市場熱力圖** (`MarketHeatmap`) | 支援北美、歐洲、亞洲與台灣全市場 (AllTW / TW50)。 | ![Heatmap of Daily Market](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e) |
+| **ETF 板塊熱力圖** (`ETFHeatmap`) | 跨資產與產業板塊 ETF 表現視覺化。 | ![ETF Heatmap](https://github.com/user-attachments/assets/cb2b29d9-acb7-4c8f-90c7-0390e72907f6) |
+| **股票篩選器** (`StockScreener`) | 依基本面與技術指標篩選潛力標的。 | ![Stock Screener](https://github.com/user-attachments/assets/8ecadec9-69a1-4e18-a9fe-7b30df9f6ff5) |
+| **市場概況行情** (`MarketOverview`) | 股票、期貨、債券、外匯即時行情看板。 | ![Market Overview](https://github.com/user-attachments/assets/79048f3b-9153-41f9-8de5-6b3d45f331dd) |
+| **熱門排行榜** (`MarketTrending`) | 今日漲幅榜、跌幅榜與成交量榜。 | ![Trending Stocks](https://github.com/user-attachments/assets/848c1ebf-7828-4116-a041-6f0ba7156bd5) |
 
 ## LLM 與多階層備援設定 (LLM & Multi-Tier Fallback Configuration)
 

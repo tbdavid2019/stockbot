@@ -4,6 +4,44 @@
 
 ---
 
+## [2026-09-01] - 台灣三大法人籌碼情報直連、全站 15 張圖卡字體視覺重構與 SpaceX 上市事實對齊
+
+### ✨ 新增 (Added)
+
+- **🏛️ 台灣證交所 (TWSE) 與櫃買中心 (TPEX) 三大法人籌碼情報引擎 ([`lib/quant/institutional.ts`](lib/quant/institutional.ts))**：
+  - 直接串接 **台灣證券交易所 T86 報表** (`/rwd/zh/fund/T86`)、**MI_QFIIS 外資持股報表** 與 **證券櫃檯買賣中心 3insti / 3itrade** 官方開放數據。
+  - 精確解析外資及陸資、國內投信、自營商（自行買賣 + 避險部位）今日買賣超**張數**、5 日累計買賣超、外資持股佔比 %、連買/連賣天數。
+  - 實作四大籌碼訊號判讀演算法：🟢 **土洋同買**、⚔️ **土洋對作**、🚀 **投信連買認養**、🔴 **三大法人同步賣超**。
+  - 新增全新原生視覺化卡片 [`InstitutionalFlowCard`](components/stocks/institutional-flow-card.tsx)，提供三大支柱看板、近 5 日買賣超歷史表格與籌碼訊號解讀。
+- **確定性工具路由與對話歷史完全持久化**：
+  - 更新 [`lib/chat/routing.ts`](lib/chat/routing.ts)，加入「三大法人/法人買賣超/法人籌碼/外資買賣超/投信連買/自營商/土洋對作/土洋同買」確定性工具路由。
+  - 更新 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 註冊 `showInstitutionalFlow` 工具，並在 [`lib/chat-history.tsx`](lib/chat-history.tsx) 支援 `localStorage` 純 JSON 狀態無損還原。
+- **README.md 補齊全站 15 張原生金融情報與量化卡片規格一覽**：
+  - 完整記錄 15 套原生卡片之名稱、組件、工具、數據來源、核心功能與推薦提問範例。
+
+### 🎨 優化與重構 (Design & Typography Overhaul)
+
+- **🎨 全站 15 張原生金融圖卡字體層級、視覺縮放與留白空間全面升級**：
+  - 依據現代金融終端 Design System 規範，徹底消除 `text-[10px]`、`text-[11px]` 與窄小行距。
+  - **卡片容器**：升級為 `p-5 sm:p-6 rounded-2xl border shadow-sm`，更顯大器舒適。
+  - **標題層級**：卡片主標題統一升級為 `text-xl sm:text-2xl font-bold tracking-tight`。
+  - **核心數值**：重點指標數值放大至 `text-2xl sm:text-3xl font-extrabold font-mono`。
+  - **標籤與次要數據**：分類徽章、副標與指標說明全面放大至 `text-xs sm:text-sm`。
+  - **歷史數據表格**：表頭與數值行距全面擴大，儲存格內文字升級至 `text-xs sm:text-sm font-mono`。
+  - 涵蓋組件：`InstitutionalFlowCard`、`CompanyValuationCard`、`NativeFinancialsCard`、`FinancialMetricCard`、`SepaStrategyCard`、`EarningsBriefingCard`、`MacroFactorRegimeCard`、`TransmissionChainCard`、`SignalTrackerCard`、`OptionsPayoffCard`、`StockLiquidityCard`、`EtfPremiumCard`、`WebSearchResults`、`FinancialReportCard`、`StockAnalysis`。
+
+### 🐛 修復 (Fixed)
+
+- **SpaceX 上市事實與全專案代號映射鐵律 (`NASDAQ:SPCX`)**：
+  - 確立 SpaceX (Space Exploration Technologies Corp.) 於 2026 年 6 月 12 日在美國那斯達克掛牌上市（股票代號 `SPCX`）之即時事實。
+  - 在 [`lib/utils.ts`](lib/utils.ts) 與 [`lib/chat/routing.ts`](lib/chat/routing.ts) 中將 `SpaceX`、`SPACEX`、`SPCX`、`太空探索` 強制映射為 `NASDAQ:SPCX`，絕不以未上市為由拒絕分析或回退到模糊搜尋。
+  - 同步將鐵律寫入 `AGENTS.md`、`telegram-bot-stock2` 與 `ai-hedge-fund-API`。
+- **DCF 估值模型擴張期負現金流平滑與股權價值下界修復**：
+  - 修復高資本支出（Capex）擴張期企業（如 SpaceX 2025 FCF 為負）因傳統複利折現導致每股計算出負股價（如 `$-58.70`）的數學缺陷。
+  - 當 FCF $\le 0$ 時，自動套用產業穩態 15% 營收標準化利潤率平滑，並強制約束股權內在價值 $\ge 0$。
+
+---
+
 ## [2026-08-31] - 整合 voidful/tw_stocker 台股歷史資料庫與 voidful/us_fddk 20年因子配置研究
 
 ### ✨ 新增 (Added)
