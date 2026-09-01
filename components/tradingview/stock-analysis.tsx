@@ -600,33 +600,33 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
   })()
 
   return (
-    <div className="space-y-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 p-5 shadow-sm">
+    <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 p-5 sm:p-6 shadow-sm">
       {/* 標題與分批狀態 */}
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="border-b border-slate-100 dark:border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               🏛️ 傳奇投資大師多維度研調報告：{ticker}
             </h3>
             {batchLoading && (
               <span className="inline-flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-800 font-medium">
-                <span className="h-2 w-2 rounded-full bg-blue-500 animate-ping"></span>
+                <span className="size-2 rounded-full bg-blue-500 animate-ping"></span>
                 {batchStatusText}
               </span>
             )}
             {batchStage === 4 && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 font-medium">
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 font-semibold">
                 ✨ 13 位大師全維度分析完畢
               </span>
             )}
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             由多位傳奇投資大師進行獨立研判、量化估值、技術動能與輿論審計
           </p>
         </div>
         {roundTable?.signal && (
           <span
-            className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${getSignalColor(roundTable.signal)}`}
+            className={`px-3.5 py-1 rounded-full text-xs sm:text-sm font-bold border ${getSignalColor(roundTable.signal)}`}
           >
             {getSignalEmoji(roundTable.signal)} ({roundTable.confidence ?? 0}%)
           </span>
@@ -634,23 +634,23 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       </div>
 
       {/* LLM 讀取三批大師實際結果後產生的投資委員會摘要 */}
-      <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 dark:border-indigo-900/60 dark:bg-indigo-950/20">
-        <h4 className="mb-2 text-sm font-semibold text-indigo-900 dark:text-indigo-200">
+      <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 sm:p-5 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+        <h4 className="mb-2 text-sm sm:text-base font-bold text-indigo-900 dark:text-indigo-200">
           🧠 投資委員會綜合判讀
         </h4>
         {summaryLoading && (
-          <p className="text-xs text-indigo-600 dark:text-indigo-400">
+          <p className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">
             正在交叉比對 13 位大師的共識、分歧與關鍵數字…
           </p>
         )}
         {summaryError && (
-          <p className="text-xs text-amber-700 dark:text-amber-400">
+          <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-400">
             綜合判讀暫時無法載入：{summaryError}
           </p>
         )}
         {executiveSummary && (
           <MemoizedReactMarkdown
-            className="prose prose-sm max-w-none break-words text-sm leading-relaxed dark:prose-invert prose-headings:mb-2 prose-headings:mt-3 prose-p:my-2 prose-li:my-0.5"
+            className="prose prose-sm sm:prose-base max-w-none break-words text-sm sm:text-base leading-relaxed dark:prose-invert prose-headings:mb-2 prose-headings:mt-3 prose-p:my-2 prose-li:my-0.5"
             remarkPlugins={[remarkGfm]}
           >
             {executiveSummary}
@@ -661,17 +661,17 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       {/* 最終決策 */}
       {decision && (
         <div
-          className={`rounded-xl border-2 p-4 ${getActionColor(decision.action)}`}
+          className={`rounded-xl border-2 p-4 sm:p-5 ${getActionColor(decision.action)}`}
         >
           <div className="flex items-center justify-between">
-            <div className="text-xl font-bold">
+            <div className="text-2xl sm:text-3xl font-extrabold">
               {getActionText(decision.action)}
             </div>
-            <div className="text-xs font-medium opacity-90">
+            <div className="text-xs sm:text-sm font-semibold opacity-90">
               信心度：{decision.confidence}% | 建議數量：{decision.quantity} 股
             </div>
           </div>
-          <div className="mt-2 text-xs md:text-sm leading-relaxed">
+          <div className="mt-2.5 text-xs sm:text-sm leading-relaxed">
             {decisionReasoning}
           </div>
         </div>
@@ -679,16 +679,16 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
       {/* 🏛️ 圓桌辯論委員會共識 */}
       {roundTable && (
-        <div className="rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 p-4 space-y-3">
+        <div className="rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-950/20 p-4 sm:p-5 space-y-3.5">
           <div className="flex items-center justify-between">
-            <h4 className="font-semibold text-sm text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
+            <h4 className="font-bold text-sm sm:text-base text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
               🏛️ 圓桌委員會辯論結論 (Round Table Consensus)
             </h4>
             {transcriptTurns.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowTranscript(!showTranscript)}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:underline font-semibold"
               >
                 {showTranscript ? '隱藏大師辯論對話 ▲' : '展開大師辯論對話 ▼'}
               </button>
@@ -696,8 +696,8 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           </div>
 
           {roundTable.consensus_view && (
-            <div className="text-xs text-slate-700 dark:text-slate-300">
-              <span className="font-semibold text-blue-800 dark:text-blue-300">
+            <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+              <span className="font-bold text-blue-900 dark:text-blue-300">
                 🎯 核心共識：
               </span>
               {roundTable.consensus_view}
@@ -705,8 +705,8 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           )}
 
           {roundTable.discussion_summary && (
-            <div className="text-xs text-slate-700 dark:text-slate-300">
-              <span className="font-semibold text-blue-800 dark:text-blue-300">
+            <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+              <span className="font-bold text-blue-900 dark:text-blue-300">
                 💬 辯論焦點：
               </span>
               {roundTable.discussion_summary}
@@ -714,8 +714,8 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           )}
 
           {roundTable.dissenting_opinions && (
-            <div className="text-xs text-slate-700 dark:text-slate-300">
-              <span className="font-semibold text-amber-800 dark:text-amber-400">
+            <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
+              <span className="font-bold text-amber-800 dark:text-amber-400">
                 ⚡ 分歧觀點：
               </span>
               {roundTable.dissenting_opinions}
@@ -724,20 +724,20 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
           {/* 📜 大師辯論交鋒過程 */}
           {showTranscript && transcriptTurns.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-blue-200/60 dark:border-blue-800/40 space-y-2">
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+            <div className="mt-3.5 pt-3.5 border-t border-blue-200/60 dark:border-blue-800/40 space-y-2.5">
+              <div className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
                 📜 投資大師辯論對話過程：
               </div>
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                 {transcriptTurns.map((turn, idx) => {
                   const speakerLabel =
                     SPEAKER_ICONS[turn.speaker] || turn.speaker
                   return (
                     <div
                       key={idx}
-                      className="rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-2.5 text-xs shadow-2xs"
+                      className="rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 p-3 text-xs sm:text-sm shadow-xs"
                     >
-                      <div className="font-bold text-slate-800 dark:text-slate-200 mb-0.5">
+                      <div className="font-bold text-slate-900 dark:text-slate-100 mb-1">
                         {speakerLabel}：
                       </div>
                       <div className="text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -753,11 +753,11 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       )}
 
       {/* 📊 各分析師觀點信號 */}
-      <div className="space-y-2.5">
-        <h4 className="font-semibold text-sm text-slate-700 dark:text-slate-300">
+      <div className="space-y-3">
+        <h4 className="font-bold text-sm sm:text-base text-slate-800 dark:text-slate-200">
           📊 各大師與專業分析師信號
         </h4>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {Object.entries(result.analyst_signals || {}).map(
             ([analyst, signals]) => {
               if (
@@ -787,23 +787,23 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
               return (
                 <div
                   key={analyst}
-                  className={`rounded-lg border p-3 ${getSignalColor(tickerSignal.signal)}`}
+                  className={`rounded-xl border p-3.5 sm:p-4 ${getSignalColor(tickerSignal.signal)}`}
                 >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-medium text-xs text-slate-800 dark:text-slate-200">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100">
                       {displayName}
                     </span>
-                    <div className="flex items-center space-x-1.5">
-                      <span className="text-xs font-semibold">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs sm:text-sm font-bold">
                         {getSignalEmoji(tickerSignal.signal)}
                       </span>
-                      <span className="text-xs opacity-75 font-mono">
+                      <span className="text-xs sm:text-sm font-mono opacity-80">
                         {tickerSignal.confidence}%
                       </span>
                     </div>
                   </div>
                   {tickerSignal.reasoning && (
-                    <p className="text-xs opacity-85 line-clamp-3 leading-snug">
+                    <p className="text-xs sm:text-sm opacity-90 line-clamp-3 leading-relaxed">
                       {formatReasoning(
                         tickerSignal.reasoning,
                         analyst,
@@ -819,12 +819,12 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       </div>
 
       {/* 免責聲明 */}
-      <div className="border-t border-slate-100 dark:border-slate-800 pt-2.5 text-[11px] text-slate-400">
-        📌
-        此分析由量化指標與大師策略模型綜合研判，僅供研究參考，不構成投資建議。市場有風險，投資需謹慎。
+      <div className="border-t border-slate-100 dark:border-slate-800 pt-3 text-xs text-slate-400 dark:text-slate-500">
+        📌 此分析由量化指標與大師策略模型綜合研判，僅供研究參考，不構成投資建議。市場有風險，投資需謹慎。
       </div>
     </div>
   )
 }
 
 export default StockAnalysis
+

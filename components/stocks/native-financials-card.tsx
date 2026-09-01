@@ -204,23 +204,23 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-zinc-950 dark:to-zinc-900/50 p-4 sm:p-5 shadow-xs">
+    <div className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-zinc-950 dark:to-zinc-900/50 p-5 sm:p-6 shadow-sm">
       {/* 標題欄 */}
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3 mb-3.5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-sm">
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-4 gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-base">
             📊
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xl sm:text-2xl tracking-tight">
                 {formattedSymbol || symbol} 核心財務報表與指標分析
               </h3>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+              <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold">
                 最新財報
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
               涵蓋估值倍數、獲利能力 (ROE/淨利率)、財務體質與成長趨勢
             </p>
           </div>
@@ -231,7 +231,7 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
             <span className="text-xs text-muted-foreground block">
               參考市價
             </span>
-            <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-sm">
+            <span className="font-mono font-bold text-slate-800 dark:text-slate-200 text-lg">
               ${Number(metrics.price).toFixed(2)}
             </span>
           </div>
@@ -241,27 +241,27 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-10 space-y-2.5">
           <div className="size-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs sm:text-sm text-muted-foreground">
             正在檢索財報與財務指標...
           </span>
         </div>
       ) : error ? (
-        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-300">
+        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs sm:text-sm text-amber-800 dark:text-amber-300">
           ⚠️ 暫時無法獲取結構化財報指標，下方已為您整合即時市場情報。
         </div>
       ) : (
-        <div className="space-y-3.5">
+        <div className="space-y-4">
           {/* 4 大維度指標矩陣 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* 1. 估值指標 */}
-            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   📈 估值倍數 (Valuation)
                 </span>
                 {getSignalBadge(metrics?.valuationSignal)}
               </div>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">本益比 (P/E):</span>
                   <span className="font-mono font-semibold">
@@ -288,19 +288,19 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
             </div>
 
             {/* 2. 獲利能力 */}
-            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   💰 獲利能力 (Profitability)
                 </span>
                 {getSignalBadge(metrics?.profitSignal)}
               </div>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
                     股東權益報酬率 (ROE):
                   </span>
-                  <span className="font-mono font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
                     {metrics?.roe ?? '—'}
                   </span>
                 </div>
@@ -324,14 +324,14 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
             </div>
 
             {/* 3. 財務體質 */}
-            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   🛡️ 財務體質 (Health)
                 </span>
                 {getSignalBadge(metrics?.healthSignal)}
               </div>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
                     流動比率 (Current Ratio):
@@ -350,7 +350,7 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">資本結構安全度:</span>
-                  <span className="font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
                     {metrics?.healthSignal === 'bullish'
                       ? '相對穩健'
                       : metrics?.healthSignal === 'bearish'
@@ -362,14 +362,14 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
             </div>
 
             {/* 4. 成長動能 */}
-            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-3 flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2.5">
+                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
                   🚀 成長動能 (Growth)
                 </span>
                 {getSignalBadge(metrics?.growthSignal)}
               </div>
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-2 text-xs sm:text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">
                     營收年增率 (YoY):
@@ -388,7 +388,7 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">產業成長週期:</span>
-                  <span className="font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
                     {metrics?.growthSignal === 'bullish'
                       ? '成長偏強'
                       : metrics?.growthSignal === 'bearish'
@@ -402,12 +402,12 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
 
           {/* DCF 估值模型摘要 */}
           {metrics?.dcfValue && (
-            <div className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-blue-50/40 dark:bg-blue-950/20 p-3 text-xs flex items-center justify-between">
+            <div className="rounded-xl border border-blue-200/60 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 p-3.5 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <span className="font-semibold text-blue-900 dark:text-blue-200">
                   🏛️ DCF 現金流折現內在價值估計：
                 </span>
-                <span className="font-mono font-bold text-blue-700 dark:text-blue-300">
+                <span className="font-mono font-bold text-blue-700 dark:text-blue-300 text-sm sm:text-base">
                   {metrics.dcfValue}
                 </span>
               </div>

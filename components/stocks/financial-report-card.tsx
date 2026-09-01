@@ -39,23 +39,23 @@ export function FinancialReportCard({
   const isPdf = filename.toLowerCase().endsWith('.pdf') || url?.toLowerCase().includes('.pdf')
 
   return (
-    <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/60 via-background to-blue-50/40 dark:from-indigo-950/20 dark:via-background dark:to-blue-950/10 p-4 shadow-sm space-y-3 text-slate-800 dark:text-slate-100">
+    <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/60 via-background to-blue-50/40 dark:from-indigo-950/20 dark:via-background dark:to-blue-950/10 p-5 sm:p-6 shadow-sm space-y-4 text-slate-800 dark:text-slate-100">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm text-lg">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm text-xl">
             {isPdf ? '📑' : '📊'}
           </div>
           <div className="min-w-0">
-            <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate">
+            <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 truncate">
               {displayTitle}
             </h4>
-            <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-0.5">
               <span>2MD AnyDoc 財報解析引擎</span>
               {pages !== undefined && pages > 0 && (
                 <>
                   <span>•</span>
-                  <span className="font-medium text-indigo-600 dark:text-indigo-400">共 {pages} 頁</span>
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">共 {pages} 頁</span>
                 </>
               )}
             </div>
@@ -66,23 +66,23 @@ export function FinancialReportCard({
           variant="outline"
           size="sm"
           onClick={handleCopy}
-          className="h-7 text-xs gap-1 shrink-0 bg-background"
+          className="h-8 text-xs sm:text-sm gap-1.5 shrink-0 bg-background px-3 font-semibold"
         >
-          {copied ? <IconCheck className="size-3 text-emerald-600" /> : <IconCopy className="size-3" />}
+          {copied ? <IconCheck className="size-3.5 text-emerald-600" /> : <IconCopy className="size-3.5" />}
           <span>{copied ? '已複製' : '複製內容'}</span>
         </Button>
       </div>
 
       {url && (
-        <div className="text-[11px] font-mono text-muted-foreground truncate bg-background/60 rounded px-2 py-1 border">
+        <div className="text-xs font-mono text-muted-foreground truncate bg-background/60 rounded-xl px-3 py-1.5 border">
           來源網址：{url}
         </div>
       )}
 
       {/* Snippet / Content Preview */}
       {contentSnippet && (
-        <div className="rounded-xl border bg-background/80 p-3 text-xs text-slate-700 dark:text-slate-300 font-mono leading-relaxed max-h-48 overflow-y-auto">
-          <pre className="whitespace-pre-wrap font-sans text-xs">
+        <div className="rounded-xl border bg-background/80 p-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-mono leading-relaxed max-h-56 overflow-y-auto">
+          <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm">
             {isExpanded ? fullContent || contentSnippet : contentSnippet}
           </pre>
         </div>
@@ -93,7 +93,7 @@ export function FinancialReportCard({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
+            className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-bold"
           >
             {isExpanded ? '收合完整文件 ▲' : '展開完整文件全文 ▼'}
           </button>
