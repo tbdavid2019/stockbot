@@ -70,8 +70,10 @@ import {
   type SignalTrackerData
 } from '@/components/stocks/signal-tracker-card'
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
+import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 import { buildTransmissionAnalysis } from '@/lib/deepear'
 import { fetchMacroFactorRegime } from '@/lib/quant/us-fddk'
+import { fetchInstitutionalFlow } from '@/lib/quant/institutional'
 import { toast } from 'sonner'
 import {
   extractExplicitTicker,
@@ -2568,6 +2570,67 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <MacroFactorRegimeCard data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          showInstitutionalFlow: {
+            description:
+              'Display Taiwan (TWSE/TPEX) Three Major Institutional Investors (Foreign Investors, Domestic Investment Trusts, Proprietary Dealers) daily net buy/sell in lots (張數), 5-day cumulative, streaks, and institutional signals.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .describe('The stock symbol or ticker (e.g. 2330, 2454, 6488, NVDA).')
+            }),
+            generate: async function* ({ symbol }) {
+              const formattedSymbol = formatStockSymbol(
+                resolvedTicker || symbol
+              )
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在載入 {formattedSymbol} 證交所/櫃買三大法人籌碼與買賣超…
+                  </div>
+                </BotCard>
+              )
+
+              const data = await fetchInstitutionalFlow(formattedSymbol)
+              const context = JSON.stringify({
+                symbol: data.symbol,
+                companyName: data.companyName,
+                market: data.market,
+                latestDate: data.latestDate,
+                todayTotalNet: data.today.totalNet,
+                todayForeignNet: data.today.foreignNet,
+                todayTrustNet: data.today.trustNet,
+                todayDealerNet: data.today.dealerNet,
+                fiveDayTotalNet: data.fiveDayCumulative.totalNet,
+                fiveDayForeignNet: data.fiveDayCumulative.foreignNet,
+                fiveDayTrustNet: data.fiveDayCumulative.trustNet,
+                signalTag: data.signals.tag,
+                signalDescription: data.signals.description
+              })
+
+              const caption = await generateCaption(
+                formattedSymbol,
+                [],
+                'showInstitutionalFlow',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'showInstitutionalFlow',
+                { symbol: formattedSymbol },
+                { symbol: formattedSymbol, data },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  <InstitutionalFlowCard symbol={formattedSymbol} data={data} />
                   <BotCaption content={caption} />
                 </BotCard>
               )

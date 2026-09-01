@@ -29,6 +29,7 @@ import { EtfPremiumCard } from '@/components/stocks/etf-premium-card'
 import { TransmissionChainCard } from '@/components/stocks/transmission-chain-card'
 import { SignalTrackerCard } from '@/components/stocks/signal-tracker-card'
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
+import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 
 export const CHAT_STORAGE_KEY = 'stockbot_chat_sessions_v1'
 export const CHAT_HISTORY_EVENT = 'stockbot-chat-history-updated'
@@ -425,6 +426,15 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
               case 'showMacroFactorRegime':
                 cardContent = result?.data ? (
                   <MacroFactorRegimeCard data={result.data} />
+                ) : null
+                break
+
+              case 'showInstitutionalFlow':
+                cardContent = result?.data ? (
+                  <InstitutionalFlowCard
+                    symbol={args.symbol || result?.symbol || '2330'}
+                    data={result.data}
+                  />
                 ) : null
                 break
 

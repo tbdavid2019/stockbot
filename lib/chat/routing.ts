@@ -19,6 +19,7 @@ export type DeterministicToolName =
   | 'showTransmissionChain'
   | 'trackInvestmentSignal'
   | 'showMacroFactorRegime'
+  | 'showInstitutionalFlow'
 
 const NON_TICKER_WORDS = new Set([
   'AI',
@@ -208,6 +209,13 @@ export function inferDeterministicTool(
     )
   ) {
     return 'analyzeStockLiquidity'
+  }
+  if (
+    /三大法人|法人買賣超|法人籌碼|外資買賣超|外資持股|投信連買|投信買賣超|投信持股|自營商|土洋對作|土洋同買|法人動向|籌碼面|籌碼分析|institutional\s*(?:flow|investor)/i.test(
+      content
+    )
+  ) {
+    return 'showInstitutionalFlow'
   }
 
   if (

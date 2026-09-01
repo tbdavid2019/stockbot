@@ -143,6 +143,14 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - **`voidful/tw_stocker` ([`lib/quant/tw-stocker.ts`](lib/quant/tw-stocker.ts))**：提供全市場台股與 ETF 歷史 OHLCV 靜態數據庫備援，當 Yahoo Finance 無法取得或缺漏時，自動自 `raw.githubusercontent.com/voidful/tw_stocker` 聚合還原日 K 線與均線計算。
 - **`showMacroFactorRegime` ➔ `<MacroFactorRegimeCard />` ([`lib/quant/us-fddk.ts`](lib/quant/us-fddk.ts))**：串接 `voidful/us_fddk` 20 年可稽核歷史凍結數據與 Fama-French 多因子模型，提供包含扣除 10/50 bps 滑價成本之跨資產 ETF（SPY, QQQ, 80/20 VUG/SHY, 60/40）策略回測對照與 LIVE Paper 實績。
 
+### 12. 🏛️ 台灣證交所/櫃買三大法人籌碼情報 (Three Major Institutional Investors)
+
+- **`showInstitutionalFlow` ➔ `<InstitutionalFlowCard />` ([`lib/quant/institutional.ts`](lib/quant/institutional.ts))**：
+  - 直接串接 **台灣證券交易所（TWSE T86 / MI_QFIIS）** 與 **證券櫃檯買賣中心（TPEX 3insti）** 官方開放數據。
+  - 精確解析：外資及陸資、投信、自營商（自行買賣與避險部位）今日買賣超**張數**、5 日累計買賣超、外資持股佔比 %、連買/連賣天數。
+  - 自動判讀籌碼訊號標籤：🟢 **土洋同買**、⚔️ **土洋對作**、🚀 **投信連買認養**、🔴 **三大法人同步賣超**。
+  - 支援近 5 日法人買賣超明細歷史表格，並以純 JSON 持久化至瀏覽器 `localStorage`。
+
 ---
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)
