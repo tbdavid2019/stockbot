@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import http from 'node:http'
 
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+
 // Vercel Serverless Function 執行時間設定 (允許最多 60 秒)
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
@@ -8,7 +10,7 @@ export const dynamic = 'force-dynamic'
 // API 設定 - 分開 host 和 port 避免解析問題
 const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || 'dns.glsoft.ai'
 const AI_HEDGE_FUND_PORT = process.env.AI_HEDGE_FUND_PORT || '6000'
-const AI_HEDGE_FUND_FALLBACK_HOST = '46.51.245.98'
+const AI_HEDGE_FUND_FALLBACK_HOST = process.env.AI_HEDGE_FUND_FALLBACK_HOST || ''
 
 // 預設核心分析師團隊 (涵蓋傳奇投資大師與全方位分析模型)
 const DEFAULT_ANALYSTS = [
@@ -98,11 +100,22 @@ function requestHedgeFundApi(
 // 查詢異步任務狀態
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const taskId = searchParams.get('taskId') || searchParams.get('task_id')
+    const ip = getClientIp(request)
+    const rateLimit = checkRateLimit(`task_status:${ip}`, { maxRequests: 60, intervalMs: 60000 })
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: '請求過於頻繁，請稍後再試。' },
+        { status: 429 }
+      )
+    }
 
-    if (!taskId) {
-      return NextResponse.json({ error: '缺少 taskId 參數' }, { status: 400 })
+    const searchParams = request.nextUrl.searchParams
+    const rawTaskId = searchParams.get('taskId') || searchParams.get('task_id') || ''
+    const taskId = rawTaskId.trim()
+
+    // 嚴格白名單檢驗 taskId，防止路徑遍歷與字串注入
+    if (!taskId || !/^[a-zA-Z0-9_-]{1,64}$/.test(taskId)) {
+      return NextResponse.json({ error: '無效或缺少 taskId 參數格式' }, { status: 400 })
     }
 
     const hostsToTry = [AI_HEDGE_FUND_HOST, AI_HEDGE_FUND_FALLBACK_HOST].filter(Boolean)
@@ -111,7 +124,14 @@ export async function GET(request: NextRequest) {
 
     for (const host of hostsToTry) {
       try {
-        taskData = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, `/api/task/${taskId}`, 'GET', null, 10000)
+        taskData = await requestHedgeFundApi(
+          host,
+          AI_HEDGE_FUND_PORT,
+          `/api/task/${encodeURIComponent(taskId)}`,
+          'GET',
+          null,
+          10000
+        )
         if (taskData) break
       } catch (err: any) {
         lastError = err
@@ -160,6 +180,15 @@ function normalizeTickerForBackend(sym: string): string {
 // 執行分析 (支援同步與異步任務模式)
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rateLimit = checkRateLimit(`stock_analysis:${ip}`, { maxRequests: 20, intervalMs: 60000 })
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: '分析請求過於頻繁，請稍候再試。' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const {
       tickers,
@@ -170,9 +199,9 @@ export async function POST(request: NextRequest) {
       async: isAsync = true
     } = body
 
-    if (!tickers) {
+    if (!tickers || typeof tickers !== 'string' || tickers.trim().length === 0 || tickers.length > 50) {
       return NextResponse.json(
-        { error: '缺少股票代碼 (tickers)' },
+        { error: '無效或缺少股票代碼 (tickers)' },
         { status: 400 }
       )
     }

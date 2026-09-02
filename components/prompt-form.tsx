@@ -138,7 +138,7 @@ export function PromptForm({
         </div>
       )
 
-      fullPromptPayload = `【使用者已上傳財報/文件 (${currentDoc.filename})，由 2MD AnyDoc 引擎萃取之全文】：\n${currentDoc.content}\n\n【使用者分析指令/提問】：\n${value || '請詳細解讀並深度分析這份財報/文件，包含關鍵財務數據、毛利率、自由現金流、營收成長趨勢、主要風險與大師投資評價。'}`
+      fullPromptPayload = `【使用者上傳附件文件 (${currentDoc.filename})】\n<uploaded_document filename="${encodeURIComponent(currentDoc.filename)}">\n${currentDoc.content}\n</uploaded_document>\n\n【使用者分析指令/提問】：\n${value || '請詳細解讀並深度分析這份財報/文件，包含關鍵財務數據、毛利率、自由現金流、營收成長趨勢、主要風險與大師投資評價。'}`
     } else {
       userDisplayNode = value
       fullPromptPayload = value

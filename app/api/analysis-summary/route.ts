@@ -1,6 +1,7 @@
 import { generateText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const maxDuration = 30
 export const dynamic = 'force-dynamic'
@@ -139,6 +140,15 @@ ${strongest
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request)
+    const rateLimit = checkRateLimit(`analysis_summary:${ip}`, { maxRequests: 25, intervalMs: 60000 })
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: '摘要請求過於頻繁，請稍後再試。' },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const symbol = String(body?.symbol || '')
       .trim()
@@ -146,9 +156,9 @@ export async function POST(request: NextRequest) {
     const analysis = body?.analysis
     const locale = String(body?.locale || 'zh-TW')
 
-    if (!symbol || !analysis) {
+    if (!symbol || symbol.length > 50 || !analysis || typeof analysis !== 'object') {
       return NextResponse.json(
-        { error: '缺少 symbol 或 analysis' },
+        { error: '無效或缺少 symbol / analysis 參數' },
         { status: 400 }
       )
     }
