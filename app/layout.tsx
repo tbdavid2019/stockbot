@@ -116,6 +116,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="zh-TW" suppressHydrationWarning>
       <head>
+        <link rel="describedby" href="/llms.txt" />
+        <link
+          rel="alternate"
+          type="text/markdown"
+          href="/llms-full.txt"
+          title="Full LLM Documentation"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

@@ -1,0 +1,287 @@
+# StockBot 2.0 Full Reference Documentation (llms-full.txt)
+
+> Comprehensive architectural, quantitative, and API reference manual for StockBot 2.0.
+
+## Table of Contents
+1. System Overview & Dual-Model Separation
+2. Institutional Flow Architecture (TWSE / TPEX)
+3. Quantitative Valuation Engine (DCF, CAPM, WACC, Sensitivity Matrix)
+4. Mark Minervini SEPA Momentum Engine
+5. Earnings Intelligence & Consensus Engine
+6. Black-Scholes Multi-Leg Options Simulator
+7. Market Microstructure & Square-Root Impact Engine
+8. ETF NAV Divergence & Dealer GEX Engine
+9. 13 Masters Hedge Fund Simulation (3-Batch Progressive Loading)
+10. DeepEar Causal Transmission Chains & AlphaEar Invalidation Triggers
+11. Multi-Factor Regime Asset Allocation (voidful/us_fddk)
+12. 2MD AnyDoc Financial Report Engine
+13. Generative UI React Component Mapping
+14. Complete Benchmark Test Suite & QA Prompts
+
+---
+
+<a id="institutional-flow"></a>
+## 1. Institutional Flow Architecture (TWSE / TPEX)
+
+### Source APIs
+- **TWSE T86**: `https://www.twse.com.tw/rwd/zh/fund/T86?date={YYYYMMDD}&selectType=ALLBUT0999&response=json`
+- **TWSE MI_QFIIS**: `https://www.twse.com.tw/rwd/zh/fund/MI_QFIIS` (Foreign ownership ratio %)
+- **TPEX 3insti**: `https://www.tpex.org.tw/web/stock/3invest/3itrade_hedge/3itrade_hedge_result.php`
+
+### Quant Signal Logic
+1. **🟢 土洋同買 (Foreign & Trust Co-Buying)**: Both Foreign Investors (`foreignNetLots > 0`) and Domestic Investment Trusts (`trustNetLots > 0`) have positive net buying volume today.
+2. **⚔️ 土洋對作 (Foreign vs Trust Divergence)**: Foreign and Trust net volumes have opposing signs with magnitude difference > 100 lots.
+3. **🚀 投信連買認養 (Trust Accumulation Streak)**: Domestic Investment Trust consecutive net buying streak $\ge 3$ trading days.
+4. **🔴 三大法人同步賣超 (Institutional Sell-off)**: Foreign, Trust, and Dealers all have net negative trading volume on the day.
+
+---
+
+<a id="valuation"></a>
+## 2. Quantitative Valuation Engine (DCF, CAPM, WACC, Sensitivity Matrix)
+
+### Free Cash Flow to Firm (FCFF) Model
+$$\text{FCFF} = \text{EBIT} \times (1 - t) + \text{D\&A} - \text{CapEx} - \Delta \text{NWC}$$
+
+### CAPM & Weighted Average Cost of Capital (WACC)
+$$\text{Cost of Equity } (K_e) = R_f + \beta \times \text{ERP}$$
+$$\text{WACC} = \left(\frac{E}{V} \times K_e\right) + \left(\frac{D}{V} \times K_d \times (1 - t)\right)$$
+- $R_f$: 10-Year US Treasury Yield (live dynamic or baseline 4.25%)
+- ERP: Equity Risk Premium (5.00%)
+- $\beta$: Rolling 5-year regression beta (defaults to sector benchmark when unlisted)
+
+### Expansion Phase Smoothing
+For high-capex growth companies with transient negative FCF (such as SpaceX SPCX during satellite mega-constellation deployment), the model applies a normalized steady-state 15% revenue margin to prevent negative equity value塌陷, ensuring $\text{Intrinsic Value} \ge 0$.
+
+### 5x5 Sensitivity Matrix
+Dynamic cross-tabulation of WACC (vertical axis, $\pm 1.0\%$ step) against Perpetual Terminal Growth Rate $g$ (horizontal axis, $1.5\% \sim 3.5\%$, step $0.5\%$).
+
+---
+
+<a id="sepa"></a>
+## 3. Mark Minervini SEPA Momentum Engine
+
+### 8-Point Trend Template Rules
+1. Current Stock Price $>$ 150-day and 200-day Simple Moving Average (SMA).
+2. 150-day SMA $>$ 200-day SMA.
+3. 200-day SMA is trending upward for at least 1 month (22 trading days).
+4. 50-day SMA $>$ 150-day SMA and 50-day SMA $>$ 200-day SMA.
+5. Current Stock Price $>$ 50-day SMA.
+6. Current Stock Price is at least 30% above its 52-week low (or $\ge 25\%$ for large caps).
+7. Current Stock Price is within 25% of its 52-week high.
+8. Relative Strength (RS) rating $\ge 70$ (Minervini optimal $\ge 80$).
+
+### Cycle Stages & Volatility Contraction Pattern (VCP)
+- **Stage 1**: Neglected Consolidation (Base building)
+- **Stage 2**: Advancing Phase (Institutional accumulation - optimal buy stage)
+- **Stage 3**: Top Area (Distribution)
+- **Stage 4**: Declining Phase (Capitulation)
+- **Risk Position Sizing**: $\text{Shares} = \frac{\text{Portfolio Equity} \times \text{Risk \%}}{|\text{Entry Price} - \text{Stop Loss}|}$
+
+---
+
+<a id="earnings"></a>
+## 4. Earnings Intelligence & Consensus Engine
+
+### Capabilities
+- Next Earnings Release Date detection with Time-of-Day tag (BMO: Before Market Open / AMC: After Market Close).
+- Consensus Wall Street EPS & Revenue forecast ranges (Low, Consensus Median, High).
+- Analyst 12-Month Target Price Spread (Low, Mean, High) with upside/downside percentage.
+- Historical 4-Quarter Beat/Miss Surprise Track Record table.
+
+---
+
+<a id="native-financials"></a>
+<a id="financial-metrics"></a>
+## 5. Native Financials & Metric Direct Answer
+
+### 4-Pillar Fundamental Matrix
+1. **Valuation Multiples**: Trailing P/E, Forward P/E, P/B, P/S, EV/EBITDA, EV/Sales.
+2. **Profitability Margins**: Gross Margin, Operating Margin, Net Profit Margin, ROE, ROA, ROIC.
+3. **Balance Sheet Health**: Current Ratio, Quick Ratio, Debt-to-Equity Ratio, Interest Coverage.
+4. **Growth Trajectory**: Revenue YoY/QoQ, Operating Income Growth, EPS Diluted YoY.
+
+### Deterministic Financial Metric Calculation
+Structured queries (e.g. EBITDA, 3-Year CAGR, FCF) are computed directly from balance sheet and income statement time-series with explicit reported currency, fiscal period, and accounting standard.
+
+---
+
+<a id="options-payoff"></a>
+## 6. Black-Scholes Multi-Leg Options Simulator
+
+### Analytical Closed-Form Greeks
+$$d_1 = \frac{\ln(S/K) + (r + \sigma^2/2)T}{\sigma\sqrt{T}}, \quad d_2 = d_1 - \sigma\sqrt{T}$$
+$$\Delta_{\text{Call}} = N(d_1), \quad \Delta_{\text{Put}} = N(d_1) - 1, \quad \Gamma = \frac{N'(d_1)}{S\sigma\sqrt{T}}$$
+$$\Theta_{\text{Call}} = -\frac{S N'(d_1)\sigma}{2\sqrt{T}} - r K e^{-rT}N(d_2), \quad \mathcal{V} = S\sqrt{T}N'(d_1)$$
+
+### Supported Strategies
+Iron Condor, Long/Short Straddle, Long/Short Strangle, Bull/Bear Vertical Spread, Butterfly, Calendar Spread, Covered Call, Cash-Secured Put.
+
+---
+
+<a id="liquidity"></a>
+## 7. Market Microstructure & Square-Root Impact Engine
+
+### Amihud Illiquidity Ratio
+$$\text{Amihud} = \frac{1}{D} \sum_{t=1}^D \frac{|R_t|}{\text{Volume}_t \times \text{Price}_t}$$
+
+### Square-Root Market Impact
+$$\text{Impact (bps)} = Y \times \sigma_{\text{daily}} \times \sqrt{\frac{Q}{V_{\text{daily}}}} \times 10{,}000$$
+- $Q$: Order size in shares
+- $V_{\text{daily}}$: Average daily volume
+- $\sigma_{\text{daily}}$: Daily price volatility ($\approx \frac{\text{IV}}{\sqrt{252}}$)
+- $Y$: Microstructure coefficient ($\approx 0.5 \sim 0.7$)
+
+---
+
+<a id="etf-premium"></a>
+## 8. ETF NAV Divergence & Dealer GEX Engine
+
+### Metrics
+- **NAV Divergence %**: $\frac{\text{Market Price} - \text{iNAV}}{\text{iNAV}} \times 100\%$
+- **Dealer Gamma Exposure (GEX)**: Aggregated dollar gamma per 1% underlying move ($+/-\$M/\%$).
+- **Gamma Regime**: Positive Gamma (Volatility dampening / mean-reverting) vs Negative Gamma (Volatility amplifying / trending).
+
+---
+
+<a id="stock-analysis"></a>
+## 9. 13 Masters Hedge Fund Simulation (3-Batch Progressive Loading)
+
+### Batch 1: Core Value & Growth Titans (Fast Response: 18-24s)
+- **Warren Buffett**: Economic moat, owner earnings, ROE $> 15\%$, rational management.
+- **Ben Graham**: Net-Net value, margin of safety, liquidation value, P/E $< 15$.
+- **Charlie Munger**: Quality businesses, competitive advantage, mental models.
+- **Cathie Wood**: Disruptive innovation, exponential TAM growth, 5-year multi-bagger potential.
+- **Michael Burry**: Hidden balance sheet liabilities, overvaluation risks, macro imbalances.
+
+### Batch 2: Sentiment, Technical & Momentum (Background: ~21s)
+- **Technical Analyst**: Support/resistance, moving averages, RSI/MACD divergence.
+- **Sentiment Analyst**: Social sentiment, option put/call skew, insider activity.
+- **Nancy Pelosi Tracker**: Congressional disclosures, policy tailwinds, regulatory catalysts.
+
+### Batch 3: Valuation, Quality & Growth Specialists (Background: ~26s)
+- **Peter Lynch**: PEG ratio $< 1.0$, earnings story, categorized business types.
+- **Phil Fisher**: 15 scuttlebutt points, R&D efficiency, superior sales organization.
+- **Bill Ackman**: High-quality cash-flow generative franchises, activist catalysts.
+- **Fundamentals Analyst**: Balance sheet forensics, Dupont analysis, cash conversion cycle.
+- **Valuation Analyst**: Multi-scenario DCF and relative multiple bounds.
+
+---
+
+<a id="transmission-chain"></a>
+<a id="signal-tracker"></a>
+## 10. DeepEar Causal Transmission Chains & AlphaEar Invalidation Triggers
+
+### 3-Tier Causal Node Logic
+- **Tier 1 (Macro / Catalyst)**: Interest rate cuts, CPI prints, geopolitical tensions, trade restrictions.
+- **Tier 2 (Industry / Supply Chain)**: Semiconductor equipment demand, memory pricing cycles, freight rates.
+- **Tier 3 (Corporate Cash Flows)**: Revenue realization, margin expansion, CapEx pass-through.
+
+### 4-State Investment Hypothesis
+- 🟢 **Strengthened**: Incoming macro or earnings data exceeds thesis assumptions.
+- 🟡 **Weakened**: Minor headwinds or guidance reductions within tolerance.
+- 🔴 **Falsified**: Clear breach of predefined invalidation triggers (e.g. gross margin $< 50\%$).
+- ⚪ **Unchanged**: Steady state.
+
+---
+
+<a id="macro-regime"></a>
+## 11. Multi-Factor Regime Asset Allocation (voidful/us_fddk)
+
+### Verified 20-Year Benchmark Strategies (10/50 bps slippage deducted)
+1. **100% SPY (S&P 500)**: Market beta baseline.
+2. **100% QQQ (Nasdaq 100)**: Large-cap tech growth.
+3. **80/20 Growth Gatekeeper (VUG / SHY)**: Dual-momentum trend-following with cash buffer.
+4. **60/40 Classic Balanced (VTI / BND)**: Traditional equity/bond diversification.
+
+---
+
+<a id="financial-report"></a>
+<a id="web-search"></a>
+## 12. 2MD AnyDoc Financial Report & Live Intelligence
+
+- Multi-format document parser supporting PDF, Word (.docx), Excel (.xlsx/.csv), PPT, TXT up to 25MB.
+- Automated extraction of Income Statement, Balance Sheet, Cash Flow Statement, and Management Guidance.
+- Multi-query parallel web reader for live corporate press releases and earnings transcripts.
+
+---
+
+## 13. Generative UI React Component Mapping
+
+| Card Component | Server Action Tool | Description |
+| :--- | :--- | :--- |
+| `<InstitutionalFlowCard />` | `showInstitutionalFlow` | TWSE/TPEX institutional buy/sell lots & streak |
+| `<CompanyValuationCard />` | `calculateCompanyValuation` | 5Y FCFF DCF & 5x5 WACC sensitivity matrix |
+| `<SepaStrategyCard />` | `analyzeSepaStrategy` | Minervini 8-template, VCP, and position sizing |
+| `<EarningsBriefingCard />` | `previewEarnings` | Next earnings date, consensus EPS, and surprises |
+| `<NativeFinancialsCard />` | `showStockFinancials` | 4-pillar fundamental matrix & ratio analysis |
+| `<FinancialMetricCard />` | `answerFinancialMetric` | Specific metric direct answer with verified sources |
+| `<OptionsPayoffCard />` | `simulateOptionsPayoff` | Black-Scholes multi-leg option payoff simulator |
+| `<StockLiquidityCard />` | `analyzeStockLiquidity` | Amihud measure, float turnover, & market impact |
+| `<EtfPremiumCard />` | `analyzeEtfPremium` | ETF price vs NAV divergence % & Dealer GEX |
+| `<StockAnalysis />` | `analyzeStockWithAI` | 13 Masters hedge fund progressive research |
+| `<TransmissionChainCard />` | `showTransmissionChain` | DeepEar 3-tier causal propagation engine |
+| `<SignalTrackerCard />` | `trackInvestmentSignal` | AlphaEar 4-state hypothesis invalidation tracker |
+| `<MacroFactorRegimeCard />` | `showMacroFactorRegime` | 20-year ETF asset allocation backtest (us_fddk) |
+| `<FinancialReportCard />` | `readFinancialReport` | 2MD AnyDoc uploaded/online document analysis |
+| `<WebSearchResults />` | `searchFinancialWeb` | Real-time live web research & news citations |
+
+---
+
+## 14. Benchmark Prompt Dataset
+
+```text
+2330 三大法人買賣超
+台積電法人籌碼動向與外資持股佔比
+聯發科 2454 投信連買幾天？自營商避險動態
+長榮 2603 是土洋同買還是土洋對作？
+台達電 2308 法人買賣超與三大法人籌碼分析
+請計算 NVDA 的合理價與 DCF 估值模型
+SpaceX (SPCX) 合理價與 DCF 估值模型
+AAPL 內在價值與 WACC 敏感度分析
+TSLA fair value and valuation analysis
+台積電 2330 合理價是多少？請用 DCF 與同業倍數計算
+檢查 NVDA 是否符合 SEPA 趨勢範本？
+SpaceX (SPCX) SEPA 策略分析與買點檢查
+該買 AMD 嗎？幫我做 Stage 2 階段與 VCP 分析
+TSLA SEPA 策略分析與停損部位計算
+檢查台積電 2330 的 SEPA 趨勢模板與均線多頭排列
+NVDA 財報前瞻與分析師共識
+AAPL earnings preview，市場預期 EPS 是多少？
+MSFT 財報預測與過去四季 Beat/Miss 紀錄
+台積電 2330 下次法說會時間與法人共識
+台積電 2330 核心財務報表與獲利能力指標
+NVDA 最新一季 EBITDA 是多少？
+台積電近三年營收 CAGR 複合成長率
+AAPL 最新自由現金流 (FCF) 與淨利率
+2330 最新財務數據與估值倍數
+模擬 SPY 選擇權蝶式價差損益曲線
+NVDA 選擇權鐵鷹策略 (Iron Condor) 損益圖
+TSLA 掩護性買權 (Covered Call) 期權損益模擬
+模擬 QQQ 買權跨式 (Long Straddle) 損益曲線
+AAPL 流動性分析與市場衝擊評估
+如果我要交易 10 萬股 TSLA，預估滑價和衝擊成本是多少？
+NVDA Amihud 缺乏流動性指標與換手率
+2330 股票流動性與大單 5 萬股滑價分析
+IBIT ETF 溢折價與淨值 (NAV) 偏離程度
+BITO 現價有溢價嗎？
+TLT ETF NAV premium discount
+0050 ETF 溢折價與套利空間分析
+13 位傳奇投資大師分析 NVDA
+台積電 2330 值得買嗎？請大師團隊進行研調
+分析 SpaceX (SPCX) 的傳奇大師多維度投資報告
+巴菲特與女股神如何看待特斯拉 TSLA？
+分析美國降息循環對台積電 2330 的產業邏輯傳導鏈
+分析中東局勢升溫對航運股與油價的連鎖反應傳導分析
+黃金跳水對避險邏輯與原物料鏈的傳導鏈分析
+液冷伺服器爆發對散熱與光模組供應鏈的傳導鏈
+追蹤 NVDA 投資訊號，目前 AI 算力假說是否被證偽？
+幫我做 2330 台積電的投資假說論點驗證與訊號追蹤
+驗證 TSLA 特斯拉自動駕駛與 Robotaxi 論點是否出現證偽訊號？
+美股 20 年多因子風格輪動與資產配置分析
+現在美股 ETF 該怎麼配？幫我做 80/20 成長守門員與雙動能策略分析
+美股 Fama-French 多因子曝險與資產配置推薦
+比較 SPY、QQQ 與 60/40 股債平衡的 20 年實證表現與最大回撤
+請幫我為 TSMC (2330) 寫一份深度的 2026 Q3 投資研究報告並發布到 Wiki
+幫我寫一份 NVDA 競爭護城河與估值分析報告發布到 Wiki
+寫一份 SpaceX (SPCX) NASDAQ 掛牌上市與星鏈估值報告發布到 Wiki
+```

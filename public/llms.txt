@@ -1,0 +1,43 @@
+# StockBot 2.0
+
+> StockBot 2.0 is an institutional-grade AI financial terminal and agentic intelligence platform powered by Next.js, Vercel AI SDK Generative UI, TradingView widgets, 2MD financial intelligence, TWSE/TPEX institutional chip data, and quantitative finance engines (DCF, Minervini SEPA, Black-Scholes, Amihud Microstructure, and 13 Legendary Investor models).
+
+StockBot 2.0 is optimized for AI agents, LLMs, and quant analysts. It provides deterministic intent routing, zero-hallucination data verification, pure TypeScript quantitative models, and 15 native React financial visualization cards that render directly above text captions. All chat sessions, tool results, and charts persist safely in client-side localStorage without database dependencies.
+
+Key System Directives:
+- **Card Positioning**: All charts, valuation cards, and reports render ABOVE accompanying text summaries (refer with "如上方所示", never "如下所示").
+- **SpaceX Listing Reality**: SpaceX (Space Exploration Technologies Corp.) listed on NASDAQ on June 12, 2026 under ticker `SPCX` (`NASDAQ:SPCX`). Aliases `SpaceX`, `SPACEX`, `SPCX`, `太空探索` map to `NASDAQ:SPCX`.
+- **Institutional Chip Flow**: Direct integration with Taiwan Stock Exchange (TWSE T86/MI_QFIIS) and TPEX for foreign, trust, and dealer net lot volumes and buy/sell streak signals.
+- **Dual-Model Separation**: Dedicated `TOOL_MODEL` in streamUI for function calling + `MODEL` for evidence synthesis and contextual follow-up prompts.
+
+## Core Financial Tools & Generative UI Cards
+
+- [Institutional Flow Card](https://bot.david888.com/llms-full.txt#institutional-flow): TWSE and TPEX official chip data parsing foreign investors, investment trusts, and dealers net trading volume in lots (張), foreign ownership %, consecutive streak days, and 4 chip signals (土洋同買, 土洋對作, 投信連買認養, 三大法人同步賣超).
+- [Company Valuation Card](https://bot.david888.com/llms-full.txt#valuation): 5-year FCFF discounted cash flow (DCF), CAPM/WACC discount rate, peer multiples (P/E, EV/EBITDA, EV/Sales) triangulation, and a dynamic 5x5 WACC x Terminal Growth sensitivity matrix.
+- [SEPA Momentum Strategy Card](https://bot.david888.com/llms-full.txt#sepa): Mark Minervini 8-point Trend Template inspection, Stage 1-4 cycle classification, Volatility Contraction Pattern (VCP) detection, +5% buy zone limits, and account-risk-based position sizing.
+- [Earnings Briefing Card](https://bot.david888.com/llms-full.txt#earnings): Upcoming earnings release date (pre-market/post-market), Wall Street consensus EPS and revenue ranges, analyst price target spread, and past 4 quarters beat/miss surprise history.
+- [Native Financials Card](https://bot.david888.com/llms-full.txt#native-financials): 4-pillar fundamental matrix covering Valuation (P/E, P/B, P/S), Profitability (ROE, Net Margin, Operating Margin), Financial Health (Current Ratio, Debt/Equity), and Growth (YoY revenue & EPS) with DCF summary.
+- [Financial Metric Direct Answer](https://bot.david888.com/llms-full.txt#financial-metrics): Deterministic calculation of specific financial metrics (EBITDA, FCF, CAGR, TTM) from structured fundamental series with official source verification.
+- [Options Payoff Simulator](https://bot.david888.com/llms-full.txt#options-payoff): Black-Scholes pricing simulator for multi-leg option strategies (Iron Condor, Butterfly, Straddle, Covered Call) with interactive sliders for Spot, Strike, DTE, and IV.
+- [Stock Liquidity & Impact Card](https://bot.david888.com/llms-full.txt#liquidity): Market microstructure diagnostics including Amihud illiquidity measure, annualized float turnover %, square-root market impact curve, and estimated slippage in basis points.
+- [ETF Premium & GEX Card](https://bot.david888.com/llms-full.txt#etf-premium): Real-time ETF price vs NAV divergence (Premium/Discount %), Dealer Gamma Exposure (GEX), and peer median benchmark comparison.
+- [13 Masters Investment Analysis](https://bot.david888.com/llms-full.txt#stock-analysis): Multi-analyst hedge fund committee featuring 13 legendary investor personas (Buffett, Graham, Munger, Wood, Burry, etc.) with 3-batch progressive streaming and round table consensus.
+- [Transmission Chain Card](https://bot.david888.com/llms-full.txt#transmission-chain): DeepEar 3-tier causal propagation engine (Tier-1 Macro -> Tier-2 Industry Supply Chain -> Tier-3 Corporate Cash Flow) with impact sentiment and falsification criteria.
+- [Signal Tracker Card](https://bot.david888.com/llms-full.txt#signal-tracker): AlphaEar 4-state investment thesis tracking (Strengthened, Weakened, Falsified, Unchanged) with hard invalidation triggers and position adjustment guidelines.
+- [Macro Factor Regime Card](https://bot.david888.com/llms-full.txt#macro-regime): 20-year multi-factor asset allocation backtest (SPY, QQQ, 80/20 VUG/SHY, 60/40) backed by `voidful/us_fddk` frozen data deducting 10/50 bps slippage.
+- [AnyDoc Financial Report Parser](https://bot.david888.com/llms-full.txt#financial-report): 2MD AnyDoc parsing for uploaded or online PDF, Excel, Word 10-K/10-Q documents up to 25MB, extracting financial statements and key ratio drivers.
+- [Web Search Results](https://bot.david888.com/llms-full.txt#web-search): 2MD live web search aggregator retrieving real-time breaking news, corporate actions, and supply chain intelligence.
+
+## Documentation & Specifications
+
+- [StockBot Benchmark Test Suite](https://wiki.david888.com/share/rzye4g): Full 50+ benchmark prompt suite and QA test cases across all financial tools.
+- [Full LLM Documentation (llms-full.txt)](https://bot.david888.com/llms-full.txt): Complete in-depth architectural and quantitative reference manual for LLMs.
+- [Project Repository](https://github.com/tbdavid2019/stockbot): Source code, TypeScript implementations, and deployment guidelines.
+- [AI Hedge Fund API](http://dns.glsoft.ai:6000): Backend multi-persona investment simulation service.
+- [David888 Wiki Publisher](https://wiki.david888.com): Public Markdown publishing and presentation deck export API.
+
+## Optional
+
+- [TradingView Interactive Charts](https://bot.david888.com): Interactive candlestick charts with volume, moving averages, and technical indicators.
+- [Market Heatmap](https://bot.david888.com): Sector and market performance heatmaps for US, Europe, Asia, and Taiwan (AllTW / TW50).
+- [Stock Screener](https://bot.david888.com): Fundamental and technical screener for US and global equities.

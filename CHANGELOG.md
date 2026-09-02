@@ -4,6 +4,21 @@
 
 ---
 
+## [2026-09-02] - 整合 llmstxt.org 開放標準協定 (/llms.txt 與 /llms-full.txt)
+
+### ✨ 新增 (Added)
+
+- **🤖 支援 llmstxt.org 機器可讀協定 ([`public/llms.txt`](public/llms.txt))**：
+  - 依照 [llmstxt.org v2 規範](https://llmstxt.org/) 實作網站根目錄 `/llms.txt` 與 `/llms-full.txt`。
+  - 為 Perplexity、ChatGPT、Claude、Cursor、Copilot 及自主 AI 智能體提供無 HTML 雜訊、結構化、可直接注入 Prompt Context 的機器可讀文件。
+  - 完整條列 15 套原生 Generative UI 金融圖卡規格、確定性分流邏輯、量化金融模型（DCF、SEPA、Black-Scholes、Amihud、GEX、13位大師等）與即時連線規範。
+- **📚 完整架構參考手冊 ([`public/llms-full.txt`](public/llms-full.txt))**：
+  - 收錄全系統數學公式（FCFF、WACC、Minervini 8 條件、Greeks、平方根市場衝擊）、籌碼訊號判讀邏輯、API 數據規格與 50+ 題實戰 Benchmark 題庫。
+- **🌐 HTML Head 自動發現標籤**：
+  - 在 [`app/layout.tsx`](app/layout.tsx) `<head>` 中注入 `<link rel="describedby" href="/llms.txt" />` 與 `<link rel="alternate" type="text/markdown" href="/llms-full.txt" />`，確保各類 AI 爬蟲自動感知並索引。
+
+---
+
 ## [2026-09-01] - 台灣三大法人籌碼情報直連、全站 15 張圖卡字體視覺重構與 SpaceX 上市事實對齊
 
 ### ✨ 新增 (Added)

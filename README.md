@@ -191,8 +191,17 @@ pnpm dev
 
 Your app should now be running on [localhost:3000](http://localhost:3000/).
 
+## 🤖 LLMs.txt & AI Agent 協定支援 (llmstxt.org)
+
+StockBot 2.0 原生支援由 Jeremy Howard 發起之 [llmstxt.org](https://llmstxt.org/) 開放標準協定，為外部 LLM 爬蟲、Perplexity、Cursor、ChatGPT、Claude 及各類 AI Agent 提供結構化、無廢話之機器可讀知識索引：
+
+- **標準索引**：[`/llms.txt`](public/llms.txt)（符合 llms.txt v2 規範，包含 15 套卡片索引、核心架構與 Benchmark 題庫鏈接）
+- **完整參考手冊**：[`/llms-full.txt`](public/llms-full.txt)（包含所有量化公式、API Schema、演算法細節與純文字提示詞集）
+- **自動發現機制**：HTML `<head>` 內建 `<link rel="describedby" href="/llms.txt" />` 與 `<link rel="alternate" type="text/markdown" href="/llms-full.txt" />`，支援全網 AI 智能體自動識別與檢索。
+
 ## Credits
 
 This app was originally developed by [Benjamin Klieger](https://x.com/benjaminklieger) at [Groq](https://groq.com) and uses the AI Chatbot template created by Vercel: [Github Repository](https://github.com/vercel/ai-chatbot). Taiwan stock market support was added by [tbdavid2019](https://github.com/tbdavid2019).
 
 技術提供：[david888.com](https://david888.com)
+
