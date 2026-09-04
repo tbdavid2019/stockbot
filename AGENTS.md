@@ -151,7 +151,19 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 自動判讀籌碼訊號標籤：🟢 **土洋同買**、⚔️ **土洋對作**、🚀 **投信連買認養**、🔴 **三大法人同步賣超**。
   - 支援近 5 日法人買賣超明細歷史表格，並以純 JSON 持久化至瀏覽器 `localStorage`。
 
+### 13. 📅 Investing.com 全球總經日曆與 2MD 防驚群 (Economic Calendar & Singleflight Resilience)
+
+- **`showEconomicCalendar` ➔ `<EconomicCalendarCard />` ([`lib/quant/investing-macro.ts`](lib/quant/investing-macro.ts))**：
+  - 透過 2MD Fast Reader 即時抓取 `www.investing.com/`，萃取包含倒數時間、國家、事件等級、預期值 (Cons.)、前值 (Prev.)、實際值 (Act.) 之重大經濟日曆。
+  - 同時統整美股三大期指盤前走勢、VIX 恐慌指數、10Y/2Y 美債殖利率曲線、黃金/原油期貨與美元指數 (DXY)，支援即時 Risk-On / Risk-Off 風向評估。
+- **2MD 引擎防驚群（Thundering Herd）與熔斷降級防護 ([`lib/2md.ts`](lib/2md.ts))**：
+  - **Singleflight 請求合併**：以 `inFlightSearch` 與 `inFlightRead` 合併並發重複請求，避免多請求同時觸發外部爬蟲。
+  - **記憶體 TTL 快取**：搜尋 60 秒、網頁解析 180 秒快取，大幅減輕後端負載。
+  - **端點熔斷機制 (Circuit Breaker)**：連續 2 次失敗自動進入 30 秒冷卻期，配合隨機 Micro-jitter，徹底防止逾時雪崩湧入最後一個 Fallback。
+  - **合理逾時配置**：Primary 搜尋 3.5 秒、網頁解析 7.5 秒，避免過度激進的 abort 誤殺造成級聯容錯。
+
 ---
+
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)
 

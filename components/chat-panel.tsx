@@ -29,6 +29,9 @@ interface ExampleMessage {
 }
 
 const promptLabelsZh = [
+  '📅 今晚重大總經與即時日曆',
+  '🌐 盤前美股期指與跨資產風向',
+  '⚡ 非農就業與央行政策時程',
   '💡 今天想先看哪個市場？',
   '📈 挑一張卡，直接問！',
   '🔥 盤前先掃一輪？',
@@ -37,6 +40,9 @@ const promptLabelsZh = [
 ]
 
 const promptLabelsEn = [
+  '📅 Global Economic Calendar Tonight',
+  '🌐 US Pre-Market Futures & Macro Radar',
+  '⚡ NFP & Central Bank Decisions',
   '💡 What should we check first?',
   '📈 Pick a card and ask away!',
   '🔥 Ready for a market scan?',
@@ -45,12 +51,16 @@ const promptLabelsEn = [
 ]
 
 const promptModesZh = [
+  '📅 總經日曆',
+  '🌐 盤前風向',
   '🎲 隨機靈感',
   '📊 市場雷達',
   '🧭 深度拆解',
   '⚡ 快問快答'
 ]
 const promptModesEn = [
+  '📅 Macro Calendar',
+  '🌐 Pre-market Scan',
   '🎲 Random picks',
   '📊 Market radar',
   '🧭 Deep dive',
@@ -59,23 +69,41 @@ const promptModesEn = [
 
 function shufflePrompts(
   prompts: ExampleMessage[],
-  previousPrompts: ExampleMessage[] = []
+  previousPrompts: ExampleMessage[] = [],
+  featured: ExampleMessage[] = []
 ) {
+  // Select up to 2 distinct featured macro prompts
+  const featuredBatch: ExampleMessage[] = []
+  if (featured.length > 0) {
+    const shuffledFeatured = [...featured].sort(() => 0.5 - Math.random())
+    for (const item of shuffledFeatured) {
+      if (!featuredBatch.some(f => f.message === item.message)) {
+        featuredBatch.push(item)
+      }
+      if (featuredBatch.length >= 2) break
+    }
+  }
+
+  const pool = prompts.filter(
+    p => !featuredBatch.some(f => f.message === p.message)
+  )
+
   const makeBatch = () => {
-    const shuffled = [...prompts]
+    const shuffled = [...pool]
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
       const swapIndex = Math.floor(Math.random() * (index + 1))
       const currentPrompt = shuffled[index]
       shuffled[index] = shuffled[swapIndex]
       shuffled[swapIndex] = currentPrompt
     }
-    return shuffled.slice(0, 6)
+    const needed = Math.max(0, 6 - featuredBatch.length)
+    return [...featuredBatch, ...shuffled.slice(0, needed)]
   }
 
   let nextBatch = makeBatch()
   let attempts = 0
   while (
-    prompts.length > 6 &&
+    pool.length > 6 &&
     previousPrompts.length > 0 &&
     nextBatch.every(prompt =>
       previousPrompts.some(previous => previous.message === prompt.message)
@@ -105,6 +133,8 @@ export function ChatPanel({
 
   const [cachedPromptsZh, setCachedPromptsZh] = useState<ExampleMessage[]>([])
   const [cachedPromptsEn, setCachedPromptsEn] = useState<ExampleMessage[]>([])
+  const [featuredZh, setFeaturedZh] = useState<ExampleMessage[]>([])
+  const [featuredEn, setFeaturedEn] = useState<ExampleMessage[]>([])
 
   const [visibleExamples, setVisibleExamples] = useState<ExampleMessage[]>([])
   const [promptLabelIndex, setPromptLabelIndex] = useState(0)
@@ -124,6 +154,12 @@ export function ChatPanel({
             if (data.promptsEn && data.promptsEn.length > 0) {
               setCachedPromptsEn(data.promptsEn)
             }
+            if (data.featuredPromptsZh && data.featuredPromptsZh.length > 0) {
+              setFeaturedZh(data.featuredPromptsZh)
+            }
+            if (data.featuredPromptsEn && data.featuredPromptsEn.length > 0) {
+              setFeaturedEn(data.featuredPromptsEn)
+            }
             setIsLoadingPrompts(false)
           }
         } else if (isMounted) {
@@ -141,13 +177,14 @@ export function ChatPanel({
   }, [setCachedPromptsEn, setCachedPromptsZh])
 
   const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
+  const currentFeatured = lang === 'zh' ? featuredZh : featuredEn
   const promptLabels = lang === 'zh' ? promptLabelsZh : promptLabelsEn
   const promptModes = lang === 'zh' ? promptModesZh : promptModesEn
 
   useEffect(() => {
-    setVisibleExamples(shufflePrompts(currentExamples))
+    setVisibleExamples(shufflePrompts(currentExamples, [], currentFeatured))
     setPromptLabelIndex(Math.floor(Math.random() * promptLabels.length))
-  }, [currentExamples, promptLabels.length])
+  }, [currentExamples, currentFeatured, promptLabels.length])
 
   const handleMarketQuoteSelect = useCallback(
     async (quote: MarketQuote) => {
@@ -210,7 +247,7 @@ export function ChatPanel({
                 className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 onClick={() => {
                   setVisibleExamples(
-                    shufflePrompts(currentExamples, visibleExamples)
+                    shufflePrompts(currentExamples, visibleExamples, currentFeatured)
                   )
                   setPromptLabelIndex(
                     Math.floor(Math.random() * promptLabels.length)
@@ -224,42 +261,56 @@ export function ChatPanel({
             {isLoadingPrompts ? (
               <div className="rounded-lg border border-dashed bg-background/50 px-3 py-4 text-sm text-muted-foreground">
                 {lang === 'zh'
-                  ? '正在載入最新市場標的…'
-                  : 'Loading the latest market symbols…'}
+                  ? '正在透過 2MD 萃取最新總經與市場標的…'
+                  : 'Loading live macro & market symbols…'}
               </div>
             ) : visibleExamples.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
-                {visibleExamples.map((example, index) => (
-                  <div
-                    key={`${lang}-${example.heading}-${index}`}
-                    className="cursor-pointer rounded-lg border bg-white p-2.5 shadow-2xs transition-all hover:border-blue-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900 sm:p-3.5"
-                    onClick={async () => {
-                      setMessages(currentMessages => [
-                        ...currentMessages,
-                        {
-                          id: nanoid(),
-                          display: <UserMessage>{example.message}</UserMessage>
-                        }
-                      ])
+                {visibleExamples.map((example, index) => {
+                  const isMacro = /總經|期指|非農|日曆|大宗商品|宏觀|Macro|NFP|Futures/i.test(
+                    `${example.heading} ${example.message}`
+                  )
+                  return (
+                    <div
+                      key={`${lang}-${example.heading}-${index}`}
+                      className={`cursor-pointer rounded-lg border p-2.5 shadow-2xs transition-all sm:p-3.5 ${
+                        isMacro
+                          ? 'border-sky-300/80 bg-sky-50/40 hover:border-sky-400 hover:bg-sky-50/80 dark:border-sky-800/70 dark:bg-sky-950/30 dark:hover:border-sky-600'
+                          : 'border-slate-200/90 bg-white hover:border-blue-300 hover:bg-zinc-50 dark:border-slate-800 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900'
+                      }`}
+                      onClick={async () => {
+                        setMessages(currentMessages => [
+                          ...currentMessages,
+                          {
+                            id: nanoid(),
+                            display: <UserMessage>{example.message}</UserMessage>
+                          }
+                        ])
 
-                      const responseMessage = await submitUserMessage(
-                        example.message,
-                        apiKey
-                      )
-                      setMessages(currentMessages => [
-                        ...currentMessages,
-                        responseMessage
-                      ])
-                    }}
-                  >
-                    <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base">
-                      {example.heading}
+                        const responseMessage = await submitUserMessage(
+                          example.message,
+                          apiKey
+                        )
+                        setMessages(currentMessages => [
+                          ...currentMessages,
+                          responseMessage
+                        ])
+                      }}
+                    >
+                      <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base flex items-center gap-1.5">
+                        {isMacro && (
+                          <span className="shrink-0 inline-flex items-center rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                            ⚡ 即時總經
+                          </span>
+                        )}
+                        <span className="truncate">{example.heading}</span>
+                      </div>
+                      <div className="mt-0.5 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
+                        {example.subheading}
+                      </div>
                     </div>
-                    <div className="mt-0.5 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
-                      {example.subheading}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <div className="rounded-lg border border-dashed bg-background/50 px-3 py-4 text-sm text-muted-foreground">

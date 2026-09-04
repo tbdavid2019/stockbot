@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server'
+import {
+  fetchGlobalMacroDashboard,
+  type GlobalMacroDashboardResult
+} from '@/lib/quant/investing-macro'
 
 interface StockItem {
   symbol: string
@@ -36,12 +40,47 @@ let cachedData: {
   timestamp: number
   usStocks: StockItem[]
   twStocks: StockItem[]
+  featuredPromptsZh: ExamplePrompt[]
+  featuredPromptsEn: ExamplePrompt[]
   promptsZh: ExamplePrompt[]
   promptsEn: ExamplePrompt[]
 } | null = null
 
-const CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const CACHE_TTL_MS = 3 * 60 * 1000 // 3 minutes
 const UPSTREAM_TIMEOUT_MS = 3500
+
+let isWarmerRunning = false
+function ensureBackgroundWarmer() {
+  if (isWarmerRunning) return
+  isWarmerRunning = true
+
+  const timer = setInterval(async () => {
+    try {
+      const macro = await fetchGlobalMacroDashboard()
+      if (macro && cachedData) {
+        const { macroPromptsZh, macroPromptsEn } = buildMacroPrompts(macro)
+        cachedData.featuredPromptsZh = macroPromptsZh
+        cachedData.featuredPromptsEn = macroPromptsEn
+        cachedData.promptsZh = [
+          ...macroPromptsZh,
+          ...cachedData.promptsZh.filter(
+            p => !macroPromptsZh.some(m => m.message === p.message)
+          )
+        ]
+        cachedData.promptsEn = [
+          ...macroPromptsEn,
+          ...cachedData.promptsEn.filter(
+            p => !macroPromptsEn.some(m => m.message === p.message)
+          )
+        ]
+        cachedData.timestamp = Date.now()
+      }
+    } catch (err) {
+      console.warn('[dynamic-prompts warmer] failed:', err)
+    }
+  }, 180000) // every 3 minutes
+  if (timer.unref) timer.unref()
+}
 
 function parseStocks(content: string): {
   sp500: StockItem[]
@@ -197,10 +236,89 @@ function mergeCurrentPrices(
   }))
 }
 
+function buildMacroPrompts(macroData: GlobalMacroDashboardResult | null): {
+  macroPromptsZh: ExamplePrompt[]
+  macroPromptsEn: ExamplePrompt[]
+} {
+  const events = macroData?.economicEvents || []
+  const futures = macroData?.indicesFutures || []
+  const yields = macroData?.bondYields || []
+  const commodities = macroData?.commodities || []
+  const sentiment = macroData?.sentimentSummary
+
+  const upcomingEvent = events.find(e => e.status === 'upcoming')
+  const spFuture = futures.find(f => f.name.includes('S&P 500'))
+  const vixFuture = futures.find(f => f.name.includes('VIX'))
+  const tenYear = yields.find(y => y.name.includes('10 年期') || y.name.includes('10Y'))
+  const gold = commodities.find(c => c.name.includes('Gold') || c.name.includes('黃金'))
+  const oil = commodities.find(c => c.name.includes('Crude Oil') || c.name.includes('原油'))
+
+  const macroPromptsZh: ExamplePrompt[] = [
+    {
+      heading: upcomingEvent
+        ? `📅 今晚總經焦點：${upcomingEvent.event}`
+        : '📅 今晚有什麼重大總經數據？',
+      subheading: upcomingEvent
+        ? `距公布約 ${upcomingEvent.time} · 預估 ${upcomingEvent.forecast || '—'} · 前值 ${upcomingEvent.previous || '—'}`
+        : '即時掌握非農 (NFP)、CPI、PMI、零售銷售與央行決議時程',
+      message: '今晚有什麼重大總經數據？'
+    },
+    {
+      heading: '🌐 美股盤前期貨與經濟日曆',
+      subheading: spFuture
+        ? `S&P期指 ${spFuture.last} (${spFuture.changePercent || ''}) · VIX ${vixFuture?.last || ''} · ${sentiment?.bias || '盤前掃描'}`
+        : '美股三大期指盤前行情、恐慌指數 VIX 與跨資產風向',
+      message: '美股盤前期貨與經濟日曆'
+    },
+    {
+      heading: '⚡ 非農就業公布時間與預期',
+      subheading: '美國非農就業報告 (NFP)、失業率與華爾街預估分析',
+      message: '非農就業公布時間與重大經濟日曆'
+    },
+    {
+      heading: '🛢️ 大宗商品與 10Y 美債殖利率',
+      subheading: `10Y美債 ${tenYear?.last || '4.76%'} · 黃金 ${gold?.last || '$4,523'} · 原油 ${oil?.last || '$91.6'}`,
+      message: '目前大宗商品與美債殖利率走勢如何？'
+    }
+  ]
+
+  const macroPromptsEn: ExamplePrompt[] = [
+    {
+      heading: upcomingEvent
+        ? `📅 Tonight's Macro Focus: ${upcomingEvent.event}`
+        : '📅 Key Economic Events Tonight',
+      subheading: upcomingEvent
+        ? `In ${upcomingEvent.time} · Cons: ${upcomingEvent.forecast || '—'} · Prev: ${upcomingEvent.previous || '—'}`
+        : 'Live global economic calendar, CPI, NFP & central bank policy',
+      message: 'What are the key global economic events and data releases tonight?'
+    },
+    {
+      heading: '🌐 US Pre-Market Futures & Macro Calendar',
+      subheading: spFuture
+        ? `S&P Futures ${spFuture.last} (${spFuture.changePercent || ''}) · VIX ${vixFuture?.last || ''}`
+        : 'Live S&P, Nasdaq futures and Risk-On / Risk-Off sentiment',
+      message: 'Show me US pre-market futures and economic calendar'
+    },
+    {
+      heading: '⚡ Nonfarm Payrolls (NFP) Schedule',
+      subheading: 'Jobs report countdown, unemployment consensus & expectations',
+      message: 'When is the Nonfarm Payrolls (NFP) release and what is expected?'
+    },
+    {
+      heading: '🛢️ Commodities & 10Y Treasury Yield',
+      subheading: `10Y Yield ${tenYear?.last || '4.76%'} · Gold ${gold?.last || '$4,523'} · WTI ${oil?.last || '$91.6'}`,
+      message: 'How are global commodities and US Treasury yields moving today?'
+    }
+  ]
+
+  return { macroPromptsZh, macroPromptsEn }
+}
+
 function buildPrompts(
   sp500: StockItem[],
   tw50: StockItem[],
-  twMid: StockItem[]
+  twMid: StockItem[],
+  macroData: GlobalMacroDashboardResult | null
 ) {
   const uniqueStocks = (stocks: StockItem[]) =>
     stocks.filter(
@@ -211,8 +329,10 @@ function buildPrompts(
 
   const twPool = uniqueStocks([...tw50, ...twMid])
   const usPool = uniqueStocks(sp500)
+  const { macroPromptsZh, macroPromptsEn } = buildMacroPrompts(macroData)
 
   const promptsZh: ExamplePrompt[] = [
+    ...macroPromptsZh,
     ...twPool.map((stock, index) => {
       const label = `${stock.name} (${stock.symbol})`
       const price = stock.price ? `（NT$${stock.price}）` : ''
@@ -280,6 +400,7 @@ function buildPrompts(
   ]
 
   const promptsEn: ExamplePrompt[] = [
+    ...macroPromptsEn,
     ...twPool.map((stock, index) => {
       const label = `${stock.name} (${stock.symbol})`
       const templates = [
@@ -345,11 +466,17 @@ function buildPrompts(
     }
   ]
 
-  return { promptsZh, promptsEn }
+  return {
+    featuredPromptsZh: macroPromptsZh,
+    featuredPromptsEn: macroPromptsEn,
+    promptsZh,
+    promptsEn
+  }
 }
 
 export async function GET() {
   const now = Date.now()
+  ensureBackgroundWarmer()
 
   // 若快取有效則直接回傳
   if (cachedData && now - cachedData.timestamp < CACHE_TTL_MS) {
@@ -360,10 +487,8 @@ export async function GET() {
 
   let rawContent = ''
 
-  // Probe all upstreams in parallel. Sequential 5s retries can exceed the
-  // serverless request window and turn a recoverable upstream failure into a
-  // 504 for the entire homepage.
-  const [upstreamResults, answerBookData] = await Promise.all([
+  // Probe upstreams and fetch live macro dashboard in parallel
+  const [upstreamResults, answerBookData, macroData] = await Promise.all([
     Promise.allSettled(
       PROXY_URLS.map(async url => {
         const res = await fetch(url, {
@@ -381,7 +506,11 @@ export async function GET() {
         return text
       })
     ),
-    fetchAnswerBookMarketData()
+    fetchAnswerBookMarketData(),
+    fetchGlobalMacroDashboard().catch(err => {
+      console.warn('[dynamic-prompts] fetchGlobalMacroDashboard error:', err)
+      return null
+    })
   ])
 
   const firstSuccessfulResult = upstreamResults.find(
@@ -395,12 +524,15 @@ export async function GET() {
   const sp500 = mergeCurrentPrices(answerBookData.usStocks, scrapedStocks.sp500)
   const tw50 = mergeCurrentPrices(answerBookData.tw50, scrapedStocks.tw50)
   const twMid = mergeCurrentPrices(answerBookData.twMid, scrapedStocks.twMid)
-  const { promptsZh, promptsEn } = buildPrompts(sp500, tw50, twMid)
+  const { featuredPromptsZh, featuredPromptsEn, promptsZh, promptsEn } =
+    buildPrompts(sp500, tw50, twMid, macroData)
 
   cachedData = {
     timestamp: now,
     usStocks: sp500,
     twStocks: [...tw50, ...twMid],
+    featuredPromptsZh,
+    featuredPromptsEn,
     promptsZh,
     promptsEn
   }

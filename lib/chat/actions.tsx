@@ -71,9 +71,11 @@ import {
 } from '@/components/stocks/signal-tracker-card'
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
+import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
 import { buildTransmissionAnalysis } from '@/lib/deepear'
 import { fetchMacroFactorRegime } from '@/lib/quant/us-fddk'
 import { fetchInstitutionalFlow } from '@/lib/quant/institutional'
+import { fetchGlobalMacroDashboard } from '@/lib/quant/investing-macro'
 import { toast } from 'sonner'
 import {
   extractExplicitTicker,
@@ -2635,6 +2637,65 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <InstitutionalFlowCard symbol={formattedSymbol} data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          showEconomicCalendar: {
+            description:
+              'Display global real-time economic calendar (NFP, CPI, PMI, Fed speeches, central bank decisions) and cross-asset macro market dashboard (Index Futures, Bond Yields, Commodities, Crypto) from Investing.com via 2MD.',
+            parameters: z.object({
+              query: z
+                .string()
+                .optional()
+                .describe(
+                  'Optional query context such as economic event name, country (US, EU, JP), or macro topic.'
+                )
+            }),
+            generate: async function* ({ query }) {
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在透過 2MD 萃取 Investing.com 全球重大總經日曆與跨資產即時風向…
+                  </div>
+                </BotCard>
+              )
+
+              const data = await fetchGlobalMacroDashboard()
+              const context = JSON.stringify({
+                asOfDate: data.asOfDate,
+                sentiment: data.sentimentSummary,
+                topEvents: data.economicEvents.slice(0, 5).map(
+                  e =>
+                    `${e.time} [${e.country}] ${e.event} (Act: ${e.actual || '-'}, Cons: ${e.forecast || '-'}, Prev: ${e.previous || '-'})`
+                ),
+                futures: data.indicesFutures.map(
+                  f => `${f.name}: ${f.last} (${f.changePercent || ''})`
+                ),
+                yields: data.bondYields.map(b => `${b.name}: ${b.last}`),
+                commodities: data.commodities.map(c => `${c.name}: ${c.last}`)
+              })
+
+              const caption = await generateCaption(
+                'GLOBAL-MACRO',
+                [],
+                'showEconomicCalendar',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'showEconomicCalendar',
+                { query },
+                { data },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  <EconomicCalendarCard data={data} />
                   <BotCaption content={caption} />
                 </BotCard>
               )

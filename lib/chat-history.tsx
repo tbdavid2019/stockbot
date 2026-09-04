@@ -30,6 +30,7 @@ import { TransmissionChainCard } from '@/components/stocks/transmission-chain-ca
 import { SignalTrackerCard } from '@/components/stocks/signal-tracker-card'
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
+import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
 
 export const CHAT_STORAGE_KEY = 'stockbot_chat_sessions_v1'
 export const CHAT_HISTORY_EVENT = 'stockbot-chat-history-updated'
@@ -435,6 +436,12 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                     symbol={args.symbol || result?.symbol || '2330'}
                     data={result.data}
                   />
+                ) : null
+                break
+
+              case 'showEconomicCalendar':
+                cardContent = result?.data ? (
+                  <EconomicCalendarCard data={result.data} />
                 ) : null
                 break
 

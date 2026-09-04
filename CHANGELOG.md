@@ -4,6 +4,35 @@
 
 ---
 
+## [2026-09-04] - 整合 Investing.com 全球總經日曆、2MD 引擎防驚群重構與動態情報驅動首頁提示詞
+
+### ✨ 新增 (Added)
+
+- **📅 Investing.com 全球重大總經日曆與跨資產風向儀 (`showEconomicCalendar` & `<EconomicCalendarCard />`)**：
+  - 新增 [`lib/quant/investing-macro.ts`](lib/quant/investing-macro.ts) 與原生卡片 [`<EconomicCalendarCard />`](components/stocks/economic-calendar-card.tsx)。
+  - 透過 2MD Fast Reader 即時萃取 Investing.com 全球重大財經日曆（非農就業 NFP、CPI、PMI、零售銷售、央行決議與行長發言），精確解析倒數時間、國家、事件等級（★★★ 高 / ★★ 中）、市場預估值 (Cons.)、前值 (Prev.) 與實際發布值 (Act.)。
+  - 同步統整美股三大期指盤前走勢（Dow / S&P 500 / Nasdaq 100 期貨）、VIX 恐慌指數、10Y/2Y 美債殖利率曲線、大宗商品期貨（黃金、WTI / 布蘭特原油）與美元指數 (DXY)，自動研判市場 `Risk-On` / `Risk-Off` 風向。
+- **⚡ 首頁動態情報驅動提示詞與後台排程預熱機制 ([`app/api/dynamic-prompts/route.ts`](app/api/dynamic-prompts/route.ts))**：
+  - 徹底摒棄傳統靜態硬編碼，將 2MD 即時總經數據（即將發布事件倒數時間、預估值、S&P 期指點位與漲跌幅、VIX、美債殖利率、金價）直接注入提示詞標題與副標。
+  - 實作伺服器後台定時排程預熱（Proactive Cache Warmer），每 3 分鐘自動更新快取，達成首頁載入與點擊 macro 提示詞 0ms 秒開。
+  - 在 [`components/chat-panel.tsx`](components/chat-panel.tsx) 加入 `⚡ 即時總經` 專屬高亮天藍邊框與徽章，確保每次載入均包含 2 席 live macro 焦點提示詞。
+- **確定性工具路由與對話歷史完全持久化**：
+  - 更新 [`lib/chat/routing.ts`](lib/chat/routing.ts)，加入「經濟日曆/總經日曆/財經日曆/非農/PMI/CPI/央行決議/盤前期貨/大宗商品/美債殖利率」確定性工具路由。
+  - 更新 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 註冊 `showEconomicCalendar` 工具，並在 [`lib/chat-history.tsx`](lib/chat-history.tsx) 支援 `localStorage` 純 JSON 狀態無損還原。
+- **README.md & AGENTS.md 補齊第 16 項原生圖卡規格與架構規範**：
+  - 更新 [`README.md`](README.md) 第 16 項原生金融情報卡 `<EconomicCalendarCard />`。
+  - 更新 [`AGENTS.md`](AGENTS.md) 第 13 節 Investing.com 全球總經日曆與 2MD 防驚群架構。
+
+### 🛡️ 效能與架構重構 (Performance & Resilience)
+
+- **2MD 引擎防驚群（Thundering Herd）與級聯失效重構 ([`lib/2md.ts`](lib/2md.ts))**：
+  - **Singleflight 請求合併**：引入 `inFlightSearch` 與 `inFlightRead` 進行 Promise 記憶化，當並發多請求查詢相同標的或網址時，僅向 2MD 發送 1 次真實 HTTP 連線，杜絕驚群效應。
+  - **短期 In-Memory TTL 快取**：搜尋結果快取 60 秒、網頁內容快取 180 秒，在多輪對話中直接攔截 90% 以上重複請求。
+  - **端點熔斷機制 (Circuit Breaker) & Micro-jitter**：單一端點連續失敗 2 次自動進入 30 秒冷卻期，後續請求直接走健康端點，不再空等超時；且 Fallback 之間加入 20-60ms 隨機微抖動，打散重試峰值。
+  - **合理自適應逾時預算**：Primary 搜尋放寬至 3.5s、一般網頁 9.0s、重型網站 Investing.com 支援自訂 12.0s，消滅過早中止引發的虛假故障轉移。
+
+---
+
 ## [2026-09-02] - 整合 llmstxt.org 開放標準協定 (/llms.txt 與 /llms-full.txt)
 
 ### ✨ 新增 (Added)

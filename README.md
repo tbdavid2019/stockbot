@@ -120,6 +120,7 @@ StockBot 內建 15 套機構級原生 React 金融視覺化卡片，所有卡片
 | **13** | **🌐 2MD 即時連網研調來源卡**<br>`<WebSearchResults />` | `searchFinancialWeb` | 由 2MD 全網情報大腦並發檢索最新重大快訊、供應鏈上下游、法說會動態與總經環境，以摺疊清單呈現可信來源標題、網址與內文摘要。 | `SpaceX 最新上市估值與新聞`<br>`全球人形機器人供應鏈` |
 | **14** | **📑 AnyDoc 財報文件解析卡**<br>`<FinancialReportCard />` | `readFinancialReport` | 支援線上財報網址或本機上傳之 PDF、Excel、Word、PPT 文件（最大 25MB）。秒級萃取三大報表、管理層指引與風險因子，支援一鍵複製與全文展開。 | `閱讀這份台積電法說會簡報`<br>`分析上傳的財報 PDF` |
 | **15** | **🏛️ 傳奇大師多維度研調卡**<br>`<StockAnalysis />` | `analyzeStockWithAI` | 整合 AI Hedge Fund API，由 13 位傳奇投資大師（巴菲特、葛拉漢、蒙格、木頭姐等）分為 3 批次漸進式研調，呈現各分析師多空訊號、圓桌委員會辯論對話過程與投資委員會綜合決策判讀。 | `台積電值得買嗎？`<br>`13位大師分析 NVDA` |
+| **16** | **📅 全球重大總經日曆卡**<br>`<EconomicCalendarCard />` | `showEconomicCalendar` | 透過 2MD Fast Reader 即時萃取 Investing.com 全球重大財經日曆（非農就業、CPI、PMI、央行決議與倒數時間）、三大期指盤前行情、美債殖利率曲線（10Y/2Y）與大宗商品（原油/黃金），具備 Singleflight 防驚群與 TTL 快取。 | `今晚有什麼重大總經數據？`<br>`美股盤前期貨與經濟日曆` |
 
 ---
 

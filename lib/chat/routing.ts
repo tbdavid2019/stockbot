@@ -20,6 +20,7 @@ export type DeterministicToolName =
   | 'trackInvestmentSignal'
   | 'showMacroFactorRegime'
   | 'showInstitutionalFlow'
+  | 'showEconomicCalendar'
 
 const NON_TICKER_WORDS = new Set([
   'AI',
@@ -164,6 +165,13 @@ export function inferDeterministicTool(
     )
   ) {
     return 'showMacroFactorRegime'
+  }
+  if (
+    /經濟日曆|總經日曆|財經日曆|非農|PMI|CPI公布|央行決議|economic\s*calendar|macro\s*calendar|重大總經|總經數據|盤前走勢|盤前期貨|(?:大宗商品|美債殖利率|原油黃金|黃金原油).{0,12}(?:走勢|行情|概況)/i.test(
+      content
+    )
+  ) {
+    return 'showEconomicCalendar'
   }
 
   if (!resolvedTicker) return undefined
