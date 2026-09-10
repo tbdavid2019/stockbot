@@ -8,9 +8,12 @@ import {
   normalizeNasdaqOtherText,
   normalizeNasdaqText,
   normalizeEuronextCsv,
+  extractLseWorkbookLinks,
   normalizeLseCsv,
+  normalizeLseWorkbookRows,
   normalizeSseSuggestionText,
   normalizeSzseRows,
+  type LseWorkbookLink,
   type GlobalSecurity
 } from './global-market-universe'
 import { normalizeTpExRows, normalizeTwseRows } from './market-universe'
@@ -25,7 +28,11 @@ const SOURCES = {
   sse: 'https://www.sse.com.cn/js/common/ssesuggestdataAll.js',
   szse: 'https://www.szse.cn/api/report/ShowReport?SHOWTYPE=xlsx&CATALOGID=1110&TABKEY=tab1',
   euronext:
-    'https://live.euronext.com/product_directory/data/stocks-all-places/download?mics=ALXB%2CALXL%2CALXP%2CBGEM%2CENXB%2CENXL%2CETLX%2CEXGM%2CMERK%2CMIVX%2CMLXB%2CMTAH%2CTNLA%2CTNLB%2CXAMC%2CXAMS%2CXATL%2CXBRU%2CXESM%2CXLDN%2CXLIS%2CXMLI%2CXMSM%2CXOAS%2CXOSL%2CXPAR%2CXPMC'
+    'https://live.euronext.com/product_directory/data/stocks-all-places/download?mics=ALXB%2CALXL%2CALXP%2CBGEM%2CENXB%2CENXL%2CETLX%2CEXGM%2CMERK%2CMIVX%2CMLXB%2CMTAH%2CTNLA%2CTNLB%2CXAMC%2CXAMS%2CXATL%2CXBRU%2CXESM%2CXLDN%2CXLIS%2CXMLI%2CXMSM%2CXOAS%2CXOSL%2CXPAR%2CXPMC',
+  lsePage:
+    'https://www.londonstockexchange.com/equities-trading/asset-classes/shares-trading/uk-and-european-securities',
+  lsePageApi:
+    'https://api.londonstockexchange.com/api/v1/pages?path=equities-trading%2Fasset-classes%2Fshares-trading%2Fuk-and-european-securities'
 } as const
 
 export const GLOBAL_MARKET_SOURCE_CATALOG = [
@@ -95,9 +102,9 @@ export const GLOBAL_MARKET_SOURCE_CATALOG = [
   {
     id: 'LSE',
     market: 'United Kingdom',
-    url: 'https://www.londonstockexchange.com/exchange/instrument-search.html',
-    format: 'official instrument search / licensed daily report',
-    refresh: 'daily'
+    url: SOURCES.lsePage,
+    format: 'public page API → four official weekly XLSX files',
+    refresh: 'weekly'
   }
 ] as const
 
@@ -171,6 +178,20 @@ async function fetchWorkbookRows(url: string): Promise<string[][]> {
   }) as string[][]
 }
 
+async function fetchLseWeeklySecurities(): Promise<GlobalSecurity[]> {
+  const payload = JSON.parse(await fetchText(SOURCES.lsePageApi)) as unknown
+  const links = extractLseWorkbookLinks(payload)
+  if (links.length !== 4)
+    throw new Error(`Expected 4 LSE weekly XLSX links, found ${links.length}`)
+
+  const batches = await Promise.all(
+    links.map(async (link: LseWorkbookLink) =>
+      normalizeLseWorkbookRows(await fetchWorkbookRows(link.url), link.category)
+    )
+  )
+  return batches.flat()
+}
+
 async function fetchOfficialSnapshot(
   asOfDate: string
 ): Promise<GlobalMarketUniverseSnapshot> {
@@ -195,7 +216,8 @@ async function fetchOfficialSnapshot(
     }).then(async response => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       return normalizeEuronextCsv(await response.text())
-    })
+    }),
+    fetchLseWeeklySecurities()
   ]
   const labels = [
     'TWSE/TPEx',
@@ -205,12 +227,13 @@ async function fetchOfficialSnapshot(
     'JPX',
     'SSE',
     'SZSE',
-    'Euronext'
+    'Euronext',
+    'LSE weekly XLSX'
   ]
   const lseUrl = process.env.GLOBAL_LSE_SOURCE_URL?.trim()
   if (lseUrl) {
     jobs.push(fetchText(lseUrl).then(normalizeLseCsv))
-    labels.push('LSE')
+    labels.push('LSE authorized CSV')
   }
   const settled = await Promise.allSettled(jobs)
   const securities = settled.flatMap(item =>
@@ -243,6 +266,8 @@ async function fetchOfficialSnapshot(
       SOURCES.sse,
       SOURCES.szse,
       SOURCES.euronext,
+      SOURCES.lsePage,
+      SOURCES.lsePageApi,
       ...(lseUrl ? [lseUrl] : [])
     ],
     warnings

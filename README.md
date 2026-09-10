@@ -34,7 +34,7 @@
 ## 功能特點
 
 - 📈 **Stockdata 外部量化 Provider**：透過 server-only REST adapters 接入 LSTM、TimesFM、玄鐵、策略共振、券商分點、全市場法人排行、公司簡介/新聞、宏觀 Regime、FedWatch、財報/經濟日曆、商品與 Polymarket 情緒；結果保留來源、時間戳、stale/partial 狀態，並以 `STOCKDATA_ENABLED` 與 domain flags 控制。REST 是正式執行路徑，MCP/WebMCP 僅作診斷。
-- 🌍 **全球官方證券清冊 Registry**：每日以台北自然日快取 TWSE/TPEx、NASDAQ Trader、NYSE/AMEX/ARCA/BATS/IEX、HKEX、JPX、SSE、SZSE 與 Euronext 官方清冊；公司名稱解析先查本地 registry，再進公司簡介或其他金融工具。LSE 支援透過 `GLOBAL_LSE_SOURCE_URL` 接入官方/授權 CSV。
+- 🌍 **全球官方證券清冊 Registry**：每日以台北自然日快取 TWSE/TPEx、NASDAQ Trader、NYSE/AMEX/ARCA/BATS/IEX、HKEX、JPX、SSE、SZSE 與 Euronext 官方清冊；公司名稱解析先查本地 registry，再進公司簡介或其他金融工具。LSE 預設從官方公開頁面 API 取得每週 XLSX 清單；`GLOBAL_LSE_SOURCE_URL` 僅作額外的官方／授權 CSV 來源。
 
 - 🤖 **即時 AI 聊天機器人**：與高速回應的 AI 互動，通過自然語言對話請求股票新聞、信息和圖表
 - 📊 **互動式股票圖表**：接收幾乎即時的、上下文感知的響應，包含承載實時數據的互動式 TradingView 圖表
@@ -70,7 +70,7 @@
 - TWSE / TPEx
 - NASDAQ、NYSE、AMEX、ARCA、BATS、IEX
 - HKEX、JPX、SSE、SZSE、Euronext
-- LSE（僅在設定 `GLOBAL_LSE_SOURCE_URL` 後載入官方／授權 CSV）
+- LSE（官方公開頁面 API → SETS、SETSqx CCP、SETSqx Non-CCP、EQS 四份每週 XLSX；`GLOBAL_LSE_SOURCE_URL` 可額外載入授權 CSV）
 
 實際更新規則如下：
 
@@ -78,10 +78,13 @@
 2. 跨日後不會由背景程序自動抓取；該日第一個需要清冊解析的請求才會觸發全市場官方來源抓取。
 3. 例如當日第一個相關請求在 09:15，當日快照就在約 09:15 建立；若直到 14:20 才有請求，則延後至 14:20 更新。
 4. 同一台北自然日內的後續請求共用同一份快照；同時發生的重複請求會合併，避免重複抓取。
-5. 快取重新驗證週期為 **24 小時（86,400 秒）**。目前不是固定時間排程，也不會依 NASDAQ 等來源的盤中發布頻率即時刷新。
+5. 快取重新驗證週期為 **24 小時（86,400 秒）**。目前不是固定時間排程，也不會依 NASDAQ 等來源的盤中發布頻率即時刷新。LSE 來源本身是公開頁面列出的**每週** XLSX 清單，不是即時行情資料。
 6. 個別來源失敗時，其他成功來源仍會合併；若已有上一份成功快照，系統會回傳該快照並標記為 `stale`。
+7. LSE 清冊只代表從公開頁面取得的證券目錄；抓到清單或解析出數千筆資料，**不代表 StockBot 取得 LSE 的即時、延遲、Redistribution、Derived Data、Non-display 或其他應用程式資料授權**。需要這些用途時，必須依 LSE 的市場資料授權規範確認權利。
 
 因此，「每日更新」代表每天最多建立一份新的全市場快照，而不是保證每天固定在某個鐘點完成同步。實作見 `lib/global-market-universe-cache.ts`。
+
+LSE 官方清單頁：[UK and European Securities](https://www.londonstockexchange.com/equities-trading/asset-classes/shares-trading/uk-and-european-securities)；市場資料授權規範：[Market Data Licensing](https://www.londonstockexchange.com/equities-trading/market-data/market-data-licensing)。
 
 ## AI 投資分析功能
 

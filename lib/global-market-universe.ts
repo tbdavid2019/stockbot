@@ -38,6 +38,19 @@ type Cell = string | number | null | undefined
 
 type MatrixPayload = { aaData?: unknown }
 
+export type LseWorkbookCategory =
+  | 'SETS'
+  | 'SETSqx CCP'
+  | 'SETSqx Non-CCP'
+  | 'EQS'
+
+export type LseWorkbookLink = {
+  category: LseWorkbookCategory
+  title: string
+  url: string
+  updatedAt?: string
+}
+
 function cell(row: Cell[], index: number): string | undefined {
   const value = row[index]
   if (typeof value === 'number' && Number.isFinite(value)) return String(value)
@@ -415,6 +428,120 @@ export function normalizeLseCsv(raw: string): GlobalSecurity[] {
       security('LSE', code, name, {
         isin: isinIndex >= 0 ? row[isinIndex] : undefined,
         instrumentType: 'Equity'
+      })
+    ]
+  })
+}
+
+function lseWorkbookCategory(title: string): LseWorkbookCategory | undefined {
+  if (/NON\s+CCP.*available on SETSqx/i.test(title)) return 'SETSqx Non-CCP'
+  if (/CCP.*available on SETSqx/i.test(title)) return 'SETSqx CCP'
+  if (/available on SETS\s*[-–—]/i.test(title)) return 'SETS'
+  if (/available on EQS\s*[-–—]/i.test(title)) return 'EQS'
+  return undefined
+}
+
+export function extractLseWorkbookLinks(payload: unknown): LseWorkbookLink[] {
+  const links = new Map<LseWorkbookCategory, LseWorkbookLink>()
+
+  const visit = (value: unknown): void => {
+    if (!value || typeof value !== 'object') return
+    if (Array.isArray(value)) {
+      value.forEach(visit)
+      return
+    }
+    const record = value as Record<string, unknown>
+    if (Array.isArray(record.documents)) {
+      for (const document of record.documents) {
+        if (!document || typeof document !== 'object') continue
+        const item = document as Record<string, unknown>
+        const title = typeof item.title === 'string' ? item.title.trim() : ''
+        const url = typeof item.url === 'string' ? item.url.trim() : ''
+        const fileType =
+          typeof item.fileType === 'string' ? item.fileType.toLowerCase() : ''
+        const category = lseWorkbookCategory(title)
+        if (
+          category &&
+          fileType === 'xlsx' &&
+          /^https?:\/\//i.test(url) &&
+          !links.has(category)
+        ) {
+          links.set(category, {
+            category,
+            title,
+            url,
+            updatedAt: typeof item.date === 'string' ? item.date : undefined
+          })
+        }
+      }
+    }
+    Object.values(record).forEach(visit)
+  }
+
+  visit(payload)
+  return (['SETS', 'SETSqx CCP', 'SETSqx Non-CCP', 'EQS'] as const)
+    .map(category => links.get(category))
+    .filter(Boolean) as LseWorkbookLink[]
+}
+
+function lseSourceDate(
+  rows: Cell[][],
+  headerIndex: number
+): string | undefined {
+  for (const row of rows.slice(0, headerIndex)) {
+    const text = row.find(value => typeof value === 'string')
+    const match = text?.match(/last updated on\s+(\d{2})\/(\d{2})\/(\d{4})/i)
+    if (match) return `${match[3]}-${match[2]}-${match[1]}`
+  }
+  return undefined
+}
+
+export function normalizeLseWorkbookRows(
+  rows: Cell[][],
+  category: LseWorkbookCategory
+): GlobalSecurity[] {
+  const headerIndex = rows.findIndex(row => {
+    const headers = row.map(value => normalizeText(String(value ?? '')))
+    return (
+      headers.includes('ISSUERNAME') &&
+      headers.includes('ISIN') &&
+      headers.includes('SECURITYTYPE') &&
+      headers.includes('MNEMONIC')
+    )
+  })
+  if (headerIndex < 0) return []
+
+  const header = rows[headerIndex].map(value =>
+    normalizeText(String(value ?? ''))
+  )
+  const index = (name: string) => header.indexOf(name)
+  const issuerIndex = index('ISSUERNAME')
+  const isinIndex = index('ISIN')
+  const securityTypeIndex = index('SECURITYTYPE')
+  const mnemonicIndex = index('MNEMONIC')
+  const segmentIndex = index('SEGMENT')
+  const shortNameIndex = index('SHORTNAME')
+  const longNameIndex = index('LONGNAME')
+  const sourceDate = lseSourceDate(rows, headerIndex)
+
+  return rows.slice(headerIndex + 1).flatMap(row => {
+    const code = cleanCode(cell(row, mnemonicIndex))
+    const issuerName = cell(row, issuerIndex)
+    if (!code || !issuerName) return []
+    const securityType = cell(row, securityTypeIndex)
+    const segment = cell(row, segmentIndex)
+    const shortName = cell(row, shortNameIndex)
+    const longName = cell(row, longNameIndex)
+    return [
+      security('LSE', code, issuerName, {
+        englishName: issuerName,
+        legalName: longName,
+        isin: cell(row, isinIndex),
+        instrumentType: securityType || segment || category,
+        sourceDate,
+        aliases: [shortName, segment, category].filter(
+          (value): value is string => Boolean(value)
+        )
       })
     ]
   })

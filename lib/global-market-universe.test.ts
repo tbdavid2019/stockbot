@@ -6,7 +6,9 @@ import {
   normalizeNasdaqText,
   normalizeEuronextRows,
   normalizeEuronextCsv,
+  extractLseWorkbookLinks,
   normalizeLseCsv,
+  normalizeLseWorkbookRows,
   normalizeSseSuggestionText,
   normalizeSzseRows,
   resolveGlobalSecurity
@@ -101,6 +103,128 @@ test('normalizes official global directory formats into one security schema', ()
       ].join('\n')
     )[0]?.canonicalTicker,
     'LSE:BARC'
+  )
+
+  const lsePage = {
+    components: [
+      {
+        content: [
+          {
+            name: 'empty',
+            value: {
+              documents: [
+                {
+                  title:
+                    'List of securities available on SETS - updated weekly',
+                  fileType: 'xlsx',
+                  url: 'https://docs.example/sets.xlsx'
+                },
+                {
+                  title:
+                    'List of CCP securities available on SETSqx - updated weekly',
+                  fileType: 'xlsx',
+                  url: 'https://docs.example/setsqx-ccp.xlsx'
+                },
+                {
+                  title:
+                    'List of NON CCP securities available on SETSqx - updated weekly',
+                  fileType: 'xlsx',
+                  url: 'https://docs.example/setsqx-non-ccp.xlsx'
+                },
+                {
+                  title: 'List of securities available on EQS - updated weekly',
+                  fileType: 'xlsx',
+                  url: 'https://docs.example/eqs.xlsx'
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+  assert.deepEqual(
+    extractLseWorkbookLinks(lsePage).map(item => item.category),
+    ['SETS', 'SETSqx CCP', 'SETSqx Non-CCP', 'EQS']
+  )
+  assert.deepEqual(
+    normalizeLseWorkbookRows(
+      [
+        [
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [null, 'Stock List for SETS'],
+        [null, 'File last updated on 07/09/2026'],
+        [
+          null,
+          'Segment',
+          'Sector',
+          'Issuer Name',
+          'ISIN',
+          'Security Type',
+          'MiFIR Identifier',
+          'Currency',
+          'Trading Parameter Code',
+          'Price Tick Table ID',
+          'Country of Register',
+          'Mnemonic',
+          'Short Name',
+          'Long Name'
+        ],
+        [
+          null,
+          'SET1',
+          'FE10',
+          'BARCLAYS PLC',
+          'GB0031348658',
+          'SHRS',
+          'DE',
+          'GBX',
+          'TP_1',
+          'TM_47',
+          'GB',
+          'BARC',
+          'BARCLAYS',
+          'ORD GBP0.25'
+        ]
+      ],
+      'SETS'
+    ),
+    [
+      {
+        exchange: 'LSE',
+        code: 'BARC',
+        canonicalTicker: 'LSE:BARC',
+        yahooTicker: 'BARC.L',
+        name: 'BARCLAYS PLC',
+        englishName: 'BARCLAYS PLC',
+        legalName: 'ORD GBP0.25',
+        aliases: [
+          'BARCLAYS PLC',
+          'ORD GBP0.25',
+          'BARC',
+          'BARCLAYS',
+          'SET1',
+          'SETS'
+        ],
+        isin: 'GB0031348658',
+        instrumentType: 'SHRS',
+        sourceDate: '2026-09-07'
+      }
+    ]
   )
 })
 
