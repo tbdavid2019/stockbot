@@ -149,6 +149,7 @@ function parseEconomicEvents(text: string): EconomicCalendarEvent[] {
  */
 export async function fetchGlobalMacroDashboard(): Promise<GlobalMacroDashboardResult> {
   const asOfDate = new Date().toLocaleDateString('zh-TW', {
+    timeZone: 'Asia/Taipei',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

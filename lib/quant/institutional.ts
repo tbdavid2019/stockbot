@@ -51,31 +51,58 @@ export interface InstitutionalFlowResult {
   history: DailyInstitutionalRecord[]
 }
 
-// In-memory cache for recent TWSE and TPEX datasets
-const twseCache = new Map<string, { stat: string; data: string[][] }>()
-const tpexCache = new Map<string, Array<Record<string, string>>>()
+// In-memory cache with TTL for recent TWSE and TPEX datasets to avoid midnight cache poisoning
+interface CacheEntry<T> {
+  data: T
+  expiresAt: number
+}
+const twseCache = new Map<string, CacheEntry<{ stat: string; data: string[][] }>>()
+let tpexCache: CacheEntry<Array<Record<string, string>>> | null = null
+
+export function getTaipeiDateString(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Taipei',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date)
+}
+
+function parseTpexDate(raw?: string): string | null {
+  if (!raw || typeof raw !== 'string') return null
+  const clean = raw.trim()
+  if (clean.length >= 6) {
+    const rocYear = parseInt(clean.slice(0, clean.length - 4), 10)
+    const month = clean.slice(clean.length - 4, clean.length - 2)
+    const day = clean.slice(clean.length - 2)
+    return `${rocYear + 1911}-${month}-${day}`
+  }
+  return null
+}
 
 function getRecentTradingDates(count: number = 8): string[] {
   const dates: string[] = []
-  const now = new Date()
+  const taipeiDateStr = getTaipeiDateString()
+  const [y, m, d] = taipeiDateStr.split('-').map(Number)
   let offset = 0
   while (dates.length < count && offset < 20) {
-    const d = new Date()
-    d.setDate(now.getDate() - offset)
+    const cur = new Date(Date.UTC(y, m - 1, d - offset, 12, 0, 0))
     offset++
-    const dayOfWeek = d.getDay()
+    const dayOfWeek = cur.getUTCDay()
     if (dayOfWeek === 0 || dayOfWeek === 6) continue // skip weekends
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    dates.push(`${y}${m}${day}`)
+    const yStr = cur.getUTCFullYear()
+    const mStr = String(cur.getUTCMonth() + 1).padStart(2, '0')
+    const dStr = String(cur.getUTCDate()).padStart(2, '0')
+    dates.push(`${yStr}${mStr}${dStr}`)
   }
   return dates
 }
 
 async function fetchTwseT86(dateStr: string): Promise<string[][] | null> {
-  if (twseCache.has(dateStr)) {
-    return twseCache.get(dateStr)!.data
+  const now = Date.now()
+  const cached = twseCache.get(dateStr)
+  if (cached && cached.expiresAt > now) {
+    return cached.data.data
   }
   try {
     const res = await fetch(
@@ -87,7 +114,9 @@ async function fetchTwseT86(dateStr: string): Promise<string[][] | null> {
     if (!res.ok) return null
     const json = await res.json()
     if (json.stat === 'OK' && Array.isArray(json.data) && json.data.length > 0) {
-      twseCache.set(dateStr, { stat: json.stat, data: json.data })
+      const todayInTaipei = getTaipeiDateString().replace(/-/g, '')
+      const ttl = dateStr === todayInTaipei ? 600_000 : 12 * 3600_000
+      twseCache.set(dateStr, { data: { stat: json.stat, data: json.data }, expiresAt: now + ttl })
       return json.data
     }
   } catch (err) {
@@ -96,9 +125,10 @@ async function fetchTwseT86(dateStr: string): Promise<string[][] | null> {
   return null
 }
 
-async function fetchTpex3Insti(dateStr: string): Promise<Array<Record<string, string>> | null> {
-  if (tpexCache.has(dateStr)) {
-    return tpexCache.get(dateStr)!
+async function fetchTpex3Insti(): Promise<Array<Record<string, string>> | null> {
+  const now = Date.now()
+  if (tpexCache && tpexCache.expiresAt > now) {
+    return tpexCache.data
   }
   try {
     // Try OpenAPI endpoint
@@ -111,12 +141,13 @@ async function fetchTpex3Insti(dateStr: string): Promise<Array<Record<string, st
     if (res.ok) {
       const json = await res.json()
       if (Array.isArray(json) && json.length > 0) {
-        tpexCache.set(dateStr, json)
+        // Cache for 10 minutes so daily updates around settlement (~15:00) are promptly reflected
+        tpexCache = { data: json, expiresAt: now + 600_000 }
         return json
       }
     }
   } catch (err) {
-    console.warn(`[fetchTpex3Insti] Failed for ${dateStr}:`, err)
+    console.warn('[fetchTpex3Insti] Failed:', err)
   }
   return null
 }
@@ -302,14 +333,16 @@ export async function fetchInstitutionalFlow(symbol: string): Promise<Institutio
 
     // 2. If not found in TWSE, check TPEX
     if (history.length === 0) {
-      const tpexData = await fetchTpex3Insti(candidateDates[0])
+      const tpexData = await fetchTpex3Insti()
       if (tpexData && tpexData.length > 0) {
         const item = tpexData.find(d => d.SecuritiesCompanyCode === rawCode)
         if (item) {
           const parsed = parseTpexItem(item)
           companyName = parsed.name || rawCode
           market = 'TPEX'
-          const formattedDate = `${candidateDates[0].slice(0, 4)}-${candidateDates[0].slice(4, 6)}-${candidateDates[0].slice(6, 8)}`
+          const formattedDate =
+            parseTpexDate(item.Date) ||
+            `${candidateDates[0].slice(0, 4)}-${candidateDates[0].slice(4, 6)}-${candidateDates[0].slice(6, 8)}`
           history.push({
             date: formattedDate,
             foreignNet: parsed.foreignNet,
@@ -329,7 +362,7 @@ export async function fetchInstitutionalFlow(symbol: string): Promise<Institutio
 
   // If no history found from TWSE/TPEX (e.g. US stock or offline), construct fallback flow
   if (history.length === 0) {
-    const todayStr = new Date().toISOString().slice(0, 10)
+    const todayStr = getTaipeiDateString()
     history.push({
       date: todayStr,
       foreignNet: 0,

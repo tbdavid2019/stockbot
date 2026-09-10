@@ -34,12 +34,62 @@ export async function fetcher<JSON = any>(
 }
 
 export function formatDate(input: string | number | Date): string {
+  if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.trim())) {
+    const [y, m, d] = input.trim().split('-').map(Number)
+    // Anchor to local noon so timezone differences (e.g. UTC-4/UTC-7) cannot roll the calendar day backward
+    const safeDate = new Date(y, m - 1, d, 12, 0, 0)
+    return safeDate.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    })
+  }
   const date = new Date(input)
   return date.toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   })
+}
+
+/**
+ * Returns the start of day (00:00:00.000) for a given date or YYYY-MM-DD string.
+ */
+export function getStartOfDay(input: string | number | Date): Date {
+  if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.trim())) {
+    const [y, m, d] = input.trim().split('-').map(Number)
+    return new Date(y, m - 1, d, 0, 0, 0, 0)
+  }
+  const d = new Date(input)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0)
+}
+
+/**
+ * Returns the end of day (23:59:59.999) for a given date or YYYY-MM-DD string.
+ * Solves the critical closed-interval boundary problem (e.g. 9/1 ~ 9/9 must include until 9/9 23:59:59.999).
+ */
+export function getEndOfDay(input: string | number | Date): Date {
+  if (typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input.trim())) {
+    const [y, m, d] = input.trim().split('-').map(Number)
+    return new Date(y, m - 1, d, 23, 59, 59, 999)
+  }
+  const d = new Date(input)
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999)
+}
+
+/**
+ * Checks if a timestamp falls within a date range inclusively [startOfDay, endOfDay].
+ * Ensures the end date covers up to 23:59:59.999.
+ */
+export function isTimestampInDateRange(
+  timestamp: number | Date,
+  startDate: string | number | Date,
+  endDate: string | number | Date
+): boolean {
+  const ts = typeof timestamp === 'number' ? timestamp : timestamp.getTime()
+  const start = getStartOfDay(startDate).getTime()
+  const end = getEndOfDay(endDate).getTime()
+  return ts >= start && ts <= end
 }
 
 export const formatNumber = (value: number) =>

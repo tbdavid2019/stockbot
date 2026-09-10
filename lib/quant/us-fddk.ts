@@ -42,6 +42,15 @@ const US_FDDK_EXPANDED_URL =
 let cachedRegime: { timestamp: number; data: MacroFactorRegimeResult } | null = null
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
 
+function getUsEasternDateString(): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date())
+}
+
 export async function fetchMacroFactorRegime(): Promise<MacroFactorRegimeResult> {
   const now = Date.now()
   if (cachedRegime && now - cachedRegime.timestamp < CACHE_TTL_MS) {
@@ -163,7 +172,7 @@ export async function fetchMacroFactorRegime(): Promise<MacroFactorRegimeResult>
     const result: MacroFactorRegimeResult = {
       title: '美股 20 年多因子風格輪動與資產配置研究',
       summary: '基於 voidful/us_fddk 20 年可稽核歷史凍結數據與 Fama-French 多因子模型，提供包含扣除 10/50 bps 滑價成本之跨資產 ETF 策略回測與 LIVE Paper 實績對照。',
-      asOfDate: siteData?.data_through || new Date().toISOString().slice(0, 10),
+      asOfDate: siteData?.data_through || getUsEasternDateString(),
       activeStrategy,
       baselines,
       institutionalInsights: '實證數據顯示：純持有 QQQ 雖具備最高 20 年 CAGR (16.6%)，但最大回撤達 -53.4%；若採用「80% 成長 ETF (VUG/QQQ) + 20% 短債 (SHY)」或動態波動率管理，能在保留 85% 以上年化報酬的同時，將最大回撤顯著壓縮至 -35% 區間，大幅提升夏普比率 (0.94 vs 0.65)。'
@@ -178,7 +187,7 @@ export async function fetchMacroFactorRegime(): Promise<MacroFactorRegimeResult>
   return {
     title: '美股 20 年多因子風格輪動與資產配置研究',
     summary: '美股跨資產 20 年可稽核量化因子基準分析。',
-    asOfDate: new Date().toISOString().slice(0, 10),
+    asOfDate: getUsEasternDateString(),
     activeStrategy: {
       name: '成長守門員 v2（波幅管理）',
       targetWeights: { QQQ: 0.755, SHY: 0.245 },

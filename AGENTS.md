@@ -149,8 +149,6 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 直接串接 **台灣證券交易所（TWSE T86 / MI_QFIIS）** 與 **證券櫃檯買賣中心（TPEX 3insti）** 官方開放數據。
   - 精確解析：外資及陸資、投信、自營商（自行買賣與避險部位）今日買賣超**張數**、5 日累計買賣超、外資持股佔比 %、連買/連賣天數。
   - 自動判讀籌碼訊號標籤：🟢 **土洋同買**、⚔️ **土洋對作**、🚀 **投信連買認養**、🔴 **三大法人同步賣超**。
-  - 支援近 5 日法人買賣超明細歷史表格，並以純 JSON 持久化至瀏覽器 `localStorage`。
-
 ### 13. 📅 Investing.com 全球總經日曆與 2MD 防驚群 (Economic Calendar & Singleflight Resilience)
 
 - **`showEconomicCalendar` ➔ `<EconomicCalendarCard />` ([`lib/quant/investing-macro.ts`](lib/quant/investing-macro.ts))**：
@@ -161,6 +159,19 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - **記憶體 TTL 快取**：搜尋 60 秒、網頁解析 180 秒快取，大幅減輕後端負載。
   - **端點熔斷機制 (Circuit Breaker)**：連續 2 次失敗自動進入 30 秒冷卻期，配合隨機 Micro-jitter，徹底防止逾時雪崩湧入最後一個 Fallback。
   - **合理逾時配置**：Primary 搜尋 3.5 秒、網頁解析 7.5 秒，避免過度激進的 abort 誤殺造成級聯容錯。
+
+### 14. ⏱️ 午夜邊界防護與時區鐵律 (Midnight Boundary & Timezone Resilience)
+
+- **閉區間當日終點 (End of Day: 23:59:59.999) 鐵律**：
+  - 當查詢日期範圍（如 9/1 ~ 9/9）時，結束時間必須透過 [`lib/utils.ts`](lib/utils.ts) 的 `getEndOfDay` 錨定在 **`23:59:59.999`**，嚴禁以 `new Date('YYYY-MM-DD')`（預設 00:00:00）作結尾，否則 9/9 整天日間交易將全被過濾吃掉。
+- **市場時區嚴格隔離**：
+  - 台股三大法人籌碼 ([`lib/quant/institutional.ts`](lib/quant/institutional.ts)) 與總經日曆 ([`lib/quant/investing-macro.ts`](lib/quant/investing-macro.ts)) 一律強制指定 **`Asia/Taipei`**，美股因子基準 ([`lib/quant/us-fddk.ts`](lib/quant/us-fddk.ts)) 一律指定 **`America/New_York`**，徹底杜絕伺服器 UTC 清晨時段產生的 8 小時換日倒退。
+- **TPEX 櫃買資料真偽日核實與快取 TTL**：
+  - 櫃買三大法人資料必須以 `parseTpexDate` 解析 API 原生民國年日期，嚴禁在盤後資料公布前硬套今日日期。
+  - 所有盤中/盤後快取必須設置適當 TTL（如 10 分鐘），防止跨午夜毒化快取 (Cache Poisoning)。
+- **日曆日跨日與日期溢出防護**：
+  - 對話時間以自然日曆日計算（`startOfToday` vs `startOfTarget` 兩者午夜零點差），嚴禁使用已流逝 24 小時除法。
+  - 財報季報日加算嚴格限制於當月最大天數（clamped day），防止 `setMonth` 月底溢出至次月。
 
 ---
 

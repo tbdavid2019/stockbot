@@ -312,9 +312,19 @@ export async function fetchEarningsIntelligence(
 
     let estimatedDate: string | undefined
     if (latestEps?.date) {
-      const d = new Date(latestEps.date)
-      d.setMonth(d.getMonth() + 3)
-      estimatedDate = d.toISOString().slice(0, 10)
+      const match = latestEps.date.match(/^(\d{4})-(\d{2})-(\d{2})/)
+      if (match) {
+        let y = parseInt(match[1], 10)
+        let m = parseInt(match[2], 10) + 3
+        const d = parseInt(match[3], 10)
+        if (m > 12) {
+          y += Math.floor((m - 1) / 12)
+          m = ((m - 1) % 12) + 1
+        }
+        const maxDays = new Date(Date.UTC(y, m, 0)).getUTCDate()
+        const clampedDay = Math.min(d, maxDays)
+        estimatedDate = `${y}-${String(m).padStart(2, '0')}-${String(clampedDay).padStart(2, '0')}`
+      }
     }
 
     const history = quarterlyEps.slice(-4).map(f => ({

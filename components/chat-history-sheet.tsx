@@ -51,17 +51,27 @@ function formatSessionTime(timestamp: number): string {
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
   const diffMinutes = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMinutes / 60)
-  const diffDays = Math.floor(diffHours / 24)
 
   if (diffMinutes < 1) return '剛剛'
   if (diffMinutes < 60) return `${diffMinutes} 分鐘前`
-  if (diffHours < 24 && date.getDate() === now.getDate()) {
-    return `今天 ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+
+  // Calculate calendar day difference by comparing midnight timestamps
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const calendarDayDiff = Math.round((startOfToday - startOfTarget) / 86400000)
+
+  const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+  if (calendarDayDiff === 0) {
+    return `今天 ${timeStr}`
   }
-  if (diffDays === 1 || (diffDays === 0 && date.getDate() !== now.getDate())) {
-    return `昨天 ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+  if (calendarDayDiff === 1) {
+    return `昨天 ${timeStr}`
   }
+  if (calendarDayDiff === 2) {
+    return `前天 ${timeStr}`
+  }
+
   return date.toLocaleDateString([], {
     month: 'numeric',
     day: 'numeric',
@@ -124,15 +134,23 @@ export function ChatHistorySheet({
     return matchTitle || matchMessages
   })
 
-  // Group filtered sessions by date
+  // Group filtered sessions by calendar date boundaries
   const now = new Date()
   const todayStart = new Date(
     now.getFullYear(),
     now.getMonth(),
     now.getDate()
   ).getTime()
-  const yesterdayStart = todayStart - 86400000
-  const last7DaysStart = todayStart - 7 * 86400000
+  const yesterdayStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 1
+  ).getTime()
+  const last7DaysStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - 7
+  ).getTime()
 
   const groups = {
     today: filteredSessions.filter(
