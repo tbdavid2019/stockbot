@@ -135,11 +135,12 @@ async function request<T>(
   const useCache = options.cache !== false
   const cached = cache.get(key)
   if (useCache && cached && cached.expiresAt > Date.now()) {
+    const cachedResult = cached.result as StockdataResult<T>
     return {
-      ...cached.result,
+      ...cachedResult,
       status:
-        cached.result.status === 'unavailable' || cached.result.status === 'stale' || cached.result.status === 'partial'
-          ? cached.result.status
+        cachedResult.status === 'unavailable' || cachedResult.status === 'stale' || cachedResult.status === 'partial'
+          ? cachedResult.status
           : 'cached'
     }
   }
@@ -219,7 +220,7 @@ export function boundResult<T>(result: StockdataResult<T>, max = MAX_ARRAY_ITEMS
   if (!rowsKey || !Array.isArray(data[rowsKey]) || data[rowsKey].length <= max) return result
   return {
     ...result,
-    data: { ...data, [rowsKey]: data[rowsKey].slice(0, max), count: data.count ?? data[rowsKey].length },
+    data: { ...data, [rowsKey]: data[rowsKey].slice(0, max), count: data.count ?? data[rowsKey].length } as T,
     warnings: [...result.warnings, `結果已限制為前 ${max} 筆，保留 provider count 與查詢條件。`],
     status: result.status === 'live' ? 'partial' : result.status
   }
