@@ -17,6 +17,7 @@
 12. 2MD AnyDoc Financial Report Engine
 13. Generative UI React Component Mapping
 14. Complete Benchmark Test Suite & QA Prompts
+15. Stockdata REST Provider Integration
 
 ---
 
@@ -285,3 +286,11 @@ TLT ETF NAV premium discount
 幫我寫一份 NVDA 競爭護城河與估值分析報告發布到 Wiki
 寫一份 SpaceX (SPCX) NASDAQ 掛牌上市與星鏈估值報告發布到 Wiki
 ```
+
+---
+
+## 15. Stockdata REST Provider Integration
+
+The server-only `lib/stockdata/` boundary integrates the documented REST API at `stockdata.david888.com`. It covers prediction rankings and history, resonance tags, broker summary/trades/trend, market-wide institutional rankings, company profiles/news/batch profiles, macro regime/exposure, FedWatch, earnings and economic calendars, commodities, and Polymarket sentiment. Provider responses are normalized into JSON-safe envelopes with `source`, `status`, `warnings`, `fetchedAt`, optional `asOf`, and bounded arrays.
+
+Tool boundaries are intentional: `showInstitutionalFlow` remains the official per-symbol TWSE/TPEX source; `showEconomicCalendar` remains the existing Investing.com/2MD contract; Stockdata tools are additive. Cards render before captions and show unavailable or partial states without synthetic numeric defaults. `STOCKDATA_ENABLED` and domain flags can disable the integration without affecting local valuation, SEPA, options, liquidity, macro-factor, or master-analysis tools. Discovery endpoints are server-side diagnostics only, and MCP SSE/WebMCP are not part of the web-chat runtime path.

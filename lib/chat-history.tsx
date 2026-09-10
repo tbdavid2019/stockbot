@@ -31,6 +31,17 @@ import { SignalTrackerCard } from '@/components/stocks/signal-tracker-card'
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
+import {
+  BrokerBranchCard,
+  CompanyProfileCard,
+  InstitutionalLeaderboardCard,
+  MacroRiskRegimeCard,
+  PolymarketSentimentCard,
+  PredictionHistoryCard,
+  PredictionTopPicksCard,
+  ResonanceCard,
+  StockdataMacroDatasetCard
+} from '@/components/stocks/stockdata-cards'
 
 export const CHAT_STORAGE_KEY = 'stockbot_chat_sessions_v1'
 export const CHAT_HISTORY_EVENT = 'stockbot-chat-history-updated'
@@ -443,6 +454,36 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
                 cardContent = result?.data ? (
                   <EconomicCalendarCard data={result.data} />
                 ) : null
+                break
+
+              case 'showStockPredictions':
+                cardContent = result?.data ? (
+                  args.kind === 'resonance' ? <ResonanceCard result={result.data} /> : args.kind === 'history' ? <PredictionHistoryCard result={result.data} ticker={args.symbol || result?.symbol} /> : <PredictionTopPicksCard result={result.data} title={args.kind === 'latest' ? 'Stockdata 最新市場批次快照' : `Stockdata ${args.kind || '模型'} 排行`} />
+                ) : null
+                break
+
+              case 'showStockBrokerBranches':
+                cardContent = result?.data ? <BrokerBranchCard result={result.data} ticker={args.symbol || result?.symbol} /> : null
+                break
+
+              case 'showMarketInstitutionalLeaderboard':
+                cardContent = result?.data ? <InstitutionalLeaderboardCard result={result.data} /> : null
+                break
+
+              case 'showStockCompanyProfile':
+                cardContent = result?.data ? <CompanyProfileCard result={result.data} ticker={args.symbol || result?.symbol} /> : null
+                break
+
+              case 'showMacroRiskRegime':
+                cardContent = result?.data ? <MacroRiskRegimeCard result={result.data} /> : null
+                break
+
+              case 'showStockdataMacroDataset':
+                cardContent = result?.data ? <StockdataMacroDatasetCard result={result.data} title={`Stockdata ${args.dataset || '宏觀資料集'}`} /> : null
+                break
+
+              case 'showPolymarketSentiment':
+                cardContent = result?.data ? <PolymarketSentimentCard result={result.data} /> : null
                 break
 
               default:

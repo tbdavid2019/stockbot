@@ -152,6 +152,25 @@ export function contextDerivedFallback(context: FollowupContext): string[] {
     /metric|financial|財務|ebitda|ebit|eps|營收|毛利|現金流|估值|yoy|qoq/i.test(
       `${context.toolName} ${q}`
     )
+  const isPrediction = /Prediction|prediction|LSTM|TimesFM|Xuantie|共振|預測|玄鐵/i.test(`${context.toolName} ${q}`)
+  const isBroker = /Broker|broker|分點|券商/i.test(`${context.toolName} ${q}`)
+  const isMacro = /Macro|macro|Regime|FedWatch|Polymarket|曝險|宏觀|利率/i.test(`${context.toolName} ${q}`)
+  if (isPrediction || isBroker || isMacro) {
+    const candidates = context.language === 'zh-TW'
+      ? [
+          isPrediction ? `比較 ${subject} 的模型訊號與最新價格或均線資料，標出仍需核實的欄位` : '',
+          isBroker ? `核對 ${subject} 券商分點資料的觀察期間、買賣單位與資料截至時間` : '',
+          isMacro ? `比較目前 ${subject} 的宏觀 Regime、曝險輸出與可核實的市場事件` : '',
+          `列出 ${subject} 目前資料仍無法支持的結論與下一個可查證問題`
+        ]
+      : [
+          isPrediction ? `Compare ${subject}'s model signal with current price or moving-average fields and flag unverified values` : '',
+          isBroker ? `Verify ${subject}'s broker-branch observation window, units, and as-of timestamp` : '',
+          isMacro ? `Compare ${subject}'s macro regime and exposure output with verifiable market events` : '',
+          `List the conclusions that remain unsupported and the next verifiable question for ${subject}`
+        ]
+    return normalizeFollowups(candidates.filter(Boolean), context)
+  }
   const candidates =
     context.language === 'zh-TW'
       ? isMetric

@@ -72,10 +72,34 @@ import {
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
+import {
+  BrokerBranchCard,
+  CompanyProfileCard,
+  InstitutionalLeaderboardCard,
+  MacroRiskRegimeCard,
+  PolymarketSentimentCard,
+  PredictionHistoryCard,
+  PredictionTopPicksCard,
+  ResonanceCard,
+  StockdataMacroDatasetCard
+} from '@/components/stocks/stockdata-cards'
 import { buildTransmissionAnalysis } from '@/lib/deepear'
 import { fetchMacroFactorRegime } from '@/lib/quant/us-fddk'
 import { fetchInstitutionalFlow } from '@/lib/quant/institutional'
 import { fetchGlobalMacroDashboard } from '@/lib/quant/investing-macro'
+import {
+  fetchBrokerData,
+  fetchCompanyProfile,
+  fetchCompanyProfilesBatch,
+  fetchInstitutionalLeaderboard,
+  fetchLatestPredictions,
+  fetchMacroDataset,
+  fetchPredictionHistory,
+  fetchPredictionRanking,
+  resolvePredictionTicker
+} from '@/lib/stockdata/adapters'
+import { normalizeTicker } from '@/lib/stockdata/normalization'
+import type { StockdataResult } from '@/lib/stockdata/types'
 import { toast } from 'sonner'
 import {
   extractExplicitTicker,
@@ -719,6 +743,41 @@ function saveQuantToolResult(
   } catch (error) {
     console.warn(`[${toolName}] aiState.done failed:`, error)
   }
+}
+
+async function finishStockdataTool<T>(
+  aiState: MutableAIState,
+  toolName: string,
+  args: Record<string, unknown>,
+  symbol: string,
+  result: StockdataResult<T>,
+  card: React.ReactNode
+) {
+  const context = JSON.stringify({
+    status: result.status,
+    source: result.source,
+    warnings: result.warnings,
+    data: result.data
+  }).slice(0, 7000)
+  const caption = await generateCaption(symbol, [], toolName, aiState, context)
+  saveQuantToolResult(
+    aiState,
+    toolName,
+    args,
+    { symbol, data: result, source: result.source, status: result.status, warnings: result.warnings },
+    caption
+  )
+  return (
+    <BotCard>
+      {card}
+      <BotCaption content={caption} />
+    </BotCard>
+  )
+}
+
+function normalizedTickerLabel(value: string) {
+  const normalized = normalizeTicker(value)
+  return normalized.ticker || value
 }
 
 async function submitUserMessage(content: string, userApiKey?: string) {
@@ -2699,6 +2758,159 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   <BotCaption content={caption} />
                 </BotCard>
               )
+            }
+          },
+          showStockPredictions: {
+            description:
+              'Display Stockdata LSTM, TimesFM, Xuantie, resonance, latest batch snapshot, or per-symbol prediction history. Use only the requested model/strategy and label all outputs as forecasts.',
+            parameters: z.object({
+              kind: z.enum(['resonance', 'xuantie', 'lstm-bullish', 'lstm-bearish', 'timesfm-bullish', 'timesfm-bearish', 'latest', 'history']).default('latest'),
+              symbol: z.string().optional(),
+              query: z.string().optional(),
+              indexName: z.string().optional()
+            }),
+            generate: async function* ({ kind, symbol, query, indexName }) {
+              const requested = symbol || query || '全市場'
+              yield <BotCard><div className="rounded-xl border p-4 text-xs text-muted-foreground">正在載入 Stockdata {kind} 量化資料…</div></BotCard>
+              let result: StockdataResult<unknown>
+              let card: React.ReactNode
+              if (kind === 'history') {
+                let normalized = normalizeTicker(requested)
+                if (normalized.ambiguous || !normalized.ticker) {
+                  const resolved = await resolvePredictionTicker(requested)
+                  const resolvedData = resolved.data && typeof resolved.data === 'object' ? resolved.data as Record<string, unknown> : undefined
+                  const resolvedTicker = typeof resolvedData?.ticker === 'string' ? resolvedData.ticker : typeof resolvedData?.symbol === 'string' ? resolvedData.symbol : undefined
+                  if (resolvedTicker) normalized = normalizeTicker(resolvedTicker)
+                }
+                if (normalized.ambiguous || !normalized.ticker) {
+                  result = { source: { provider: 'stockdata.david888.com', url: 'https://stockdata.david888.com', fetchedAt: new Date().toISOString() }, status: 'unavailable', warnings: [normalized.clarification || '股票代號無法解析。'] }
+                } else {
+                  result = await fetchPredictionHistory(normalized.ticker)
+                }
+                card = <PredictionHistoryCard result={result} ticker={normalizedTickerLabel(requested)} />
+              } else if (kind === 'latest') {
+                result = await fetchLatestPredictions({ indexName, limit: 15 })
+                card = <PredictionTopPicksCard result={result} title="Stockdata 最新市場批次快照" />
+              } else if (kind === 'resonance') {
+                result = await fetchPredictionRanking('resonance', { indexName, limit: 15 })
+                card = <ResonanceCard result={result} />
+              } else {
+                result = await fetchPredictionRanking(kind, { indexName, limit: 15 })
+                card = <PredictionTopPicksCard result={result} title={`Stockdata ${kind} 排行`} />
+              }
+              return await finishStockdataTool(aiState, 'showStockPredictions', { kind, symbol, query, indexName }, requested, result, card)
+            }
+          },
+          showStockBrokerBranches: {
+            description:
+              'Display Stockdata broker branch summary, trade detail, and trend for one ticker. This is separate from official TWSE/TPEX institutional flow.',
+            parameters: z.object({
+              symbol: z.string().describe('A resolvable ticker such as 2330, 2330.TW, or AAPL.'),
+              view: z.enum(['summary', 'trades', 'trend', 'all']).default('all')
+            }),
+            generate: async function* ({ symbol, view }) {
+              const normalized = normalizeTicker(symbol)
+              const ticker = normalized.ticker || symbol
+              yield <BotCard><div className="rounded-xl border p-4 text-xs text-muted-foreground">正在載入 {ticker} 券商分點 summary/trades/trend…</div></BotCard>
+              let combined: StockdataResult<unknown>
+              if (normalized.ambiguous || !normalized.ticker) {
+                combined = {
+                  source: { provider: 'stockdata.david888.com', url: 'https://stockdata.david888.com', fetchedAt: new Date().toISOString() },
+                  status: 'unavailable',
+                  warnings: [normalized.clarification || '股票代號無法解析。']
+                }
+              } else {
+                const kinds = view === 'all' ? ['summary', 'trades', 'trend'] as const : [view]
+                const results = await Promise.all(kinds.map(kind => fetchBrokerData(kind, ticker)))
+                const primary = results[0] || await fetchBrokerData('summary', ticker)
+                combined = {
+                  data: Object.fromEntries(kinds.map((kind, index) => [kind, results[index]?.data])),
+                  source: primary.source,
+                  status: results.some(item => item.status === 'unavailable') ? 'partial' : results.some(item => item.status === 'stale') ? 'stale' : 'live',
+                  warnings: results.flatMap(item => item.warnings)
+                }
+              }
+              return await finishStockdataTool(aiState, 'showStockBrokerBranches', { symbol, view }, ticker, combined, <BrokerBranchCard result={combined} ticker={ticker} />)
+            }
+          },
+          showMarketInstitutionalLeaderboard: {
+            description:
+              'Display Stockdata market-wide institutional net-buy/net-sell leaders. Do not use this for a single stock official TWSE/TPEX institutional flow request.',
+            parameters: z.object({ market: z.string().optional(), direction: z.enum(['buy', 'sell', 'all']).default('all') }),
+            generate: async function* ({ market, direction }) {
+              yield <BotCard><div className="rounded-xl border p-4 text-xs text-muted-foreground">正在載入 Stockdata 全市場三大法人買賣超排行…</div></BotCard>
+              const result = await fetchInstitutionalLeaderboard({ indexName: market, direction, limit: 15 })
+              return await finishStockdataTool(aiState, 'showMarketInstitutionalLeaderboard', { market, direction }, market || '全市場法人排行', result, <InstitutionalLeaderboardCard result={result} />)
+            }
+          },
+          showStockCompanyProfile: {
+            description:
+              'Display Stockdata structured company profile, business description, market cap, and linked live news. Preserve ambiguous resolver states and partial batch failures.',
+            parameters: z.object({
+              symbol: z.string().optional(),
+              query: z.string().optional(),
+              batchSymbols: z.array(z.string()).max(15).optional()
+            }),
+            generate: async function* ({ symbol, query, batchSymbols }) {
+              const requested = symbol || query || '公司資料'
+              yield <BotCard><div className="rounded-xl border p-4 text-xs text-muted-foreground">正在載入 Stockdata 公司簡介與即時新聞…</div></BotCard>
+              let result: StockdataResult<unknown>
+              let ticker = symbol
+              if (batchSymbols?.length) {
+                result = await fetchCompanyProfilesBatch(batchSymbols)
+                ticker = `批次 ${batchSymbols.length} 檔`
+              } else if (symbol) {
+                const normalized = normalizeTicker(symbol)
+                if (normalized.ambiguous || !normalized.ticker) {
+                  result = { source: { provider: 'stockdata.david888.com', url: 'https://stockdata.david888.com', fetchedAt: new Date().toISOString() }, status: 'unavailable', warnings: [normalized.clarification || '公司代號無法解析。'] }
+                } else {
+                  ticker = normalized.ticker
+                  result = await fetchCompanyProfile(normalized.ticker)
+                }
+              } else {
+                result = query
+                  ? await fetchCompanyProfile(undefined, query)
+                  : {
+                      source: {
+                        provider: 'stockdata.david888.com',
+                        url: 'https://stockdata.david888.com',
+                        fetchedAt: new Date().toISOString()
+                      },
+                      status: 'unavailable',
+                      warnings: ['請提供股票代號、公司名稱或批次股票清單。']
+                    }
+              }
+              return await finishStockdataTool(aiState, 'showStockCompanyProfile', { symbol, query, batchSymbols }, ticker || requested, result, <CompanyProfileCard result={result} ticker={ticker || requested} />)
+            }
+          },
+          showMacroRiskRegime: {
+            description:
+              'Display Stockdata macro market regime, VIX, index trend flags, and bounded 0.0–1.0 exposure recommendation. Do not fabricate exposure if missing.',
+            parameters: z.object({ market: z.string().optional() }),
+            generate: async function* ({ market }) {
+              yield <BotCard><div className="rounded-xl border p-4 text-xs text-muted-foreground">正在載入 Stockdata 市場宏觀風險 Regime…</div></BotCard>
+              const result = await fetchMacroDataset('latest', { market })
+              return await finishStockdataTool(aiState, 'showMacroRiskRegime', { market }, market || 'GLOBAL-MACRO-REGIME', result, <MacroRiskRegimeCard result={result} />)
+            }
+          },
+          showStockdataMacroDataset: {
+            description:
+              'Display one Stockdata macro dataset: FedWatch, US earnings calendar, global economic calendar, commodities, or a combined Investing summary. Keep existing Investing.com showEconomicCalendar contract separate.',
+            parameters: z.object({ dataset: z.enum(['summary', 'fed-rate', 'earnings-calendar', 'economic-calendar', 'commodities']), query: z.string().optional() }),
+            generate: async function* ({ dataset, query }) {
+              yield <BotCard><div className="rounded-xl border p-4 text-xs text-muted-foreground">正在載入 Stockdata {dataset} 宏觀資料集…</div></BotCard>
+              const result = await fetchMacroDataset(dataset)
+              return await finishStockdataTool(aiState, 'showStockdataMacroDataset', { dataset, query }, 'STOCKDATA-MACRO', result, <StockdataMacroDatasetCard result={result} title={`Stockdata ${dataset}`} />)
+            }
+          },
+          showPolymarketSentiment: {
+            description:
+              'Display Polymarket prediction-market probabilities from Stockdata with event context and a clear non-factual sentiment disclaimer.',
+            parameters: z.object({ query: z.string().optional() }),
+            generate: async function* ({ query }) {
+              yield <BotCard><div className="rounded-xl border p-4 text-xs text-muted-foreground">正在載入 Polymarket 預測市場情緒…</div></BotCard>
+              const result = await fetchMacroDataset('polymarket', { category: query })
+              return await finishStockdataTool(aiState, 'showPolymarketSentiment', { query }, 'POLYMARKET-SENTIMENT', result, <PolymarketSentimentCard result={result} />)
             }
           },
           searchFinancialWeb: {

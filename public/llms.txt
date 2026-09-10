@@ -28,6 +28,19 @@ Key System Directives:
 - [AnyDoc Financial Report Parser](https://bot.david888.com/llms-full.txt#financial-report): 2MD AnyDoc parsing for uploaded or online PDF, Excel, Word 10-K/10-Q documents up to 25MB, extracting financial statements and key ratio drivers.
 - [Web Search Results](https://bot.david888.com/llms-full.txt#web-search): 2MD live web search aggregator retrieving real-time breaking news, corporate actions, and supply chain intelligence.
 
+## Stockdata REST Provider (server-side)
+
+Stockbot optionally reads normalized data from `https://stockdata.david888.com` through server-only REST adapters. The provider is never called directly by the browser, credentials are not serialized, and every card labels source, fetched time, as-of time when supplied, and stale/partial/unavailable status.
+
+- `showStockPredictions`: LSTM/TimesFM bullish or bearish rankings, Xuantie pullback, resonance tags, latest batch snapshot, resolver, and per-symbol prediction history.
+- `showStockBrokerBranches`: broker summary, trades, and trend for one symbol; distinct from official TWSE/TPEX institutional flow.
+- `showMarketInstitutionalLeaderboard`: market-wide institutional ranking without replacing the per-symbol official flow card.
+- `showStockCompanyProfile`: structured company profile, live news, and bounded batch profiles.
+- `showMacroRiskRegime`: market regime, VIX/index flags, and provider exposure when a valid 0.0–1.0 value is returned.
+- `showStockdataMacroDataset` / `showPolymarketSentiment`: FedWatch, earnings, economic calendar, commodities, combined summary, and prediction-market sentiment.
+
+REST is the production transport. OpenAPI/MCP/plugin discovery is read-only diagnostics; MCP SSE/WebMCP are disabled by default for web chat. Responses are bounded, cached briefly, deduplicated in flight, and protected by a circuit breaker. Missing fields display `—` or `待確認`; model forecasts and prediction-market probabilities are not factual guarantees.
+
 ## Documentation & Specifications
 
 - [StockBot Benchmark Test Suite](https://wiki.david888.com/share/rzye4g): Full 50+ benchmark prompt suite and QA test cases across all financial tools.

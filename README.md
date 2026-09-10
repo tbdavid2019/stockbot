@@ -33,6 +33,8 @@
 
 ## 功能特點
 
+- 📈 **Stockdata 外部量化 Provider**：透過 server-only REST adapters 接入 LSTM、TimesFM、玄鐵、策略共振、券商分點、全市場法人排行、公司簡介/新聞、宏觀 Regime、FedWatch、財報/經濟日曆、商品與 Polymarket 情緒；結果保留來源、時間戳、stale/partial 狀態，並以 `STOCKDATA_ENABLED` 與 domain flags 控制。REST 是正式執行路徑，MCP/WebMCP 僅作診斷。
+
 - 🤖 **即時 AI 聊天機器人**：與高速回應的 AI 互動，通過自然語言對話請求股票新聞、信息和圖表
 - 📊 **互動式股票圖表**：接收幾乎即時的、上下文感知的響應，包含承載實時數據的互動式 TradingView 圖表
 - 🔄 **自適應界面**：動態渲染 TradingView UI 組件，為您的特定查詢定制金融界面
@@ -205,4 +207,3 @@ StockBot 2.0 原生支援由 Jeremy Howard 發起之 [llmstxt.org](https://llmst
 This app was originally developed by [Benjamin Klieger](https://x.com/benjaminklieger) at [Groq](https://groq.com) and uses the AI Chatbot template created by Vercel: [Github Repository](https://github.com/vercel/ai-chatbot). Taiwan stock market support was added by [tbdavid2019](https://github.com/tbdavid2019).
 
 技術提供：[david888.com](https://david888.com)
-

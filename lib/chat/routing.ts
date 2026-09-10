@@ -21,6 +21,13 @@ export type DeterministicToolName =
   | 'showMacroFactorRegime'
   | 'showInstitutionalFlow'
   | 'showEconomicCalendar'
+  | 'showStockPredictions'
+  | 'showStockBrokerBranches'
+  | 'showMarketInstitutionalLeaderboard'
+  | 'showStockCompanyProfile'
+  | 'showMacroRiskRegime'
+  | 'showStockdataMacroDataset'
+  | 'showPolymarketSentiment'
 
 const NON_TICKER_WORDS = new Set([
   'AI',
@@ -159,6 +166,24 @@ export function inferDeterministicTool(
   ) {
     return 'trackInvestmentSignal'
   }
+  if (/Polymarket|預測市場|real[- ]money odds|prediction market/i.test(content)) {
+    return 'showPolymarketSentiment'
+  }
+  if (/FedWatch|聯準會.*(?:利率|降息|升息).*機率|FOMC.*機率|fed rate odds|利率決策機率|美股財報行事曆|美股財報日曆|US earnings calendar/i.test(content)) {
+    return 'showStockdataMacroDataset'
+  }
+  if (/(?:Stockdata|外部量化).*(?:經濟日曆|商品)|(?:黃金|銅|WTI|原油).*(?:Stockdata|外部|摘要)|commodities summary/i.test(content)) {
+    return 'showStockdataMacroDataset'
+  }
+  if (/市場曝險|投資曝險|宏觀風控|風險 Regime|risk regime|recommended exposure|建議曝險/i.test(content)) {
+    return 'showMacroRiskRegime'
+  }
+  if (/TimesFM|LSTM|玄鐵|共振|預測排行|預測軌跡|模型選股|批次快照|top picks|forecast ranking/i.test(content)) {
+    return 'showStockPredictions'
+  }
+  if (/公司簡介|公司做什麼|核心業務|business profile|company profile|公司新聞/i.test(content)) {
+    return 'showStockCompanyProfile'
+  }
   if (
     /因子|風格輪動|資產配置|80\/20|60\/40|股債平衡|雙動能|fama[- ]french|factor\s*regime|asset\s*allocation/i.test(
       content
@@ -172,6 +197,10 @@ export function inferDeterministicTool(
     )
   ) {
     return 'showEconomicCalendar'
+  }
+
+  if (!resolvedTicker && /全市場|哪些股票|排行|買超前|賣超前|institutional leaders|top institutional/i.test(content) && /法人|外資|投信|自營商|institutional/i.test(content)) {
+    return 'showMarketInstitutionalLeaderboard'
   }
 
   if (!resolvedTicker) return undefined
@@ -217,6 +246,13 @@ export function inferDeterministicTool(
     )
   ) {
     return 'analyzeStockLiquidity'
+  }
+  if (
+    /券商分點|主力分點|分點進出|券商買賣|broker branch|broker trades|dealer activity/i.test(
+      content
+    )
+  ) {
+    return 'showStockBrokerBranches'
   }
   if (
     /三大法人|法人買賣超|法人籌碼|外資買賣超|外資持股|投信連買|投信買賣超|投信持股|自營商|土洋對作|土洋同買|法人動向|籌碼面|籌碼分析|institutional\s*(?:flow|investor)/i.test(
