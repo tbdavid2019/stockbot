@@ -34,6 +34,7 @@
 ## 功能特點
 
 - 📈 **Stockdata 外部量化 Provider**：透過 server-only REST adapters 接入 LSTM、TimesFM、玄鐵、策略共振、券商分點、全市場法人排行、公司簡介/新聞、宏觀 Regime、FedWatch、財報/經濟日曆、商品與 Polymarket 情緒；結果保留來源、時間戳、stale/partial 狀態，並以 `STOCKDATA_ENABLED` 與 domain flags 控制。REST 是正式執行路徑，MCP/WebMCP 僅作診斷。
+- 🌍 **全球官方證券清冊 Registry**：每日以台北自然日快取 TWSE/TPEx、NASDAQ Trader、NYSE/AMEX/ARCA/BATS/IEX、HKEX、JPX、SSE、SZSE 與 Euronext 官方清冊；公司名稱解析先查本地 registry，再進公司簡介或其他金融工具。LSE 支援透過 `GLOBAL_LSE_SOURCE_URL` 接入官方/授權 CSV。
 
 - 🤖 **即時 AI 聊天機器人**：與高速回應的 AI 互動，通過自然語言對話請求股票新聞、信息和圖表
 - 📊 **互動式股票圖表**：接收幾乎即時的、上下文感知的響應，包含承載實時數據的互動式 TradingView 圖表
@@ -61,6 +62,26 @@
 - 🚀 **SEPA 趨勢策略** (新功能)：檢查 Minervini 八項 Trend Template、Stage 1–4、VCP 收縮型態、5% 買入區、停損與風險式部位大小。
 - 🧾 **財報前瞻** (新功能)：顯示公開 earnings 日期、EPS/營收共識區間、分析師目標價與最近四季 beat/miss surprise。
 - 🧮 **衍生品與微結構** (新功能)：支援 Black-Scholes 多腿選擇權互動曲線、ETF NAV 溢折價/GEX 欄位，以及 Amihud、float turnover 與平方根市場衝擊估算。
+
+### 全球證券清冊更新與快取規則
+
+全球清冊目前採用「台北自然日 + 首次請求觸發」的每日快取策略，涵蓋：
+
+- TWSE / TPEx
+- NASDAQ、NYSE、AMEX、ARCA、BATS、IEX
+- HKEX、JPX、SSE、SZSE、Euronext
+- LSE（僅在設定 `GLOBAL_LSE_SOURCE_URL` 後載入官方／授權 CSV）
+
+實際更新規則如下：
+
+1. 每日以 `Asia/Taipei` 的 **00:00** 作為新的清冊日期邊界。
+2. 跨日後不會由背景程序自動抓取；該日第一個需要清冊解析的請求才會觸發全市場官方來源抓取。
+3. 例如當日第一個相關請求在 09:15，當日快照就在約 09:15 建立；若直到 14:20 才有請求，則延後至 14:20 更新。
+4. 同一台北自然日內的後續請求共用同一份快照；同時發生的重複請求會合併，避免重複抓取。
+5. 快取重新驗證週期為 **24 小時（86,400 秒）**。目前不是固定時間排程，也不會依 NASDAQ 等來源的盤中發布頻率即時刷新。
+6. 個別來源失敗時，其他成功來源仍會合併；若已有上一份成功快照，系統會回傳該快照並標記為 `stale`。
+
+因此，「每日更新」代表每天最多建立一份新的全市場快照，而不是保證每天固定在某個鐘點完成同步。實作見 `lib/global-market-universe-cache.ts`。
 
 ## AI 投資分析功能
 
@@ -105,37 +126,37 @@ AI_HEDGE_FUND_PORT=6000
 
 StockBot 內建 15 套機構級原生 React 金融視覺化卡片，所有卡片均遵循現代金融終端 Design System 規範，支援高清晰字體層級、自適應響應式佈局，並具備純本機 `localStorage` 狀態還原機制：
 
-| # | 卡片名稱 / 組件 | 調用工具 | 資料來源與核心功能 | 提問範例 |
-| :- | :--- | :--- | :--- | :--- |
-| **1** | **🏛️ 三大法人籌碼情報卡**<br>`<InstitutionalFlowCard />` | `showInstitutionalFlow` | 直連 **TWSE 證交所 (T86/MI_QFIIS)** 與 **TPEX 櫃買中心** 官方 API。提供外資、投信、自營商（自行買賣+避險）今日買賣超**張數**、5 日累計、外資持股比率 %、連買連賣天數與四大籌碼訊號（🟢 土洋同買、⚔️ 土洋對作、🚀 投信連買認養、🔴 三大法人同步賣超）。 | `2330 法人買賣超`<br>`聯發科投信連買幾天？` |
-| **2** | **📈 量化 DCF 估值合理價卡**<br>`<CompanyValuationCard />` | `calculateCompanyValuation` | 採用 5 年 FCFF 現金流折現、CAPM/WACC 資本成本計算，結合同業 P/E、EV/EBITDA、EV/Sales 倍數加權中位數，並提供 **WACC × 終值成長率 5×5 敏感度分析矩陣**。針對負現金流擴張期企業套用標準化利潤率平滑。 | `NVDA 合理價是多少？`<br>`特斯拉 DCF 估值` |
-| **3** | **📊 核心財務報表指標卡**<br>`<NativeFinancialsCard />` | `showStockFinancials` | 整合 4 大維度指標矩陣：(1) 估值倍數 (P/E, P/B, P/S)、(2) 獲利能力 (ROE, 淨利率, 營業利益率)、(3) 財務體質 (流動比率, 負債權益比)、(4) 成長動能 (營收 YoY, 獲利 YoY) 與 DCF 內在價值摘要。 | `台積電財務報表`<br>`AAPL 財務指標分析` |
-| **4** | **📌 財務數據即時核實卡**<br>`<FinancialMetricCard />` | `answerFinancialMetric` | 針對特定財報科目、會計比率、成長率等問題，優先檢索結構化財報時間序列計算精確數值、期間與口徑，並在上方卡片直接標註核實之官方文件來源外鏈。 | `NVDA 最新一季 EBITDA 是多少？`<br>`台積電近三年營收 CAGR` |
-| **5** | **🎯 Minervini SEPA 趨勢動能卡**<br>`<SepaStrategyCard />` | `analyzeSepaStrategy` | 嚴格檢驗 Mark Minervini 8 項 Trend Template 趨勢模板、Stage 1–4 階段判定、RS 強度評級、VCP 波動收縮型態、Pivot 關鍵買點、5% 買入區、停損點與**風險部位股數計算機**。 | `TSLA SEPA 趨勢分析`<br>`2330 符合 SEPA 買點嗎？` |
-| **6** | **📅 財報前瞻與分析師共識卡**<br>`<EarningsBriefingCard />` | `previewEarnings` | 揭示預計公布日期（盤前/盤後）、華爾街分析師 EPS 與營收共識區間、分析師平均目標價與潛在空間，並提供過去四季實際 EPS vs 預估值之 Beat/Miss Surprise 驚喜度實績表。 | `NVDA 什麼時候公布財報？`<br>`微軟財報預期與目標價` |
-| **7** | **📊 US FDDK 20 年多因子資產配置卡**<br>`<MacroFactorRegimeCard />` | `showMacroFactorRegime` | 串接 `voidful/us_fddk` 20 年可稽核歷史凍結數據與 Fama-French 多因子模型。提供扣除 10/50 bps 滑價成本之跨資產 ETF 策略回測，即時對比 SPY、QQQ、80/20 VUG/SHY、60/40 股債平衡之 CAGR、夏普比率、最大回撤與下跌捕獲率。 | `20年資產配置回測`<br>`80/20 股債平衡策略績效` |
-| **8** | **⛓️ DeepEar 宏觀邏輯傳導鏈卡**<br>`<TransmissionChainCard />` | `showTransmissionChain` | 串接因果傳導引擎，深度剖析「一階總經/事件觸發 ➔ 二階產業鏈傳導 ➔ 三階企業獲利兌現」連鎖反應，標註利好/利空衝擊、情緒評分、信心度與**核心論點證偽判定點 (Falsification Criteria)**。 | `降息對科技股的傳導鏈`<br>`地緣政治對半導體的連鎖衝擊` |
-| **9** | **🔍 AlphaEar 投資訊號演化追蹤卡**<br>`<SignalTrackerCard />` | `trackInvestmentSignal` | 實作投資假說 4 態演化（🟢 **Strengthened** / 🟡 **Weakened** / 🔴 **Falsified** / ⚪ **Unchanged**），列出最新佐證數據、關鍵證偽條件與動態風險控管部位調整建議。 | `追蹤 NVDA 投資假說`<br>`特斯拉多頭論點是否被證偽？` |
-| **10** | **⚡ Black-Scholes 期權損益模擬卡**<br>`<OptionsPayoffCard />` | `simulateOptionsPayoff` | 提供 Black-Scholes 定價模型互動式多腿選擇權損益圖。支援即時調整現價 (Spot)、履約價 (Strike)、到期天數 (DTE) 與隱含波動率 (IV)，動態繪製到期損益 (Expiry) 與現值理論曲線 (Current) 及損益兩平點。 | `AAPL 選擇權損益模擬`<br>`NVDA 跨式期權策略曲線` |
-| **11** | **💧 市場微結構流動性分析卡**<br>`<StockLiquidityCard />` | `analyzeStockLiquidity` | 計算 Amihud 非流動性指標、年化自由流通股週轉率 (Float Turnover)、流通盤出清天數 (Days to Liquidate) 與 Square-Root Market Impact 平方根市場衝擊曲線，精準估算大單進出場滑價成本 (bps)。 | `2330 流動性分析`<br>`買進 5 萬股 NVDA 滑價衝擊` |
-| **12** | **🏷️ ETF 淨值溢折價監控卡**<br>`<EtfPremiumCard />` | `analyzeEtfPremium` | 即時監控 ETF 市價與基金淨值 (NAV) 之溢價 (Premium) / 折價 (Discount) 幅度、Dealer GEX 伽瑪暴露狀態、買賣價差 (Bid-Ask Spread) 與同類 ETF 中位數對照。 | `0050 溢折價查詢`<br>`SPY NAV 淨值與 GEX 狀態` |
-| **13** | **🌐 2MD 即時連網研調來源卡**<br>`<WebSearchResults />` | `searchFinancialWeb` | 由 2MD 全網情報大腦並發檢索最新重大快訊、供應鏈上下游、法說會動態與總經環境，以摺疊清單呈現可信來源標題、網址與內文摘要。 | `SpaceX 最新上市估值與新聞`<br>`全球人形機器人供應鏈` |
-| **14** | **📑 AnyDoc 財報文件解析卡**<br>`<FinancialReportCard />` | `readFinancialReport` | 支援線上財報網址或本機上傳之 PDF、Excel、Word、PPT 文件（最大 25MB）。秒級萃取三大報表、管理層指引與風險因子，支援一鍵複製與全文展開。 | `閱讀這份台積電法說會簡報`<br>`分析上傳的財報 PDF` |
-| **15** | **🏛️ 傳奇大師多維度研調卡**<br>`<StockAnalysis />` | `analyzeStockWithAI` | 整合 AI Hedge Fund API，由 13 位傳奇投資大師（巴菲特、葛拉漢、蒙格、木頭姐等）分為 3 批次漸進式研調，呈現各分析師多空訊號、圓桌委員會辯論對話過程與投資委員會綜合決策判讀。 | `台積電值得買嗎？`<br>`13位大師分析 NVDA` |
-| **16** | **📅 全球重大總經日曆卡**<br>`<EconomicCalendarCard />` | `showEconomicCalendar` | 透過 2MD Fast Reader 即時萃取 Investing.com 全球重大財經日曆（非農就業、CPI、PMI、央行決議與倒數時間）、三大期指盤前行情、美債殖利率曲線（10Y/2Y）與大宗商品（原油/黃金），具備 Singleflight 防驚群與 TTL 快取。 | `今晚有什麼重大總經數據？`<br>`美股盤前期貨與經濟日曆` |
+| #      | 卡片名稱 / 組件                                                     | 調用工具                    | 資料來源與核心功能                                                                                                                                                                                                                                     | 提問範例                                                   |
+| :----- | :------------------------------------------------------------------ | :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------- |
+| **1**  | **🏛️ 三大法人籌碼情報卡**<br>`<InstitutionalFlowCard />`            | `showInstitutionalFlow`     | 直連 **TWSE 證交所 (T86/MI_QFIIS)** 與 **TPEX 櫃買中心** 官方 API。提供外資、投信、自營商（自行買賣+避險）今日買賣超**張數**、5 日累計、外資持股比率 %、連買連賣天數與四大籌碼訊號（🟢 土洋同買、⚔️ 土洋對作、🚀 投信連買認養、🔴 三大法人同步賣超）。 | `2330 法人買賣超`<br>`聯發科投信連買幾天？`                |
+| **2**  | **📈 量化 DCF 估值合理價卡**<br>`<CompanyValuationCard />`          | `calculateCompanyValuation` | 採用 5 年 FCFF 現金流折現、CAPM/WACC 資本成本計算，結合同業 P/E、EV/EBITDA、EV/Sales 倍數加權中位數，並提供 **WACC × 終值成長率 5×5 敏感度分析矩陣**。針對負現金流擴張期企業套用標準化利潤率平滑。                                                     | `NVDA 合理價是多少？`<br>`特斯拉 DCF 估值`                 |
+| **3**  | **📊 核心財務報表指標卡**<br>`<NativeFinancialsCard />`             | `showStockFinancials`       | 整合 4 大維度指標矩陣：(1) 估值倍數 (P/E, P/B, P/S)、(2) 獲利能力 (ROE, 淨利率, 營業利益率)、(3) 財務體質 (流動比率, 負債權益比)、(4) 成長動能 (營收 YoY, 獲利 YoY) 與 DCF 內在價值摘要。                                                              | `台積電財務報表`<br>`AAPL 財務指標分析`                    |
+| **4**  | **📌 財務數據即時核實卡**<br>`<FinancialMetricCard />`              | `answerFinancialMetric`     | 針對特定財報科目、會計比率、成長率等問題，優先檢索結構化財報時間序列計算精確數值、期間與口徑，並在上方卡片直接標註核實之官方文件來源外鏈。                                                                                                             | `NVDA 最新一季 EBITDA 是多少？`<br>`台積電近三年營收 CAGR` |
+| **5**  | **🎯 Minervini SEPA 趨勢動能卡**<br>`<SepaStrategyCard />`          | `analyzeSepaStrategy`       | 嚴格檢驗 Mark Minervini 8 項 Trend Template 趨勢模板、Stage 1–4 階段判定、RS 強度評級、VCP 波動收縮型態、Pivot 關鍵買點、5% 買入區、停損點與**風險部位股數計算機**。                                                                                   | `TSLA SEPA 趨勢分析`<br>`2330 符合 SEPA 買點嗎？`          |
+| **6**  | **📅 財報前瞻與分析師共識卡**<br>`<EarningsBriefingCard />`         | `previewEarnings`           | 揭示預計公布日期（盤前/盤後）、華爾街分析師 EPS 與營收共識區間、分析師平均目標價與潛在空間，並提供過去四季實際 EPS vs 預估值之 Beat/Miss Surprise 驚喜度實績表。                                                                                       | `NVDA 什麼時候公布財報？`<br>`微軟財報預期與目標價`        |
+| **7**  | **📊 US FDDK 20 年多因子資產配置卡**<br>`<MacroFactorRegimeCard />` | `showMacroFactorRegime`     | 串接 `voidful/us_fddk` 20 年可稽核歷史凍結數據與 Fama-French 多因子模型。提供扣除 10/50 bps 滑價成本之跨資產 ETF 策略回測，即時對比 SPY、QQQ、80/20 VUG/SHY、60/40 股債平衡之 CAGR、夏普比率、最大回撤與下跌捕獲率。                                   | `20年資產配置回測`<br>`80/20 股債平衡策略績效`             |
+| **8**  | **⛓️ DeepEar 宏觀邏輯傳導鏈卡**<br>`<TransmissionChainCard />`      | `showTransmissionChain`     | 串接因果傳導引擎，深度剖析「一階總經/事件觸發 ➔ 二階產業鏈傳導 ➔ 三階企業獲利兌現」連鎖反應，標註利好/利空衝擊、情緒評分、信心度與**核心論點證偽判定點 (Falsification Criteria)**。                                                                    | `降息對科技股的傳導鏈`<br>`地緣政治對半導體的連鎖衝擊`     |
+| **9**  | **🔍 AlphaEar 投資訊號演化追蹤卡**<br>`<SignalTrackerCard />`       | `trackInvestmentSignal`     | 實作投資假說 4 態演化（🟢 **Strengthened** / 🟡 **Weakened** / 🔴 **Falsified** / ⚪ **Unchanged**），列出最新佐證數據、關鍵證偽條件與動態風險控管部位調整建議。                                                                                       | `追蹤 NVDA 投資假說`<br>`特斯拉多頭論點是否被證偽？`       |
+| **10** | **⚡ Black-Scholes 期權損益模擬卡**<br>`<OptionsPayoffCard />`      | `simulateOptionsPayoff`     | 提供 Black-Scholes 定價模型互動式多腿選擇權損益圖。支援即時調整現價 (Spot)、履約價 (Strike)、到期天數 (DTE) 與隱含波動率 (IV)，動態繪製到期損益 (Expiry) 與現值理論曲線 (Current) 及損益兩平點。                                                       | `AAPL 選擇權損益模擬`<br>`NVDA 跨式期權策略曲線`           |
+| **11** | **💧 市場微結構流動性分析卡**<br>`<StockLiquidityCard />`           | `analyzeStockLiquidity`     | 計算 Amihud 非流動性指標、年化自由流通股週轉率 (Float Turnover)、流通盤出清天數 (Days to Liquidate) 與 Square-Root Market Impact 平方根市場衝擊曲線，精準估算大單進出場滑價成本 (bps)。                                                                | `2330 流動性分析`<br>`買進 5 萬股 NVDA 滑價衝擊`           |
+| **12** | **🏷️ ETF 淨值溢折價監控卡**<br>`<EtfPremiumCard />`                 | `analyzeEtfPremium`         | 即時監控 ETF 市價與基金淨值 (NAV) 之溢價 (Premium) / 折價 (Discount) 幅度、Dealer GEX 伽瑪暴露狀態、買賣價差 (Bid-Ask Spread) 與同類 ETF 中位數對照。                                                                                                  | `0050 溢折價查詢`<br>`SPY NAV 淨值與 GEX 狀態`             |
+| **13** | **🌐 2MD 即時連網研調來源卡**<br>`<WebSearchResults />`             | `searchFinancialWeb`        | 由 2MD 全網情報大腦並發檢索最新重大快訊、供應鏈上下游、法說會動態與總經環境，以摺疊清單呈現可信來源標題、網址與內文摘要。                                                                                                                              | `SpaceX 最新上市估值與新聞`<br>`全球人形機器人供應鏈`      |
+| **14** | **📑 AnyDoc 財報文件解析卡**<br>`<FinancialReportCard />`           | `readFinancialReport`       | 支援線上財報網址或本機上傳之 PDF、Excel、Word、PPT 文件（最大 25MB）。秒級萃取三大報表、管理層指引與風險因子，支援一鍵複製與全文展開。                                                                                                                 | `閱讀這份台積電法說會簡報`<br>`分析上傳的財報 PDF`         |
+| **15** | **🏛️ 傳奇大師多維度研調卡**<br>`<StockAnalysis />`                  | `analyzeStockWithAI`        | 整合 AI Hedge Fund API，由 13 位傳奇投資大師（巴菲特、葛拉漢、蒙格、木頭姐等）分為 3 批次漸進式研調，呈現各分析師多空訊號、圓桌委員會辯論對話過程與投資委員會綜合決策判讀。                                                                            | `台積電值得買嗎？`<br>`13位大師分析 NVDA`                  |
+| **16** | **📅 全球重大總經日曆卡**<br>`<EconomicCalendarCard />`             | `showEconomicCalendar`      | 透過 2MD Fast Reader 即時萃取 Investing.com 全球重大財經日曆（非農就業、CPI、PMI、央行決議與倒數時間）、三大期指盤前行情、美債殖利率曲線（10Y/2Y）與大宗商品（原油/黃金），具備 Singleflight 防驚群與 TTL 快取。                                       | `今晚有什麼重大總經數據？`<br>`美股盤前期貨與經濟日曆`     |
 
 ---
 
 ## 📈 TradingView 互動組件 (TradingView Interactive Widgets)
 
-| 組件名稱 | 說明 | 預覽截圖 |
-| :--- | :--- | :--- |
-| **互動式即時走勢圖** (`StockChart`) | 支援 Candlestick K 線、成交量與多週期指標分析。 | ![Candlestick Stock Charts](https://github.com/user-attachments/assets/ce9ea4a8-a1fe-4ce7-be60-3f5d64d50ced) |
-| **全市場熱力圖** (`MarketHeatmap`) | 支援北美、歐洲、亞洲與台灣全市場 (AllTW / TW50)。 | ![Heatmap of Daily Market](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e) |
-| **ETF 板塊熱力圖** (`ETFHeatmap`) | 跨資產與產業板塊 ETF 表現視覺化。 | ![ETF Heatmap](https://github.com/user-attachments/assets/cb2b29d9-acb7-4c8f-90c7-0390e72907f6) |
-| **股票篩選器** (`StockScreener`) | 依基本面與技術指標篩選潛力標的。 | ![Stock Screener](https://github.com/user-attachments/assets/8ecadec9-69a1-4e18-a9fe-7b30df9f6ff5) |
-| **市場概況行情** (`MarketOverview`) | 股票、期貨、債券、外匯即時行情看板。 | ![Market Overview](https://github.com/user-attachments/assets/79048f3b-9153-41f9-8de5-6b3d45f331dd) |
-| **熱門排行榜** (`MarketTrending`) | 今日漲幅榜、跌幅榜與成交量榜。 | ![Trending Stocks](https://github.com/user-attachments/assets/848c1ebf-7828-4116-a041-6f0ba7156bd5) |
+| 組件名稱                            | 說明                                              | 預覽截圖                                                                                                     |
+| :---------------------------------- | :------------------------------------------------ | :----------------------------------------------------------------------------------------------------------- |
+| **互動式即時走勢圖** (`StockChart`) | 支援 Candlestick K 線、成交量與多週期指標分析。   | ![Candlestick Stock Charts](https://github.com/user-attachments/assets/ce9ea4a8-a1fe-4ce7-be60-3f5d64d50ced) |
+| **全市場熱力圖** (`MarketHeatmap`)  | 支援北美、歐洲、亞洲與台灣全市場 (AllTW / TW50)。 | ![Heatmap of Daily Market](https://github.com/user-attachments/assets/2e3919a3-280b-4be4-adcd-a1ff636bff3e)  |
+| **ETF 板塊熱力圖** (`ETFHeatmap`)   | 跨資產與產業板塊 ETF 表現視覺化。                 | ![ETF Heatmap](https://github.com/user-attachments/assets/cb2b29d9-acb7-4c8f-90c7-0390e72907f6)              |
+| **股票篩選器** (`StockScreener`)    | 依基本面與技術指標篩選潛力標的。                  | ![Stock Screener](https://github.com/user-attachments/assets/8ecadec9-69a1-4e18-a9fe-7b30df9f6ff5)           |
+| **市場概況行情** (`MarketOverview`) | 股票、期貨、債券、外匯即時行情看板。              | ![Market Overview](https://github.com/user-attachments/assets/79048f3b-9153-41f9-8de5-6b3d45f331dd)          |
+| **熱門排行榜** (`MarketTrending`)   | 今日漲幅榜、跌幅榜與成交量榜。                    | ![Trending Stocks](https://github.com/user-attachments/assets/848c1ebf-7828-4116-a041-6f0ba7156bd5)          |
 
 ## LLM 與多階層備援設定 (LLM & Multi-Tier Fallback Configuration)
 
