@@ -71,7 +71,7 @@ function validateDiscoveryDocument(endpoint: string, data: unknown): Omit<Discov
     return { valid: Boolean(recordString(data, 'version')) && tools.length > 0, version: recordString(data, 'version'), transport: recordString(data, 'transport'), tools }
   }
   if (endpoint.includes('ai-plugin')) {
-    const api = isRecord(data.api)
+    const api = isRecord(data.api) ? data.api : undefined
     return { valid: Boolean(recordString(data, 'schema_version')) && Boolean(api && recordString(api, 'url')), version: recordString(data, 'schema_version') }
   }
   return { valid: Boolean(data.success !== false), version: recordString(data, 'version') }
