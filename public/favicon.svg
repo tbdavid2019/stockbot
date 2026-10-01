@@ -1,5 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#F55036"/>
-  <path d="M6 22 L13 14 L18 19 L26 9" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M21 9 L26 9 L26 14" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF7A1A" />
+      <stop offset="60%" stop-color="#FF5A00" />
+      <stop offset="100%" stop-color="#E54400" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#orangeGrad)" />
+  <g fill="#FFFFFF" text-anchor="middle" font-family="-apple-system, BlinkMacSystemFont, 'SF Pro Display', Inter, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif">
+    <text x="256" y="254" font-size="172" font-weight="900" letter-spacing="-4">888</text>
+    <text x="256" y="382" font-size="88" font-weight="800" letter-spacing="-1">StockBot</text>
+  </g>
 </svg>
