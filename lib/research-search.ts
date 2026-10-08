@@ -1,6 +1,7 @@
 import { searchWeb2MD, type TwoMDResultItem } from '@/lib/2md'
 import { resolveMarketCatalogName } from '@/lib/market-catalog'
 import { extractExplicitTicker } from '@/lib/chat/routing'
+import { evaluateSystemOne, type ChoiceAnswer } from './clef'
 
 type ResearchMode = 'financial' | 'general'
 
@@ -150,5 +151,74 @@ export async function searchResearchEvidence({
     .slice(0, limit)
     .map(item => item.result)
 
-  return { results: ranked, entityName }
+  // Verify and optimize top result relevance with Clef System One
+  const verifiedResults = await verifySearchResultsWithClef(
+    cleanedQuestion,
+    subject,
+    ranked
+  )
+
+  return { results: verifiedResults, entityName }
+}
+
+async function verifySearchResultsWithClef(
+  question: string,
+  subject: string,
+  candidates: TwoMDResultItem[]
+): Promise<TwoMDResultItem[]> {
+  if (candidates.length <= 1) return candidates
+
+  const evaluatedCandidates = candidates.slice(0, 5)
+
+  try {
+    const res = await evaluateSystemOne(
+      {
+        model: 'clef-flash',
+        state: {
+          targetEntity: subject,
+          userQuestion: question,
+          articles: evaluatedCandidates.map((c, i) => ({
+            id: `art_${i}`,
+            title: c.title,
+            snippet: c.description?.slice(0, 150)
+          }))
+        },
+        questions: {
+          best_result: {
+            type: 'choice',
+            instructions: '哪一篇文章對回答目標標的之具體財務或業務問題最相關且具實質證據？',
+            criteria: evaluatedCandidates.reduce(
+              (acc, c, i) => {
+                acc[`art_${i}`] = c.title.slice(0, 60)
+                return acc
+              },
+              {} as Record<string, string>
+            )
+          }
+        }
+      },
+      { timeoutMs: 1000 }
+    )
+
+    if (res?.answers) {
+      const bestAns = res.answers.best_result as ChoiceAnswer | undefined
+      if (
+        bestAns?.choice &&
+        bestAns.choice.startsWith('art_') &&
+        typeof bestAns.confidence === 'number' &&
+        bestAns.confidence >= 0.7
+      ) {
+        const bestIdx = parseInt(bestAns.choice.replace('art_', ''), 10)
+        if (!isNaN(bestIdx) && bestIdx > 0 && bestIdx < evaluatedCandidates.length) {
+          // Promote the Clef-verified best article to the 1st position
+          const topItem = candidates[bestIdx]
+          return [topItem, ...candidates.filter((_, idx) => idx !== bestIdx)]
+        }
+      }
+    }
+  } catch (err) {
+    // Fail safely, return candidates as-is
+  }
+
+  return candidates
 }

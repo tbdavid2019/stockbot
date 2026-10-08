@@ -1,3 +1,5 @@
+import { evaluateSystemOne } from '../clef.ts'
+
 export type DeterministicToolName =
   | 'showStockChart'
   | 'showStockPrice'
@@ -142,6 +144,14 @@ export function inferDeterministicTool(
   if (/etf.{0,12}(熱力圖|heatmap)|(熱力圖|heatmap).{0,12}etf/i.test(content)) {
     return 'showETFHeatmap'
   }
+  // TradingView embed widget does not support Taiwan stock heatmaps (Chinese & English)
+  if (
+    /台股.{0,8}熱力圖|台灣.{0,8}熱力圖|熱力圖.{0,8}(?:台股|台灣)|taiwan.{0,15}heatmap|heatmap.{0,15}taiwan|taiex.{0,15}heatmap|heatmap.{0,15}taiex/i.test(
+      content
+    )
+  ) {
+    return undefined
+  }
   if (/熱力圖|heatmap/i.test(content)) return 'showMarketHeatmap'
   if (/選股器|篩選器|screener/i.test(content)) return 'showStockScreener'
   if (
@@ -149,7 +159,12 @@ export function inferDeterministicTool(
   ) {
     return 'showTrendingStocks'
   }
-  if (/市場概況|market overview|總經市場/i.test(content) && !resolvedTicker) {
+  if (
+    /(?:市場概況|market overview|總經市場|(?:台股|大盤).*(?:概況|總覽)|taiwan.*(?:overview|market)|taiex.*(?:overview|market))/i.test(
+      content
+    ) &&
+    !resolvedTicker
+  ) {
     return 'showMarketOverview'
   }
   if (
@@ -325,10 +340,170 @@ export function inferDeterministicTool(
     return 'showStockPrice'
   }
 
-  // A resolved company/ticker with no more specific intent is a company
-  // profile request. This keeps natural-language company questions out of
-  // the generic web-search fallback without maintaining a company alias list.
-  if (resolvedTicker) return 'showStockCompanyProfile'
+  // A bare company name or ticker inquiry with no further question intent
+  // is treated as a company profile request.
+  if (
+    resolvedTicker &&
+    content.trim().length <= 10 &&
+    !/[?？嗎呢如何怎樣麼什麽誰]/.test(content) &&
+    isPlausibleFinancialQuery(content, resolvedTicker)
+  ) {
+    return 'showStockCompanyProfile'
+  }
 
   return undefined
+}
+
+/**
+ * Fast local check to filter out greetings, plain conversational banter,
+ * and unrelated tasks (rewriting, translation, general questions)
+ * before making any external System One semantic routing requests.
+ */
+export function isPlausibleFinancialQuery(
+  content: string,
+  resolvedTicker?: string
+): boolean {
+  const trimmed = content.trim()
+  if (!trimmed || trimmed.length < 2) return false
+
+  // Fast-path ignore obvious conversational greetings and short non-financial chatter,
+  // even if a ticker was inherited from prior conversation context.
+  if (
+    /^(?:hi|hello|hey|yo|你好|您好|哈囉|早安.*|午安.*|晚安.*|嗨|嗨囉|謝謝(?:你|您)?|多謝|感謝(?:你|您)?|thanks?(?:\s+you)?|thx|ok|okay|bye|再見|掰掰|你是誰|你能做什麼|說明|help)[!！。~～\s]*$/i.test(
+      trimmed
+    )
+  ) {
+    return false
+  }
+
+  // 1. Explicit ticker symbols or recognized market assets in the message (e.g. AAPL, NVDA, TSLA, 2330)
+  // Uses extractExplicitTicker to safely exclude single-letter pronouns like "I" or non-ticker words.
+  if (extractExplicitTicker(trimmed)) {
+    return true
+  }
+
+  // 2. English financial terminology
+  if (
+    /\b(?:stocks?|charts?|prices?|quotes?|financials?|earnings|revenue|margins?|valuations?|values?|intrinsic|dividends?|options?|calls?|puts?|macro|crypto|markets?|bullish|bearish|shares?|nasdaq|nyse|twse|tpex|sec|10-k|10-q|dcf|pe|pb|ps|roe|eps|fcf|capex|ebitda|yields?|fed|cpi|ppi|gdp|pmi|ipo|target\s*prices?|peers?|competitors?|falsif\w*|thesis|catalysts?|moats?|risks?|forecasts?|outlooks?)\b/i.test(
+      trimmed
+    )
+  ) {
+    return true
+  }
+
+  // 3. Chinese financial, corporate, valuation, and market keywords
+  if (
+    /股|市|盤|價|息|幣|金|債|買|賣|單|券|估|值|盈|損|營|利|財|報|線|率|比|長|跌|漲|衝|空|多|宏觀|傳導|指數|期貨|選擇權|期權|總經|外資|投信|法人|籌碼|大師|巴菲特|彼得林區|達里歐|芒格|費雪|索羅斯|葛拉漢|席格|歐尼爾|米奈爾維尼|波克夏|ETF|DCF|ROE|EPS|P\/E|P\/B|P\/S|YOY|QOQ|CAGR|公司|企業|業務|競爭|同業|對手|產品|護城河|風險|展望|前景|標的|投資|持股|建倉|加碼|減碼|停損|停利|證偽|論點|假說|檔|賺|賠|趨勢|走勢|行情|表現|評價|分析|熱力圖|選股|日曆|優勢|客戶|供應鏈/i.test(
+      trimmed
+    )
+  ) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Tier 1.5 Semantic Tool Intent Gatekeeper powered by Clef-Flash System One
+ * Evaluates ambiguous or conversational natural language questions within ~190ms
+ * and maps high-confidence classifications directly to DeterministicToolName.
+ */
+export async function inferSemanticToolWithClef(
+  content: string,
+  resolvedTicker?: string
+): Promise<DeterministicToolName | undefined> {
+  const trimmed = content.trim()
+  if (!trimmed || trimmed.length < 2) return undefined
+
+  if (!isPlausibleFinancialQuery(trimmed, resolvedTicker)) {
+    return undefined
+  }
+
+  try {
+    const res = await evaluateSystemOne(
+      {
+        model: 'clef-flash',
+        state: {
+          userQuery: trimmed,
+          resolvedTicker: resolvedTicker || null
+        },
+        questions: {
+          intent: {
+            type: 'choice',
+            instructions: '使用者問題最符合哪一個金融意圖？',
+            criteria: {
+              financial_metric: '查詢特定財務指標、比率、營收、毛利、本益比、EPS、負債、現金流',
+              company_valuation: '計算內在價值、合理價、估值模型、DCF折現',
+              institutional_flow: '查詢三大法人籌碼、外資買賣超、投信連買、主力動向',
+              master_analysis: '多位傳奇大師分析、投資價值評估、該買嗎、值不值得投資',
+              stock_chart: '查看股價K線走勢圖、技術線型、支撐壓力',
+              stock_price: '查看即時股價、行情、盤中報價',
+              stock_news: '查詢最新重大財經新聞、突發消息、法說會動態',
+              company_profile: '詢問公司是做什麼的、核心業務、產品服務、商業模式',
+              transmission_chain: '總經或突發事件傳導鏈、產業鏈連鎖反應分析',
+              signal_tracker: '投資論點演化、訊號追蹤、邏輯證偽檢驗',
+              economic_calendar: '查詢非農、CPI公布、聯準會降息等全球總經日曆',
+              macro_factor: '資產配置、股債平衡、因子輪動、宏觀風控',
+              options_payoff: '選擇權/期權策略損益模擬曲線',
+              sepa_strategy: 'SEPA動能策略、VCP型態、突破買點分析',
+              market_overview: '整體大盤走勢、市場概況、熱門榜',
+              other_general: '其他一般對話或不明確問題'
+            }
+          }
+        }
+      },
+      { timeoutMs: 450, totalTimeoutMs: 800 }
+    )
+
+    const answer = res?.answers?.intent
+    if (!answer || answer.type !== 'choice') return undefined
+
+    // Accept classifications with valid finite confidence >= 0.72
+    if (
+      typeof answer.confidence !== 'number' ||
+      !Number.isFinite(answer.confidence) ||
+      answer.confidence < 0.72
+    ) {
+      return undefined
+    }
+
+    const choice = answer.choice
+    switch (choice) {
+      case 'financial_metric':
+        return resolvedTicker ? 'answerFinancialMetric' : undefined
+      case 'company_valuation':
+        return resolvedTicker ? 'calculateCompanyValuation' : undefined
+      case 'institutional_flow':
+        return resolvedTicker ? 'showInstitutionalFlow' : 'showMarketInstitutionalLeaderboard'
+      case 'master_analysis':
+        return resolvedTicker ? 'analyzeStockWithAI' : undefined
+      case 'stock_chart':
+        return resolvedTicker ? 'showStockChart' : undefined
+      case 'stock_price':
+        return resolvedTicker ? 'showStockPrice' : undefined
+      case 'stock_news':
+        return resolvedTicker ? 'showStockNews' : undefined
+      case 'company_profile':
+        return resolvedTicker ? 'showStockCompanyProfile' : undefined
+      case 'transmission_chain':
+        return 'showTransmissionChain'
+      case 'signal_tracker':
+        return resolvedTicker ? 'trackInvestmentSignal' : undefined
+      case 'economic_calendar':
+        return 'showEconomicCalendar'
+      case 'macro_factor':
+        return 'showMacroFactorRegime'
+      case 'options_payoff':
+        return resolvedTicker ? 'simulateOptionsPayoff' : undefined
+      case 'sepa_strategy':
+        return resolvedTicker ? 'analyzeSepaStrategy' : undefined
+      case 'market_overview':
+        return 'showMarketOverview'
+      default:
+        return undefined
+    }
+  } catch (err) {
+    console.warn('[Clef Semantic Routing] Failed or timed out:', err)
+    return undefined
+  }
 }

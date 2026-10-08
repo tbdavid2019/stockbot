@@ -17,6 +17,21 @@ export interface MarketQuote extends StockItem {
   market: 'TW' | 'US'
 }
 
+const DEFAULT_QUOTES: MarketQuote[] = [
+  { symbol: '2330', name: '台積電', market: 'TW' },
+  { symbol: 'NVDA', name: 'NVIDIA', market: 'US' },
+  { symbol: '2317', name: '鴻海', market: 'TW' },
+  { symbol: 'AAPL', name: 'Apple', market: 'US' },
+  { symbol: '2454', name: '聯發科', market: 'TW' },
+  { symbol: 'MSFT', name: 'Microsoft', market: 'US' },
+  { symbol: '2382', name: '廣達', market: 'TW' },
+  { symbol: 'TSLA', name: 'Tesla', market: 'US' },
+  { symbol: '2881', name: '富邦金', market: 'TW' },
+  { symbol: 'GOOGL', name: 'Alphabet', market: 'US' },
+  { symbol: '2603', name: '長榮', market: 'TW' },
+  { symbol: 'META', name: 'Meta', market: 'US' }
+]
+
 function shuffleQuotes(quotes: MarketQuote[]) {
   const shuffled = [...quotes]
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -37,7 +52,7 @@ export function MarketQuotes({
 }: {
   onSelect?: (quote: MarketQuote) => void
 }) {
-  const [quotes, setQuotes] = useState<MarketQuote[]>([])
+  const [quotes, setQuotes] = useState<MarketQuote[]>(DEFAULT_QUOTES)
 
   useEffect(() => {
     let isMounted = true
@@ -65,7 +80,9 @@ export function MarketQuotes({
           ...pickRandomQuotes(twQuotes, 12),
           ...pickRandomQuotes(usQuotes, 12)
         ]
-        setQuotes(nextQuotes)
+        if (nextQuotes.length > 0) {
+          setQuotes(nextQuotes)
+        }
       } catch (error) {
         console.warn('[MarketQuotes] Failed to load live quotes:', error)
       }
@@ -109,8 +126,9 @@ export function MarketQuotes({
               {quote.name} ({quote.symbol})
             </span>
             <span className="font-mono font-semibold tabular-nums text-foreground">
-              {quote.market === 'TW' ? 'NT$' : '$'}
-              {quote.price ?? '—'}
+              {quote.price
+                ? `${quote.market === 'TW' ? 'NT$' : '$'}${quote.price}`
+                : '—'}
             </span>
           </button>
         ))}

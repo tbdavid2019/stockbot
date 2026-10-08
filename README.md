@@ -62,6 +62,7 @@
 - 🚀 **SEPA 趨勢策略** (新功能)：檢查 Minervini 八項 Trend Template、Stage 1–4、VCP 收縮型態、5% 買入區、停損與風險式部位大小。
 - 🧾 **財報前瞻** (新功能)：顯示公開 earnings 日期、EPS/營收共識區間、分析師目標價與最近四季 beat/miss surprise。
 - 🧮 **衍生品與微結構** (新功能)：支援 Black-Scholes 多腿選擇權互動曲線、ETF NAV 溢折價/GEX 欄位，以及 Amihud、float turnover 與平方根市場衝擊估算。
+- ⚡ **Clef-Flash System One 高速決策推論引擎** (新功能)：引進 Cloudflare Clef-Flash ~190ms 結構化決策推論 API，涵蓋 (1) 語意工具意圖分流閘門、(2) DeepEar 因果傳導鏈情緒打分、(3) 13 位大師共識量化與多空衝突警報、(4) 2MD 搜尋關聯度核驗與最優證據置頂，具備三層端點容錯、Singleflight 去重與 30 秒熔斷保護。
 
 ### 全球證券清冊更新與快取規則
 
@@ -168,6 +169,34 @@ StockBot 支援 **無限階層動態容錯路由 (Multi-Tier Dynamic Failover Ro
 - **`TOOL_MODEL` (工具模型)**：專用於 `streamUI` 的 Function Calling、意圖識別與圖表/分析卡片調用。
 - **`MODEL` (文字模型)**：一般卡片使用短時限 `generateCaption`；即時研究答案與 13 位大師綜合判讀使用獨立、具證據上下文的合成流程。卡片正文完成後另以同一端點產生上下文續問；失敗時只依當輪標的、問題與工具意圖產生本機 fallback，不需要額外金鑰。
 
+### ⚡ Clef-Flash System One 決策推論架構 (System One Decision Pipeline)
+
+StockBot 實作「System 1 快思考 ➔ System 2 慢思考」分層推論體系，將毫秒級結構化決策與大型生成式 LLM 深度解說解耦：
+
+- **Tier 0（0ms）**：本地正規表達式與全球官方證券清冊（明確 Ticker、強意圖關鍵字、問候與閒聊快速快篩）。
+- **Tier 1.5（~190ms）**：**Cloudflare Clef-Flash System One** 決策推論 API，專精強型別多選分類 (`choice`)、有序量化評分 (`score`) 與真假機率 (`noul`)。
+- **Tier 2（1.5s ~ 5s）**：大型生成式 LLM（GPT-4o-mini / Gemini-2.5-Flash / Groq）專注於深度文字合成與伴隨解說。
+
+```mermaid
+flowchart TD
+    UserQuery["使用者輸入 (User Prompt)"] --> PlausibleCheck{"isPlausibleFinancialQuery<br/>(本地金融意圖快篩 & 排除非金融/閒聊)"}
+
+    PlausibleCheck -- "普通閒聊/翻譯/重寫 (0ms)" --> LLMCaption["跳過 Clef ➔ 交付主模型流暢回覆"]
+    PlausibleCheck -- "具金融/標的意圖" --> Tier0{"Tier 0: 本地正則 & 標的字典"}
+
+    Tier0 -- "明確命中有 Ticker" --> Deterministic["確定性原生金融卡片"]
+    Tier0 -- "語意模糊/多選意圖" --> ClefClient["Tier 1.5: Clef-Flash System One (~190ms)<br/>(Primary ➔ Fallback 2 ➔ Fallback 3)"]
+
+    ClefClient --> Scenarios
+
+    subgraph Scenarios ["四大核心落地場景"]
+        A["場景 A: 語意工具意圖分流閘門<br/>(choice 16類工具, 置信度門檻 ≥ 0.72)"]
+        B["場景 B: DeepEar 因果傳導鏈打分<br/>(score -1~+1 情緒衝擊, 嚴格 Unchanged 觀察態)"]
+        C["場景 C: 13位大師共識量化<br/>(立場多空判讀, 衝突分歧指數 0~100, 尾部黑天鵝預警)"]
+        D["場景 D: 2MD 搜尋關聯核驗與證據置頂<br/>(候選新聞與財務問題強型別關聯比對)"]
+    end
+```
+
 ### 常用環境變數一覽
 
 ```bash
@@ -195,6 +224,12 @@ TWOMD_PRIMARY_URL=https://2md.aiurl.tw
 # 5. AI Hedge Fund 投資分析後端
 AI_HEDGE_FUND_HOST=dns.glsoft.ai
 AI_HEDGE_FUND_PORT=6000
+
+# 6. Clef-Flash System One 決策推論端點
+CLEF_PRIMARY_URL=https://clef.create360.ai/v1/systemone
+CLEF_FALLBACK_2_URL=https://clef.aiurl.tw/v1/systemone
+CLEF_FALLBACK_3_URL=https://jev.create360.ai/v1/systemone
+CLEF_PRIMARY_TIMEOUT_MS=1200
 ```
 
 ## Quickstart

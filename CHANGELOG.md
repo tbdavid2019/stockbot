@@ -4,6 +4,74 @@
 
 ---
 
+## [2026-10-08] - 整合 Cloudflare Clef-Flash System One 決策推論引擎（A/B/C/D 落地場景與高可用容錯架構）
+
+### ✨ 新增 (Added)
+
+- **⚡ Clef-Flash System One 高速決策推論客戶端 ([`lib/clef.ts`](lib/clef.ts))**：
+  - 新增專屬 System 1 決策推論客戶端，支援 `choice`（多選意圖分類）、`score`（有序量化評分）、`noul`（布林真假機率）三種強型別結構化決策。
+  - **三層高可用故障轉移 (Multi-Tier Failover)**：依序自動容錯 Primary (`clef.create360.ai`, ~190ms) ➔ Fallback 2 (`clef.aiurl.tw`, CPU GGUF) ➔ Fallback 3 (`jev.create360.ai`)。
+  - **Singleflight 請求合併**：防止同輪並發請求造成外部 API 重複呼叫。
+  - **有界 LRU 記憶體快取**：實作 500 筆上限與過期清除機制，TTL 60 秒。
+  - **熔斷降級機制 (Circuit Breaker)**：單一端點連續失敗 2 次自動進入 30 秒冷卻期，配合總時間預算截止控制 (`totalBudgetMs`)，超時或異常時 0 延遲安全降級，絕不阻斷主對話流。
+
+- **🎯 四大金融核心場景全面落地 (Scenarios A / B / C / D)**：
+  - **A. 語意意圖分流閘門 ([`lib/chat/routing.ts`](lib/chat/routing.ts) & [`lib/chat/actions.tsx`](lib/chat/actions.tsx))**：
+    - 在正則無法精確匹配時，以 ~190ms 評估 16 種金融工具意圖，高置信度直接鎖定 `deterministicTool`，杜絕弱模型誤選 2MD 搜尋。
+    - 內建 `isPlausibleFinancialQuery` 快速過濾器，普通問候、閒聊與感謝詞（含帶有上下文 ticker 之場景）直接跳過 Clef 請求，避免增加無謂延遲。
+    - `answerFinancialMetric` 與 `trackInvestmentSignal` 等需特定標的之工具僅在 `resolvedTicker` 確定存在時才強制路由，未解析出代碼時安全放行，杜絕參數缺漏或模型幻覺猜測。
+    - 嚴格校準上下文代碼繼承之意圖過濾：非金融追問（如翻譯、重寫、一般英文會話）即使在有繼承標的情境下亦精準跳過 Clef 外部請求；重構代碼識別防止代名詞「I」誤判，並在置信度與共識分數解析中強化型別檢查，確保有效 0 值不被誤判為預設值。
+  - **B. DeepEar 傳導鏈與信號追蹤 ([`lib/deepear.ts`](lib/deepear.ts) & [`lib/chat/actions.tsx`](lib/chat/actions.tsx))**：
+    - 引入 Clef 進行市場情緒衝擊打分與傳導方向評估（`transmission_direction`）。
+    - 嚴格安全策略：未經審計的自由主題動態搜尋結果，投資論點狀態嚴格保持 `Unchanged`（觀察中），中性狀態下各階傳導節點精確映射為中性衝擊標籤與邏輯，杜絕未經核實的網路搜尋片段誤發買賣建議。
+  - **C. 13 位傳奇大師共識量化與多空衝突警報 ([`app/api/analysis-summary/route.ts`](app/api/analysis-summary/route.ts))**：
+    - 引入 `evaluateMasterConsensusWithClef`，量化評估整體大師立場（`strong_bull` 到 `strong_bear`）、衝突分歧指數（0~100）與極端尾部黑天鵝風險警告。
+    - 量化指標直接融入本地大師摘要、LLM 生成提示詞與前端 JSON 回傳結構。
+  - **D. 2MD 搜尋結果關聯度核驗與最優證據置頂 ([`lib/research-search.ts`](lib/research-search.ts))**：
+    - 以 Clef-Flash 客觀評估候選新聞文章與目標標的財務問題之實質關聯度，自動將高置信度最優證據文章置頂。
+    - 嚴格驗證候選文章切片邊界 (`evaluatedCandidates.length`)，杜絕越界重排。
+
+- **🧪 確定性單元測試與架構文件規範**：
+  - 新增 [`lib/clef.test.ts`](lib/clef.test.ts) 與擴展 [`lib/chat/routing.test.ts`](lib/chat/routing.test.ts)，使用 mock fetch 全面覆蓋型別解析、快取、容錯、熔斷、會話過濾與邊界處理，全數測試 100ms 內通過。
+  - 更新 [`README.md`](README.md)、[`AGENTS.md`](AGENTS.md) 第 15 節與 [`.env.example`](.env.example)，補充 System One 三層分流架構圖 (Mermaid flowchart) 與端點環境變數設定。
+
+### 🐞 問題修復與穩定性加固 (Bug Fixes & Resilience)
+
+- **🛡️ 徹底根絕首頁「目前無法取得即時標的，請稍後重新整理」與 504 Gateway Timeout 故障**：
+  - **`/api/dynamic-prompts` 504 級聯逾時防禦 ([`app/api/dynamic-prompts/route.ts`](app/api/dynamic-prompts/route.ts))**：
+    - 匯出 `export const maxDuration = 60`。
+    - `PROXY_URLS` 代理首位調整為直接連線 `https://stock.david888.com/`，避免走失效外部 2md 代理造成 36 秒級聯逾時。
+    - 引入 `DEFAULT_TW_STOCKS` 與 `DEFAULT_US_STOCKS`，實作 `getInitialCachedData()`，確保 `cachedData` 永不為 `null`，即便全網斷線或首次冷啟動也能 0ms 回傳 200 OK。
+    - **禁止假財務預設值**：嚴格遵守 `AGENTS.md` 鐵律，預設標的不再硬編碼展示用價格，待真實爬蟲數據抵達前一律顯示 `—`。
+    - `fetchGlobalMacroDashboard` 加入 2500ms `Promise.race` 逾時限制與安全捕捉，徹底防止外部總經爬蟲阻塞首頁 API。
+  - **`components/chat-panel.tsx` 提示詞無縫保底與 SSR 水合加固 ([`components/chat-panel.tsx`](components/chat-panel.tsx))**：
+    - 內建 `DEFAULT_PROMPTS_ZH`、`DEFAULT_PROMPTS_EN`、`DEFAULT_FEATURED_ZH`、`DEFAULT_FEATURED_EN` 作為初始狀態，首頁首次開啟直接渲染 6 張精美卡片。
+    - 初始渲染採用確定性首批陣列，客戶端水合後才透過 `useEffect` 亂數重排，徹底消滅 SSR / Client React Hydration Mismatch。
+    - 即使後端 API 逾時或斷線，`displayExamples` 一律採用保底提示詞，徹底移除虛線「目前無法取得即時標的，請稍後重新整理」空框。
+  - **`components/tradingview/market-quotes.tsx` 跑馬燈冷啟動保底 ([`components/tradingview/market-quotes.tsx`](components/tradingview/market-quotes.tsx))**：
+    - 引入 `DEFAULT_QUOTES` 作為初始值，首頁開盤跑馬燈 0ms 立即平滑輪播台美核心權值股（台積電、鴻海、聯發科、廣達、NVDA、AAPL、MSFT、TSLA 等），未抓到即時跳動價前以 `—` 佔位，API 資料回傳後無縫更新。
+  - **總經資料抓取超時防禦 ([`lib/quant/investing-macro.ts`](lib/quant/investing-macro.ts))**：
+    - 將 `fetchGlobalMacroDashboard` 的 2MD 逾時由 12000ms 大幅降至 3500ms，2MD 失敗時立即回退至內建備援數據，杜絕逾時級聯。
+
+- **🎯 修復台股詢問答非所問（顯示美股 S&P 500 熱力圖）問題**：
+  - **根因消除**：TradingView 外部 embed widget 實際上完全不支援台灣股市（TWSE/TPEx）類股熱力圖。先前 prompt 與工具描述誤導 LLM 以為其支援 Taiwan，導致組件固定以美國 S&P 500 渲染。
+  - **`lib/chat/actions.tsx`**：
+    - 更新 `system` prompt 規則 5：嚴禁對台股（今天台股表現如何、台股大盤、加權指數、Taiwan stock heatmap 等）調用 `showMarketHeatmap`，明確導向 `searchFinancialWeb` 查詢即時加權指數點位、漲跌家數與盤面焦點，或調用 `showMarketOverview`。
+    - 更新 `showMarketHeatmap` 工具描述：刪除支援 Taiwan/Taiwan 50 虛假說明，刪除「preferred over showMarketOverview」引導詞，加入 TradingView 不支援台股熱力圖之強硬約束。
+    - **嚴格保留確定性路由**：正則已命中確定性工具（股價、線圖、財務指標、大師分析等）時，禁止 Clef 覆寫；Clef 僅用於未命中正則之模糊語意查詢。
+  - **`lib/chat/routing.ts`**：
+    - 在 `inferDeterministicTool` 中加入中英文台股熱力圖排除邏輯（含 `Taiwan stock heatmap`、`heatmap of taiwan stocks`），杜絕誤鎖 `showMarketHeatmap`。
+    - 支援 `/(?:市場概況|market overview|總經市場|(?:台股|大盤).*(?:概況|總覽)|taiwan.*overview)/i` 導向 `showMarketOverview`。
+  - **`components/tradingview/market-heatmap.tsx`**：
+    - 從選單中移除無效的 `tw_50` 與 `tw_all`。
+    - 在選單下方新增提示文字：「💡 提示：TradingView 原生嵌入組件目前僅提供美股與部分跨國板塊，未開放台股類股資料源；若需台股大盤點位與法人動態，請直接詢問『今天台股表現如何』或『台股市場概況』」。
+
+- **⚖️ 決策推論與傳導鏈客觀性防幻覺審計加固 ([`lib/deepear.ts`](lib/deepear.ts) & [`app/api/analysis-summary/route.ts`](app/api/analysis-summary/route.ts))**：
+  - **因果傳導推演對齊檢索證據**：傳導鏈二階與三階節點改採條件式演繹框架（`條件假設`、`需財報印證`），明確提示需官方季報核實，並將檢索新聞摘要注入 `evidence` 證據鏈，杜絕未經證實之具體營收與獲利斷言。
+  - **大師共識指標健全未知態**：Clef 外部服務未回傳置信度或尾部風險時，統一保留 `null` / `待確認`，嚴禁硬編碼預設 85% 信心或宣稱無風險。
+
+---
+
 ## [2026-09-04] - 整合 Investing.com 全球總經日曆、2MD 引擎防驚群重構與動態情報驅動首頁提示詞
 
 ### ✨ 新增 (Added)

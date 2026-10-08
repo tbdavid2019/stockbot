@@ -67,6 +67,115 @@ const promptModesEn = [
   '⚡ Quick scan'
 ]
 
+const DEFAULT_FEATURED_ZH: ExampleMessage[] = [
+  {
+    heading: '📅 今晚有什麼重大總經數據？',
+    subheading: '即時掌握非農 (NFP)、CPI、PMI、零售銷售與央行決議時程',
+    message: '今晚有什麼重大總經數據？'
+  },
+  {
+    heading: '🌐 美股盤前期貨與經濟日曆',
+    subheading: '美股三大期指盤前行情、恐慌指數 VIX 與跨資產風向',
+    message: '美股盤前期貨與經濟日曆'
+  }
+]
+
+const DEFAULT_FEATURED_EN: ExampleMessage[] = [
+  {
+    heading: '📅 Key Economic Events Tonight',
+    subheading: 'Live global economic calendar, CPI, NFP & central bank policy',
+    message: 'What are the key global economic events and data releases tonight?'
+  },
+  {
+    heading: '🌐 US Pre-Market Futures & Macro Calendar',
+    subheading: 'Live S&P, Nasdaq futures and Risk-On / Risk-Off sentiment',
+    message: 'Show me US pre-market futures and economic calendar'
+  }
+]
+
+const DEFAULT_PROMPTS_ZH: ExampleMessage[] = [
+  ...DEFAULT_FEATURED_ZH,
+  {
+    heading: '台積電 (2330) 即時股價',
+    subheading: '查詢現價行情與即時跳動點位',
+    message: '台積電 2330 目前股價是多少？'
+  },
+  {
+    heading: '台積電 (2330) 最新財務數據',
+    subheading: '查看營收、毛利、本益比與估值狀況',
+    message: '請整理台積電 (2330) 最新財務數據與估值'
+  },
+  {
+    heading: '鴻海 (2317) 走勢診斷',
+    subheading: '用波段、均線與成交量拆解走勢',
+    message: '請分析鴻海 (2317) 目前的趨勢、量價與支撐壓力'
+  },
+  {
+    heading: '聯發科 (2454) 供應鏈地圖',
+    subheading: '找出上下游與同產業連動標的',
+    message: '請整理聯發科 (2454) 的供應鏈與相關概念股'
+  },
+  {
+    heading: '今日台股大盤市場概況',
+    subheading: '查看加權指數、成交量與強弱勢類股',
+    message: '今天台股表現如何？市場概況總覽'
+  },
+  {
+    heading: 'NVDA 股票走勢圖',
+    subheading: '顯示即時走勢與技術線圖',
+    message: '幫我顯示 NVDA 的股票走勢圖表'
+  },
+  {
+    heading: 'Apple (AAPL) 大師觀點',
+    subheading: '多位投資大師圓桌分析',
+    message: '請用多位投資大師分析股票代號 AAPL（Apple）的投資價值'
+  },
+  {
+    heading: '今日美股市場板塊熱力圖',
+    subheading: '查看 S&P 500 各產業漲跌與板塊輪動',
+    message: '幫我顯示美股市場熱力圖'
+  }
+]
+
+const DEFAULT_PROMPTS_EN: ExampleMessage[] = [
+  ...DEFAULT_FEATURED_EN,
+  {
+    heading: 'TSMC (2330) current price',
+    subheading: 'Live quote and market context',
+    message: 'What is the current price of TSMC (2330)?'
+  },
+  {
+    heading: 'TSMC (2330) latest financials',
+    subheading: 'Revenue, earnings and valuation',
+    message: 'Summarize the latest financials and valuation for TSMC (2330)'
+  },
+  {
+    heading: 'Hon Hai (2317) technical check',
+    subheading: 'Trend, volume, support and resistance',
+    message: 'Analyze the trend, volume, support and resistance for Hon Hai (2317)'
+  },
+  {
+    heading: 'Taiwan & Global market overview',
+    subheading: 'TAIEX index trends, turnover and key sector drivers',
+    message: 'How is the Taiwan stock market performing today? Market overview'
+  },
+  {
+    heading: 'NVDA stock chart',
+    subheading: 'Interactive price action and trends',
+    message: 'Show me a stock chart for NVDA'
+  },
+  {
+    heading: 'Apple (AAPL) investor view',
+    subheading: 'Multi-analyst investment perspective',
+    message: 'Give me a multi-analyst investment view of ticker AAPL (Apple)'
+  },
+  {
+    heading: 'US sector performance heatmap',
+    subheading: 'S&P 500 industry heatmap and sector rotation',
+    message: 'Show me the US stock market heatmap'
+  }
+]
+
 function shufflePrompts(
   prompts: ExampleMessage[],
   previousPrompts: ExampleMessage[] = [],
@@ -131,14 +240,21 @@ export function ChatPanel({
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const [apiKey] = useLocalStorage('groqKey', '')
 
-  const [cachedPromptsZh, setCachedPromptsZh] = useState<ExampleMessage[]>([])
-  const [cachedPromptsEn, setCachedPromptsEn] = useState<ExampleMessage[]>([])
-  const [featuredZh, setFeaturedZh] = useState<ExampleMessage[]>([])
-  const [featuredEn, setFeaturedEn] = useState<ExampleMessage[]>([])
+  const [cachedPromptsZh, setCachedPromptsZh] =
+    useState<ExampleMessage[]>(DEFAULT_PROMPTS_ZH)
+  const [cachedPromptsEn, setCachedPromptsEn] =
+    useState<ExampleMessage[]>(DEFAULT_PROMPTS_EN)
+  const [featuredZh, setFeaturedZh] =
+    useState<ExampleMessage[]>(DEFAULT_FEATURED_ZH)
+  const [featuredEn, setFeaturedEn] =
+    useState<ExampleMessage[]>(DEFAULT_FEATURED_EN)
 
-  const [visibleExamples, setVisibleExamples] = useState<ExampleMessage[]>([])
+  // Use deterministic initial batch for SSR to prevent hydration mismatch; shuffled in useEffect
+  const [visibleExamples, setVisibleExamples] = useState<ExampleMessage[]>(() =>
+    DEFAULT_PROMPTS_ZH.slice(0, 6)
+  )
   const [promptLabelIndex, setPromptLabelIndex] = useState(0)
-  const [isLoadingPrompts, setIsLoadingPrompts] = useState(true)
+  const [isLoadingPrompts, setIsLoadingPrompts] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -180,6 +296,12 @@ export function ChatPanel({
   const currentFeatured = lang === 'zh' ? featuredZh : featuredEn
   const promptLabels = lang === 'zh' ? promptLabelsZh : promptLabelsEn
   const promptModes = lang === 'zh' ? promptModesZh : promptModesEn
+  const displayExamples =
+    visibleExamples.length > 0
+      ? visibleExamples
+      : lang === 'zh'
+        ? DEFAULT_PROMPTS_ZH.slice(0, 6)
+        : DEFAULT_PROMPTS_EN.slice(0, 6)
 
   useEffect(() => {
     setVisibleExamples(shufflePrompts(currentExamples, [], currentFeatured))
@@ -258,15 +380,9 @@ export function ChatPanel({
                 ↻ {lang === 'zh' ? '換一批' : 'Shuffle'}
               </button>
             </div>
-            {isLoadingPrompts ? (
-              <div className="rounded-lg border border-dashed bg-background/50 px-3 py-4 text-sm text-muted-foreground">
-                {lang === 'zh'
-                  ? '正在透過 2MD 萃取最新總經與市場標的…'
-                  : 'Loading live macro & market symbols…'}
-              </div>
-            ) : visibleExamples.length > 0 ? (
+            {displayExamples.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
-                {visibleExamples.map((example, index) => {
+                {displayExamples.map((example, index) => {
                   const isMacro = /總經|期指|非農|日曆|大宗商品|宏觀|Macro|NFP|Futures/i.test(
                     `${example.heading} ${example.message}`
                   )
@@ -311,12 +427,6 @@ export function ChatPanel({
                     </div>
                   )
                 })}
-              </div>
-            ) : (
-              <div className="rounded-lg border border-dashed bg-background/50 px-3 py-4 text-sm text-muted-foreground">
-                {lang === 'zh'
-                  ? '目前無法取得即時標的，請稍後重新整理。'
-                  : 'Live market symbols are unavailable. Please refresh shortly.'}
               </div>
             )}
           </div>

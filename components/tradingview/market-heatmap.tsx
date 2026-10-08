@@ -26,7 +26,6 @@ const MARKET_GROUPS: Array<[string, MarketTuple[]]> = [
       ['us_nasdaq100', '美國 (NASDAQ 100)', 'NASDAQ100'],
       ['us_nasdaq_composite', '美國 (NASDAQ 綜合)', 'NASDAQCOMPOSITE'],
       ['us_dow', '美國 (道瓊)', 'DJDJI'],
-      ['tw_50', '台灣 50', 'TW50'],
       ['au_200', '澳洲 (ASX 200)', 'ASX200']
     ]
   ],
@@ -116,7 +115,6 @@ const MARKET_GROUPS: Array<[string, MarketTuple[]]> = [
       ['pk_all', '巴基斯坦 (全市場)', 'AllPK'],
       ['sg_all', '新加坡 (全市場)', 'AllSGP'],
       ['th_all', '泰國 (全市場)', 'AllTH'],
-      ['tw_all', '台灣 (全市場)', 'AllTW'],
       ['vn_all', '越南 (全市場)', 'AllVN']
     ]
   ]
@@ -218,6 +216,9 @@ export function MarketHeatmap({}) {
           {MARKET_PRESETS.length} 個市場
         </span>
       </label>
+      <div className="text-[11px] text-muted-foreground/80 -mt-1.5 px-0.5">
+        💡 提示：TradingView 原生嵌入組件目前僅提供美股與部分跨國板塊，未開放台股類股資料源；若需台股大盤點位與法人動態，請直接詢問「今天台股表現如何」或「台股市場概況」。
+      </div>
 
       <div
         className="tradingview-widget-container"

@@ -4,6 +4,8 @@ import {
   type GlobalMacroDashboardResult
 } from '@/lib/quant/investing-macro'
 
+export const maxDuration = 60
+
 interface StockItem {
   symbol: string
   name: string
@@ -17,11 +19,35 @@ interface ExamplePrompt {
   message: string
 }
 
-// 代理來源列表 (依序 fallback)
+// 代理來源列表 (依序 fallback，優先直接連線主力端點)
 const PROXY_URLS = [
+  'https://stock.david888.com/',
   'https://2md.aiurl.tw/https://stock.david888.com/',
-  'https://2md.glsoft.ai/https://stock.david888.com/',
-  'https://stock.david888.com/'
+  'https://2md.glsoft.ai/https://stock.david888.com/'
+]
+
+const DEFAULT_TW_STOCKS: StockItem[] = [
+  { symbol: '2330', name: '台積電' },
+  { symbol: '2317', name: '鴻海' },
+  { symbol: '2454', name: '聯發科' },
+  { symbol: '2382', name: '廣達' },
+  { symbol: '2308', name: '台達電' },
+  { symbol: '2603', name: '長榮' },
+  { symbol: '2881', name: '富邦金' },
+  { symbol: '2882', name: '國泰金' },
+  { symbol: '3711', name: '日月光投控' },
+  { symbol: '3008', name: '大立光' }
+]
+
+const DEFAULT_US_STOCKS: StockItem[] = [
+  { symbol: 'NVDA', name: 'NVIDIA' },
+  { symbol: 'AAPL', name: 'Apple' },
+  { symbol: 'MSFT', name: 'Microsoft' },
+  { symbol: 'TSLA', name: 'Tesla' },
+  { symbol: 'GOOGL', name: 'Alphabet' },
+  { symbol: 'AMZN', name: 'Amazon' },
+  { symbol: 'META', name: 'Meta' },
+  { symbol: 'SPCX', name: 'SpaceX' }
 ]
 
 const ANSWERBOOK_MARKET_DATA = {
@@ -36,7 +62,7 @@ const ANSWERBOOK_MARKET_DATA = {
   ]
 }
 
-let cachedData: {
+interface CachedData {
   timestamp: number
   usStocks: StockItem[]
   twStocks: StockItem[]
@@ -44,7 +70,23 @@ let cachedData: {
   featuredPromptsEn: ExamplePrompt[]
   promptsZh: ExamplePrompt[]
   promptsEn: ExamplePrompt[]
-} | null = null
+}
+
+function getInitialCachedData(): CachedData {
+  const { featuredPromptsZh, featuredPromptsEn, promptsZh, promptsEn } =
+    buildPrompts(DEFAULT_US_STOCKS, DEFAULT_TW_STOCKS, [], null)
+  return {
+    timestamp: 0,
+    usStocks: DEFAULT_US_STOCKS,
+    twStocks: DEFAULT_TW_STOCKS,
+    featuredPromptsZh,
+    featuredPromptsEn,
+    promptsZh,
+    promptsEn
+  }
+}
+
+let cachedData: CachedData = getInitialCachedData()
 
 const CACHE_TTL_MS = 3 * 60 * 1000 // 3 minutes
 const UPSTREAM_TIMEOUT_MS = 3500
@@ -388,9 +430,14 @@ function buildPrompts(
       return templates[index % templates.length]
     }),
     {
-      heading: '今日美股／台股市場熱力圖',
-      subheading: '查看各產業板塊漲跌與篩選新標的',
-      message: '今天股票市場各產業表現如何？'
+      heading: '今日美股市場板塊熱力圖',
+      subheading: '查看 S&P 500 各產業漲跌與板塊輪動',
+      message: '幫我顯示美股市場熱力圖'
+    },
+    {
+      heading: '今日台股大盤市場概況',
+      subheading: '查看加權指數、成交量與強弱勢類股',
+      message: '今天台股表現如何？市場概況總覽'
     },
     {
       heading: '盤前新聞濃縮包',
@@ -454,9 +501,14 @@ function buildPrompts(
       return templates[index % templates.length]
     }),
     {
-      heading: 'Market overview by sector',
-      subheading: "Today's performance heatmap",
-      message: 'How is the stock market performing today by sector?'
+      heading: 'US sector performance heatmap',
+      subheading: "S&P 500 industry heatmap and sector rotation",
+      message: 'Show me the US stock market heatmap'
+    },
+    {
+      heading: 'Taiwan & Global market overview',
+      subheading: 'TAIEX index trends, turnover and key sector drivers',
+      message: 'How is the Taiwan stock market performing today? Market overview'
     },
     {
       heading: 'Pre-market news brief',
@@ -478,66 +530,89 @@ export async function GET() {
   const now = Date.now()
   ensureBackgroundWarmer()
 
-  // 若快取有效則直接回傳
-  if (cachedData && now - cachedData.timestamp < CACHE_TTL_MS) {
+  // 若快取仍未過期且已有資料則直接回傳 (0ms)
+  if (cachedData.timestamp > 0 && now - cachedData.timestamp < CACHE_TTL_MS) {
     return NextResponse.json(cachedData, {
       headers: { 'Cache-Control': 'no-store' }
     })
   }
 
-  let rawContent = ''
+  try {
+    let rawContent = ''
 
-  // Probe upstreams and fetch live macro dashboard in parallel
-  const [upstreamResults, answerBookData, macroData] = await Promise.all([
-    Promise.allSettled(
-      PROXY_URLS.map(async url => {
-        const res = await fetch(url, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (compatible; StockBot/1.0)'
-          },
-          signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
-          cache: 'no-store'
+    // Probe upstreams and fetch live macro dashboard in parallel with strict timeout
+    const [upstreamResults, answerBookData, macroData] = await Promise.all([
+      Promise.allSettled(
+        PROXY_URLS.map(async url => {
+          const res = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; StockBot/1.0)'
+            },
+            signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
+            cache: 'no-store'
+          })
+
+          if (!res.ok) throw new Error(`HTTP ${res.status}`)
+          const text = await res.text()
+          if (!text || text.length <= 200)
+            throw new Error('Empty upstream response')
+          return text
         })
+      ),
+      fetchAnswerBookMarketData().catch(err => {
+        console.warn('[dynamic-prompts] fetchAnswerBookMarketData error:', err)
+        return { usStocks: [], tw50: [], twMid: [] }
+      }),
+      Promise.race([
+        fetchGlobalMacroDashboard().catch(err => {
+          console.warn('[dynamic-prompts] fetchGlobalMacroDashboard error:', err)
+          return null
+        }),
+        new Promise<null>(resolve => setTimeout(() => resolve(null), 2500))
+      ])
+    ])
 
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        const text = await res.text()
-        if (!text || text.length <= 200)
-          throw new Error('Empty upstream response')
-        return text
-      })
-    ),
-    fetchAnswerBookMarketData(),
-    fetchGlobalMacroDashboard().catch(err => {
-      console.warn('[dynamic-prompts] fetchGlobalMacroDashboard error:', err)
-      return null
+    const firstSuccessfulResult = upstreamResults.find(
+      result => result.status === 'fulfilled'
+    )
+    if (firstSuccessfulResult?.status === 'fulfilled') {
+      rawContent = firstSuccessfulResult.value
+    }
+
+    const scrapedStocks = parseStocks(rawContent)
+    const sp500 =
+      answerBookData.usStocks.length > 0 || scrapedStocks.sp500.length > 0
+        ? mergeCurrentPrices(answerBookData.usStocks, scrapedStocks.sp500)
+        : DEFAULT_US_STOCKS
+    const tw50 =
+      answerBookData.tw50.length > 0 || scrapedStocks.tw50.length > 0
+        ? mergeCurrentPrices(answerBookData.tw50, scrapedStocks.tw50)
+        : DEFAULT_TW_STOCKS.slice(0, 5)
+    const twMid =
+      answerBookData.twMid.length > 0 || scrapedStocks.twMid.length > 0
+        ? mergeCurrentPrices(answerBookData.twMid, scrapedStocks.twMid)
+        : DEFAULT_TW_STOCKS.slice(5)
+
+    const { featuredPromptsZh, featuredPromptsEn, promptsZh, promptsEn } =
+      buildPrompts(sp500, tw50, twMid, macroData)
+
+    cachedData = {
+      timestamp: now,
+      usStocks: sp500,
+      twStocks: [...tw50, ...twMid],
+      featuredPromptsZh,
+      featuredPromptsEn,
+      promptsZh,
+      promptsEn
+    }
+
+    return NextResponse.json(cachedData, {
+      headers: { 'Cache-Control': 'no-store' }
     })
-  ])
-
-  const firstSuccessfulResult = upstreamResults.find(
-    result => result.status === 'fulfilled'
-  )
-  if (firstSuccessfulResult?.status === 'fulfilled') {
-    rawContent = firstSuccessfulResult.value
+  } catch (error) {
+    console.warn('[dynamic-prompts] Error fetching live dynamic prompts, returning fallback cache:', error)
+    return NextResponse.json(cachedData, {
+      headers: { 'Cache-Control': 'no-store' }
+    })
   }
-
-  const scrapedStocks = parseStocks(rawContent)
-  const sp500 = mergeCurrentPrices(answerBookData.usStocks, scrapedStocks.sp500)
-  const tw50 = mergeCurrentPrices(answerBookData.tw50, scrapedStocks.tw50)
-  const twMid = mergeCurrentPrices(answerBookData.twMid, scrapedStocks.twMid)
-  const { featuredPromptsZh, featuredPromptsEn, promptsZh, promptsEn } =
-    buildPrompts(sp500, tw50, twMid, macroData)
-
-  cachedData = {
-    timestamp: now,
-    usStocks: sp500,
-    twStocks: [...tw50, ...twMid],
-    featuredPromptsZh,
-    featuredPromptsEn,
-    promptsZh,
-    promptsEn
-  }
-
-  return NextResponse.json(cachedData, {
-    headers: { 'Cache-Control': 'no-store' }
-  })
 }

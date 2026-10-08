@@ -106,6 +106,8 @@ import { toast } from 'sonner'
 import {
   extractExplicitTicker,
   inferDeterministicTool,
+  inferSemanticToolWithClef,
+  isPlausibleFinancialQuery,
   resolveTickerFromMessages
 } from '@/lib/chat/routing'
 import {
@@ -923,7 +925,34 @@ async function submitUserMessage(content: string, userApiKey?: string) {
     currentMarketTicker ||
     resolveTickerFromMessages(content, rawAiMessages)
   const currentExplicitTicker = explicitTicker || currentMarketTicker
-  const deterministicTool = inferDeterministicTool(content, resolvedTicker)
+  let deterministicTool = inferDeterministicTool(content, resolvedTicker)
+
+  // Tier 1.5 Semantic Tool Gatekeeper (Clef-Flash System One):
+  // Evaluate semantic tool ONLY when regex router did not match any deterministic tool.
+  // Explicit deterministic tool matches (price, chart, financials, master analysis, sepa, profile, etc.) are strictly preserved.
+  const shouldEvaluateSemanticTool =
+    !deterministicTool && isPlausibleFinancialQuery(content, resolvedTicker)
+
+  if (shouldEvaluateSemanticTool) {
+    try {
+      const semanticTool = await inferSemanticToolWithClef(content, resolvedTicker)
+      if (semanticTool) {
+        deterministicTool = semanticTool
+      }
+    } catch (err) {
+      console.warn('[Clef Semantic Router] Skipped:', err)
+    }
+  }
+
+  // If no specific or semantic tool matched, a resolved ticker on a financial query
+  // falls back to company profile to prevent generic web search.
+  if (
+    !deterministicTool &&
+    resolvedTicker &&
+    isPlausibleFinancialQuery(content, resolvedTicker)
+  ) {
+    deterministicTool = 'showStockCompanyProfile'
+  }
 
   if (deterministicTool && sanitizedMessages.length > 0) {
     const lastMessage = sanitizedMessages[sanitizedMessages.length - 1]
@@ -992,7 +1021,7 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
 2. Never pass a raw unregistered company name directly to a chart, price, financials, news, or analysis tool when no ticker is present.
 3. For a known alias, convert it to the exact exchange-qualified symbol (for example SpaceX/SPCX -> NASDAQ:SPCX, 台積電/TSMC -> TWSE:2330, 統一 -> TWSE:1216, 小米 -> HKEX:1810, 騰訊 -> HKEX:700, 阿里 -> HKEX:9988, 輝達/NVIDIA -> NASDAQ:NVDA, 特斯拉/Tesla -> NASDAQ:TSLA).
 4. Only for an unknown, new, private, or ambiguous company name with no explicit ticker, call searchFinancialWeb first with the company name plus "股票代號 交易所 ticker". Then use the exact symbol and exchange returned by the live result.
-5. If the user says "台股" or asks for the Taiwan market without a specific company, use showMarketHeatmap or showMarketOverview; do not invent a single ticker.
+5. If the user says "台股" or asks for Taiwan market performance (e.g. 「今天台股表現如何」、「台股大盤走勢」、「加權指數」、「台股行情」), use searchFinancialWeb to retrieve live TAIEX index points, advance/decline stats, and sector movers, or use showMarketOverview. NEVER call showMarketHeatmap because TradingView embed widget DOES NOT support Taiwan stock heatmaps (it will incorrectly show US S&P 500 instead).
 6. If an explicit ticker is present and the user asks for a financial summary, valuation, any financial-statement line item, ratio, growth comparison, valuation multiple, or accounting term (including unfamiliar ones), call answerFinancialMetric. Do not expose a raw search-results card for a financial question.
 
 ### 🧠 多輪續問與標的繼承 (Multi-Turn Context & Symbol Resolution)
@@ -1746,7 +1775,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
             }
           },
           showMarketHeatmap: {
-            description: `This tool shows a heatmap of today's stock market performance across sectors (US / Taiwan / Taiwan 50 / Japan / Hong Kong / UK / Germany / France / Israel / Korea / China / Australia / India / Brazil / Canada). It is preferred over showMarketOverview if asked specifically about the stock market.`,
+            description: `Display a sector performance heatmap widget for US (S&P 500) and major international stock markets. CRITICAL RESTRICTION: TradingView embed widget DOES NOT support Taiwan stock heatmaps (TWSE/TPEx has no sector heatmap data source and will show US or blank). NEVER call this tool for Taiwan stock market questions (e.g. 台股、加權指數、大盤走勢、台灣股市表現). For Taiwan market questions, use searchFinancialWeb to fetch live TAIEX index performance, turnover, and sector drivers, or use showMarketOverview.`,
             parameters: z.object({}),
             generate: async function* ({}) {
               let caption = ''
@@ -2595,7 +2624,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                   `${formattedSymbol} 核心營運成長與產業龍頭溢價假說`,
                 status: transmission.signalStatus,
                 statusLabel: transmission.statusLabel,
-                evidence: [
+                evidence: transmission.evidence || [
                   `最新宏觀與產業傳導狀態評估為「${transmission.chain[0]?.node || '總經流動性穩定'}」，一階傳導影響為 ${transmission.chain[0]?.impactLabel || '中性'}。`,
                   `產業鏈環節：${transmission.chain[1]?.logic || '供需格局平穩，龍頭企業維持定價主導權。'}`,
                   `企業現金流與獲利節奏：${transmission.chain[2]?.logic || '自由現金流與成長動能符合原先推演。'}`

@@ -173,25 +173,46 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 對話時間以自然日曆日計算（`startOfToday` vs `startOfTarget` 兩者午夜零點差），嚴禁使用已流逝 24 小時除法。
   - 財報季報日加算嚴格限制於當月最大天數（clamped day），防止 `setMonth` 月底溢出至次月。
 
+### 15. ⚡ Clef-Flash System One 決策推論引擎 (Typed Fast-Thinking Decision Engine)
+
+- **三層漸進式決策架構 (Tiered Decision Pipeline)**：
+  - **Tier 0（0ms）**：本地正規表達式與字典映射（明確 Ticker、SpaceX 鐵律、顯著意圖關鍵字）。
+  - **Tier 1.5（~190ms）**：[`lib/clef.ts`](lib/clef.ts) 調用 **Cloudflare Clef-Flash System One** 決策推論 API，專精 typed choice（多選意圖分類）、noul（布林真假機率）、score（有序量化評分）。
+  - **Tier 2（1.5s ~ 5s）**：大型生成式 LLM（GPT-4o-mini / Gemini-2.5-Flash / DeepSeek）專注於深度文字合成與伴隨解說。
+- **四大核心落地場景 (A/B/C/D)**：
+  - **A. 語意意圖分流閘門 (`inferSemanticToolWithClef`)**：當 Regex 未命中時，以 190ms 評估 16 種金融工具意圖，置信度高直接鎖定 `deterministicTool`，杜絕弱模型誤調 2MD 搜尋。
+  - **B. DeepEar 傳導鏈與信號證偽打分 (`lib/deepear.ts`)**：以 Clef 取代死板正則與寫死分數，客觀輸出 `Strengthened` / `Weakened` / `Falsified` / `Unchanged` 狀態與 5 階情緒分數。
+  - **C. 13 位大師共識量化與多空衝突警報 (`app/api/analysis-summary/route.ts`)**：快速評估大師多空立場（`strong_bull` 到 `strong_bear`）、衝突分歧指數（0~100）與尾部黑天鵝風險預警。
+  - **D. 2MD 搜尋結果關聯度與防幻覺檢核 (`lib/research-search.ts`)**：以 Clef 評估候選新聞文章與目標標的之具體財務關聯度，確保最佳數據來源置頂。
+- **三層高可用備援與防雪崩機制**：
+  - **Primary**：`https://clef.create360.ai/v1/systemone`（~190ms）
+  - **Fallback 2**：`https://clef.aiurl.tw/v1/systemone`（CPU GGUF 備援）
+  - **Fallback 3**：`https://jev.create360.ai/v1/systemone`（Jev Compatible 備援）
+  - 內建 Singleflight 請求合併、60 秒記憶體快取、連續 2 次失敗進入 30 秒熔斷冷卻期，失敗時全自動降級，絕不阻斷主流程。
+
 ---
 
 
 ## ⚙️ 環境變數設定規範 (Environment Variables Reference)
 
-| 變數名稱                    | 類型   | 範例 / 預設值                                              | 說明                                               |
-| :-------------------------- | :----- | :--------------------------------------------------------- | :------------------------------------------------- |
-| **`PRIMARY_BASE_URL`**      | URL    | `https://api.openai.com/v1`                                | 主要 LLM 端點 Base URL（相容 `OPENAI_BASE_URL`）   |
-| **`PRIMARY_API_KEY`**       | Secret | `sk-proj-...`                                              | 主要 LLM 端點 API Key（相容 `OPENAI_API_KEY`）     |
-| **`PRIMARY_TOOL_MODEL`**    | String | `gpt-4o-mini`                                              | 主要端點工具調用模型（相容 `TOOL_MODEL`）          |
-| **`PRIMARY_MODEL`**         | String | `gpt-4o-mini`                                              | 主要端點文字生成模型（相容 `MODEL`）               |
-| **`FALLBACK_1_BASE_URL`**   | URL    | `https://api.groq.com/openai/v1`                           | 第 1 備用端點 Base URL（相容 `GROQ_BASE_URL`）     |
-| **`FALLBACK_1_API_KEY`**    | Secret | `gsk_...`                                                  | 第 1 備用端點 API Key（相容 `GROQ_API_KEY`）       |
-| **`FALLBACK_1_TOOL_MODEL`** | String | `openai/gpt-oss-20b`                                       | 第 1 備用端點工具模型（相容 `GROQ_TOOL_MODEL`）    |
-| **`FALLBACK_1_MODEL`**      | String | `openai/gpt-oss-20b`                                       | 第 1 備用端點文字模型（相容 `GROQ_MODEL`）         |
-| **`FALLBACK_2_BASE_URL`**   | URL    | `https://generativelanguage.googleapis.com/v1beta/openai/` | 第 2 備用端點 Base URL（如 Google Gemini / Azure） |
-| **`FALLBACK_2_API_KEY`**    | Secret | `AIza...`                                                  | 第 2 備用端點 API Key（如 `GEMINI_API_KEY`）       |
-| **`FALLBACK_2_TOOL_MODEL`** | String | `gemini-2.5-flash`                                         | 第 2 備用端點工具模型                              |
-| **`FALLBACK_2_MODEL`**      | String | `gemini-2.5-flash`                                         | 第 2 備用端點文字模型                              |
-| **`TWOMD_PRIMARY_URL`**     | URL    | `https://2md.aiurl.tw`                                     | 2MD 即時連網搜尋主端點                             |
-| **`AI_HEDGE_FUND_HOST`**    | Host   | `dns.glsoft.ai`                                            | AI Hedge Fund API 主機位置                         |
-| **`AI_HEDGE_FUND_PORT`**    | Port   | `6000`                                                     | AI Hedge Fund API 端口                             |
+| 變數名稱                     | 類型   | 範例 / 預設值                                              | 說明                                               |
+| :--------------------------- | :----- | :--------------------------------------------------------- | :------------------------------------------------- |
+| **`PRIMARY_BASE_URL`**       | URL    | `https://api.openai.com/v1`                                | 主要 LLM 端點 Base URL（相容 `OPENAI_BASE_URL`）   |
+| **`PRIMARY_API_KEY`**        | Secret | `sk-proj-...`                                              | 主要 LLM 端點 API Key（相容 `OPENAI_API_KEY`）     |
+| **`PRIMARY_TOOL_MODEL`**     | String | `gpt-4o-mini`                                              | 主要端點工具調用模型（相容 `TOOL_MODEL`）          |
+| **`PRIMARY_MODEL`**          | String | `gpt-4o-mini`                                              | 主要端點文字生成模型（相容 `MODEL`）               |
+| **`FALLBACK_1_BASE_URL`**    | URL    | `https://api.groq.com/openai/v1`                           | 第 1 備用端點 Base URL（相容 `GROQ_BASE_URL`）     |
+| **`FALLBACK_1_API_KEY`**     | Secret | `gsk_...`                                                  | 第 1 備用端點 API Key（相容 `GROQ_API_KEY`）       |
+| **`FALLBACK_1_TOOL_MODEL`**  | String | `openai/gpt-oss-20b`                                       | 第 1 備用端點工具模型（相容 `GROQ_TOOL_MODEL`）    |
+| **`FALLBACK_1_MODEL`**       | String | `openai/gpt-oss-20b`                                       | 第 1 備用端點文字模型（相容 `GROQ_MODEL`）         |
+| **`FALLBACK_2_BASE_URL`**    | URL    | `https://generativelanguage.googleapis.com/v1beta/openai/` | 第 2 備用端點 Base URL（如 Google Gemini / Azure） |
+| **`FALLBACK_2_API_KEY`**     | Secret | `AIza...`                                                  | 第 2 備用端點 API Key（如 `GEMINI_API_KEY`）       |
+| **`FALLBACK_2_TOOL_MODEL`**  | String | `gemini-2.5-flash`                                         | 第 2 備用端點工具模型                              |
+| **`FALLBACK_2_MODEL`**       | String | `gemini-2.5-flash`                                         | 第 2 備用端點文字模型                              |
+| **`CLEF_PRIMARY_URL`**       | URL    | `https://clef.create360.ai/v1/systemone`                   | Clef-Flash System One 主力端點                     |
+| **`CLEF_FALLBACK_2_URL`**    | URL    | `https://clef.aiurl.tw/v1/systemone`                       | Clef-Flash System One 備援端點 2                   |
+| **`CLEF_FALLBACK_3_URL`**    | URL    | `https://jev.create360.ai/v1/systemone`                    | Clef-Flash System One / Jev 備援端點 3             |
+| **`CLEF_PRIMARY_TIMEOUT_MS`**| Number | `1200`                                                     | Clef 主力端點超時預算 (ms)                         |
+| **`TWOMD_PRIMARY_URL`**      | URL    | `https://2md.aiurl.tw`                                     | 2MD 即時連網搜尋主端點                             |
+| **`AI_HEDGE_FUND_HOST`**     | Host   | `dns.glsoft.ai`                                            | AI Hedge Fund API 主機位置                         |
+| **`AI_HEDGE_FUND_PORT`**     | Port   | `6000`                                                     | AI Hedge Fund API 端口                             |

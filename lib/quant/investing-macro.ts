@@ -158,7 +158,7 @@ export async function fetchGlobalMacroDashboard(): Promise<GlobalMacroDashboardR
   })
 
   try {
-    const rawMarkdown = await readUrl2MD('www.investing.com/', 12000)
+    const rawMarkdown = await readUrl2MD('www.investing.com/', 3500)
     if (rawMarkdown && rawMarkdown.length > 500) {
       const economicEvents = parseEconomicEvents(rawMarkdown)
 
