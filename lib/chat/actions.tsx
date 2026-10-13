@@ -73,6 +73,7 @@ import {
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
+import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
 import {
   BrokerBranchCard,
   CompanyProfileCard,
@@ -88,6 +89,7 @@ import { buildTransmissionAnalysis } from '@/lib/deepear'
 import { fetchMacroFactorRegime } from '@/lib/quant/us-fddk'
 import { fetchInstitutionalFlow } from '@/lib/quant/institutional'
 import { fetchGlobalMacroDashboard } from '@/lib/quant/investing-macro'
+import { fetchEarningsCalls } from '@/lib/quant/earnings-call'
 import {
   fetchBrokerData,
   fetchCompanyProfile,
@@ -2902,6 +2904,74 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <EconomicCalendarCard data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          showEarningsCalls: {
+            description:
+              'Display corporate earnings call conferences (法人說明會 / 財報電話會議), scheduled dates, live audio/video webcast streams, presentation slide decks (PDF), and management guidance highlights.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .optional()
+                .describe(
+                  'Target stock symbol (e.g. 2330, NVDA, AAPL) or leave empty for market-wide schedule.'
+                ),
+              market: z
+                .enum(['TW', 'US', 'ALL'])
+                .optional()
+                .describe('Market filter: TW (Taiwan MOPS/TWSE), US (Earnings Call), or ALL.')
+            }),
+            generate: async function* ({ symbol, market }) {
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在彙整全球法人說明會 (Earnings Calls) 日程、簡報與影音回放連結…
+                  </div>
+                </BotCard>
+              )
+
+              const resolvedSym = symbol ? resolveStockSymbol(symbol) : undefined
+              const data = await fetchEarningsCalls({
+                symbol: resolvedSym,
+                market: market || 'ALL'
+              })
+
+              const context = JSON.stringify({
+                asOfDate: data.asOfDate,
+                targetSymbol: data.symbol,
+                marketFilter: data.marketFilter,
+                totalCount: data.totalCount,
+                conferences: data.all.slice(0, 6).map(c => ({
+                  symbol: c.symbol,
+                  company: c.companyName,
+                  date: c.conferenceDate,
+                  status: c.status,
+                  guidance: c.guidanceHighlights?.revenueOutlook
+                }))
+              })
+
+              const caption = await generateCaption(
+                resolvedSym || 'EARNINGS-CALLS',
+                [],
+                'showEarningsCalls',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'showEarningsCalls',
+                { symbol: resolvedSym, market },
+                { data },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  <EarningsCallCard data={data} />
                   <BotCaption content={caption} />
                 </BotCard>
               )

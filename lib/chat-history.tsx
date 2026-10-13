@@ -31,6 +31,7 @@ import { SignalTrackerCard } from '@/components/stocks/signal-tracker-card'
 import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-card'
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
+import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
 import {
   BrokerBranchCard,
   CompanyProfileCard,
@@ -453,6 +454,12 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
               case 'showEconomicCalendar':
                 cardContent = result?.data ? (
                   <EconomicCalendarCard data={result.data} />
+                ) : null
+                break
+
+              case 'showEarningsCalls':
+                cardContent = result?.data ? (
+                  <EarningsCallCard data={result.data} />
                 ) : null
                 break
 

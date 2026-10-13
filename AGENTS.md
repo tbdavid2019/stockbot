@@ -203,6 +203,19 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 凡使用者自訂之 `baseURL`，後端強制執行 `isSafeApiBaseUrl` 校驗。
   - 強制限定 `https://` 協定，全面封鎖所有私有 IPv4/IPv6、雲端中繼 Metadata (`169.254.169.254`)、IPv6-mapped IPv4 與 Wildcard DNS 隧道服務（`nip.io`, `sslip.io` 等），杜絕任何內網探測攻擊。
 
+### 17. 🎙️ 法人說明會與美股 Earnings Call 全維度情報 (Corporate Earnings Calls & 2MD Deck Analysis)
+
+- **`showEarningsCalls` ➔ `<EarningsCallCard />` ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts))**：
+  - 整合 **台灣公開資訊觀測站 (MOPS)**、**台灣證券交易所 (TWSE)**、**櫃買中心 (TPEX)** 與 **美股 Yahoo Finance / 企業 IR** 官方即時數據。
+  - 支援全市場日曆概覽與個股精準查詢，即時計算會議狀態（🔴 **進行中 (Live Webcast)**、🟡 **今日召開**、🔵 **即將舉行**、⚪ **歷史回放**）。
+  - 提供官方影音直播/錄音 Webcast 外鏈與法說會簡報 (PDF) 下載。
+- **⚡ 2MD AnyDoc 簡報一鍵 AI 深度解析 ([`app/api/parse-earnings-deck/route.ts`](app/api/parse-earnings-deck/route.ts))**：
+  - 串接 2MD 秒級 PDF 解析引擎與 LLM 萃取管道，點擊卡片「AI 深度解析簡報」即可在對話流內直接展開結構化經營層指引（Guidance）、資本支出（CapEx）與產能擴充展望。
+  - 嚴格落實 SSRF 防護與 BYOK 自備金鑰透傳。
+- **確定性路由與鐵律遵守**：
+  - 透過 [`lib/chat/routing.ts`](lib/chat/routing.ts) 確定性匹配「法說會」、「法人說明會」、「earnings call」、「法說簡報」、「業績說明會」等關鍵字。
+  - 遵守 **卡片一律渲染於文字訊息上方 (Card Positioning Policy)**，伴隨文字一律以「以上是...」總結，並由 [`lib/chat-history.tsx`](lib/chat-history.tsx) 以純 JSON 持久化至瀏覽器 `localStorage`。
+
 ---
 
 

@@ -23,6 +23,7 @@ export type DeterministicToolName =
   | 'showMacroFactorRegime'
   | 'showInstitutionalFlow'
   | 'showEconomicCalendar'
+  | 'showEarningsCalls'
   | 'showStockPredictions'
   | 'showStockBrokerBranches'
   | 'showMarketInstitutionalLeaderboard'
@@ -234,6 +235,14 @@ export function inferDeterministicTool(
     )
   ) {
     return 'showEconomicCalendar'
+  }
+
+  if (
+    /法說會|法人說明會|財報電話會議|earnings call|investor conference|法說日程|法說簡報|法說行事曆|業績說明會|業績發表會|webcast/i.test(
+      content
+    )
+  ) {
+    return 'showEarningsCalls'
   }
 
   if (

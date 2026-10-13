@@ -4,6 +4,28 @@
 
 ---
 
+## [2026-10-13] - 全球法人說明會與美股 Earnings Call 全維度情報 (Corporate Earnings Calls & 2MD Deck Analysis)
+
+### ✨ 新增 (Added)
+
+- **🎙️ 法人說明會與財報電話會議情報卡片 (`showEarningsCalls` ➔ `<EarningsCallCard />`)**：
+  - **多市場數據聚合器 ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts))**：整合公開資訊觀測站 (MOPS)、台灣證券交易所 (TWSE)、櫃買中心 (TPEX) 與美股 Yahoo Finance / 官方 IR 日程，支援市場過濾（全部 / 🇹🇼 台股 / 🇺🇸 美股）與動態時間軸狀態過濾（🔴 進行中 / 🟡 今日召開 / 🔵 即將舉行 / ⚪ 歷史回放）。
+  - **影音直播與簡報下載外鏈**：直接提供官方 Webcast 影音/錄音串流連結與官方法人說明會簡報 (PDF) 下載。
+  - **時區嚴格隔離與閉區間防護**：台股強制錨定 `Asia/Taipei`，美股強制錨定 `America/New_York`，以 `getEndOfDay` 避免午夜跨日計算失真。
+  - **Singleflight 請求合併與 10 分鐘快取**：杜絕驚群效應與高頻重複爬取。
+
+- **⚡ 2MD AnyDoc 簡報一鍵 AI 深度解析 ([`app/api/parse-earnings-deck/route.ts`](app/api/parse-earnings-deck/route.ts))**：
+  - 於卡片內建「AI 深度解析簡報」一鍵觸發按鈕，透過 2MD AnyDoc 秒級剖析數十頁簡報 PDF。
+  - 結構化萃取：(1) 🧭 經營層營收與財務指引 (Guidance)、(2) 🏭 資本支出 (CapEx) 與產能擴充、(3) 🚀 業務亮點與新技術量產時程、(4) ⚠️ 潛在營運風險與同業競爭壓力。
+  - 嚴格整合 SSRF 防護與 BYOK 自備金鑰透傳。
+
+- **🔄 確定性意圖路由與純本機持久化**：
+  - [`lib/chat/routing.ts`](lib/chat/routing.ts)：新增 `showEarningsCalls` 確定性正則匹配（「法說會」、「法人說明會」、「earnings call」、「法說簡報」、「業績說明會」）。
+  - [`lib/chat/actions.tsx`](lib/chat/actions.tsx)：註冊 `showEarningsCalls` 工具，嚴格落實卡片置於伴隨文字上方（Card Positioning Policy）與「以上是...」總結句法。
+  - [`lib/chat-history.tsx`](lib/chat-history.tsx)：實作純 JSON 還原機制，重啟或重新整理對話完整恢復卡片狀態與歷史記錄。
+
+---
+
 ## [2026-10-13] - 實作 BYOK (Bring Your Own Key) 自備金鑰機制與硬核 SSRF 防護
 
 ### ✨ 新增 (Added)
