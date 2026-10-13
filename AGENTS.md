@@ -190,6 +190,19 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - **Fallback 3**：`https://jev.create360.ai/v1/systemone`（Jev Compatible 備援）
   - 內建 Singleflight 請求合併、60 秒記憶體快取、連續 2 次失敗進入 30 秒熔斷冷卻期，失敗時全自動降級，絕不阻斷主流程。
 
+### 16. 🔑 BYOK 自備金鑰與硬核 SSRF 防護架構 (Bring Your Own Key & SSRF Defense)
+
+- **純本機儲存與伺服器零留存保證 (Server-Zero Retention Guarantee)**：
+  - 使用者自備之 API Key 僅留存於瀏覽器 `localStorage` (`stockbot_user_api_key_config`)。
+  - 送出查詢時，前端將 Key 透過參數與 Header 無狀態透傳給 Serverless Function，伺服器記憶體完成單次請求即銷毀，絕不寫入伺服器硬碟、資料庫或日誌。
+  - 支援 OpenAI、Groq、Google Gemini、DeepSeek 與自訂 OpenAI-Compatible 端點。
+  - 全鏈路覆蓋：`submitUserMessage`、`generateCaption`、上下文續問與 13 位大師綜合判讀皆優先注入使用者的 BYOK。
+- **429 額度耗盡與 401 授權優雅降級**：
+  - 當系統免費額度或自備金鑰額度耗盡時，自動渲染原生 `<QuotaExceededCard />`，並提供一鍵開啟自備金鑰設定對話框。
+- **🛡️ 硬核 SSRF (Server-Side Request Forgery) 防護 ([`lib/security-url.ts`](lib/security-url.ts))**：
+  - 凡使用者自訂之 `baseURL`，後端強制執行 `isSafeApiBaseUrl` 校驗。
+  - 強制限定 `https://` 協定，全面封鎖所有私有 IPv4/IPv6、雲端中繼 Metadata (`169.254.169.254`)、IPv6-mapped IPv4 與 Wildcard DNS 隧道服務（`nip.io`, `sslip.io` 等），杜絕任何內網探測攻擊。
+
 ---
 
 

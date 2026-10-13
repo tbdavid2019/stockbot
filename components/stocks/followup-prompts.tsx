@@ -4,8 +4,9 @@ import React from 'react'
 import { useActions, useUIState } from 'ai/rsc'
 import { UserMessage } from './message'
 import { nanoid } from 'nanoid'
-import { type AI } from '@/lib/chat/actions'
+import type { AI } from '@/lib/chat/actions'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
+import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
 import { normalizeFollowupText } from '@/lib/followup-suggestions'
 
 interface FollowupPromptsProps {
@@ -15,7 +16,7 @@ interface FollowupPromptsProps {
 export function FollowupPrompts({ prompts }: FollowupPromptsProps) {
   const { submitUserMessage } = useActions()
   const [_, setMessages] = useUIState<typeof AI>()
-  const [apiKey] = useLocalStorage('groqKey', '')
+  const { serializedConfig } = useUserApiKey()
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
   if (!prompts || prompts.length === 0) return null
@@ -34,7 +35,7 @@ export function FollowupPrompts({ prompts }: FollowupPromptsProps) {
     ])
 
     try {
-      const responseMessage = await submitUserMessage(cleanText, apiKey)
+      const responseMessage = await submitUserMessage(cleanText, serializedConfig)
       setMessages(currentMessages => [...currentMessages, responseMessage])
     } catch (err) {
       console.error('Failed to submit followup message:', err)

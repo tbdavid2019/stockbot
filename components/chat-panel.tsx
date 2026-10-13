@@ -10,6 +10,7 @@ import type { AI } from '@/lib/chat/actions'
 import { nanoid } from 'nanoid'
 import { UserMessage } from './stocks/message'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
+import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
 import { type MarketQuote } from '@/components/tradingview/market-quotes'
 
 export interface ChatPanelProps {
@@ -238,7 +239,7 @@ export function ChatPanel({
   const [messages, setMessages] = useUIState<typeof AI>()
   const { submitUserMessage } = useActions()
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
-  const [apiKey] = useLocalStorage('groqKey', '')
+  const { serializedConfig } = useUserApiKey()
 
   const [cachedPromptsZh, setCachedPromptsZh] =
     useState<ExampleMessage[]>(DEFAULT_PROMPTS_ZH)
@@ -323,10 +324,10 @@ export function ChatPanel({
         }
       ])
 
-      const responseMessage = await submitUserMessage(prompt, apiKey)
+      const responseMessage = await submitUserMessage(prompt, serializedConfig)
       setMessages(currentMessages => [...currentMessages, responseMessage])
     },
-    [apiKey, lang, setMessages, submitUserMessage]
+    [serializedConfig, lang, setMessages, submitUserMessage]
   )
 
   useEffect(() => {
@@ -405,7 +406,7 @@ export function ChatPanel({
 
                         const responseMessage = await submitUserMessage(
                           example.message,
-                          apiKey
+                          serializedConfig
                         )
                         setMessages(currentMessages => [
                           ...currentMessages,

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import remarkGfm from 'remark-gfm'
 
 import { MemoizedReactMarkdown } from '@/components/markdown'
+import { getStoredApiKeyConfig } from '@/lib/hooks/use-user-api-key'
 
 interface AnalystSignal {
   signal: 'bullish' | 'bearish' | 'neutral'
@@ -473,9 +474,15 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
     setSummaryLoading(true)
     setSummaryError('')
 
+    const userKeyConfig = getStoredApiKeyConfig()
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (userKeyConfig?.apiKey) {
+      headers['x-user-key-config'] = JSON.stringify(userKeyConfig)
+    }
+
     fetch('/api/analysis-summary', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         symbol: normalizeTickerForBackend(symbol),
         analysis: result,

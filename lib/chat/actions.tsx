@@ -31,6 +31,7 @@ import { NativeStockNewsCard } from '@/components/stocks/native-news-card'
 import { WebSearchResults } from '@/components/stocks/web-search-results'
 import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
+import { QuotaExceededCard } from '@/components/stocks/quota-exceeded-card'
 import { BotCaption } from '@/components/stocks/bot-caption'
 import { readUrl2MD } from '@/lib/2md'
 import { searchResearchEvidence } from '@/lib/research-search'
@@ -102,6 +103,7 @@ import { normalizeTicker } from '@/lib/stockdata/normalization'
 import type { StockdataResult } from '@/lib/stockdata/types'
 import { getGlobalMarketUniverse } from '@/lib/global-market-universe-cache'
 import { resolveGlobalSecurity } from '@/lib/global-market-universe'
+import { isSafeApiBaseUrl } from '@/lib/security-url'
 import { toast } from 'sonner'
 import {
   extractExplicitTicker,
@@ -143,36 +145,71 @@ interface ProviderCandidate {
   toolModel: string // 工具調用與意圖分流模型 (Function Calling / Tool Model)
 }
 
-function getProviderCandidates(userKey?: string): ProviderCandidate[] {
+function getProviderCandidates(userKeyOrConfig?: string | any): ProviderCandidate[] {
   const candidates: ProviderCandidate[] = []
 
-  // 0. 前端使用者傳入之 API Key (User Client Key - Groq / OpenAI / Gemini)
-  if (userKey && typeof userKey === 'string' && userKey.trim().length > 5) {
-    const trimmedKey = userKey.trim()
-    if (trimmedKey.startsWith('gsk_')) {
-      candidates.push({
-        name: `User Client Groq Key [openai/gpt-oss-20b]`,
-        baseURL: 'https://api.groq.com/openai/v1',
-        apiKey: trimmedKey,
-        model: 'openai/gpt-oss-20b',
-        toolModel: 'openai/gpt-oss-20b'
-      })
-    } else if (trimmedKey.startsWith('sk-')) {
-      candidates.push({
-        name: `User Client OpenAI Key [gpt-4o-mini]`,
-        baseURL: 'https://api.openai.com/v1',
-        apiKey: trimmedKey,
-        model: 'gpt-4o-mini',
-        toolModel: 'gpt-4o-mini'
-      })
-    } else if (trimmedKey.startsWith('AIza')) {
-      candidates.push({
-        name: `User Client Gemini Key [gemini-2.5-flash]`,
-        baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-        apiKey: trimmedKey,
-        model: 'gemini-2.5-flash',
-        toolModel: 'gemini-2.5-flash'
-      })
+  // 0. 前端使用者傳入之自備金鑰 (User Client Key / BYOK - 伺服器零留存)
+  if (userKeyOrConfig) {
+    let parsedConfig: any = null
+
+    if (typeof userKeyOrConfig === 'string') {
+      const trimmed = userKeyOrConfig.trim()
+      if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        try {
+          parsedConfig = JSON.parse(trimmed)
+        } catch {}
+      } else if (trimmed.length > 5) {
+        // 純字串格式（向後相容）
+        if (trimmed.startsWith('gsk_')) {
+          candidates.push({
+            name: `User Groq Key [openai/gpt-oss-20b]`,
+            baseURL: 'https://api.groq.com/openai/v1',
+            apiKey: trimmed,
+            model: 'openai/gpt-oss-20b',
+            toolModel: 'openai/gpt-oss-20b'
+          })
+        } else if (trimmed.startsWith('sk-')) {
+          candidates.push({
+            name: `User OpenAI Key [gpt-4o-mini]`,
+            baseURL: 'https://api.openai.com/v1',
+            apiKey: trimmed,
+            model: 'gpt-4o-mini',
+            toolModel: 'gpt-4o-mini'
+          })
+        } else if (trimmed.startsWith('AIza')) {
+          candidates.push({
+            name: `User Gemini Key [gemini-2.5-flash]`,
+            baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+            apiKey: trimmed,
+            model: 'gemini-2.5-flash',
+            toolModel: 'gemini-2.5-flash'
+          })
+        }
+      }
+    } else if (typeof userKeyOrConfig === 'object') {
+      parsedConfig = userKeyOrConfig
+    }
+
+    if (parsedConfig && parsedConfig.apiKey && typeof parsedConfig.apiKey === 'string') {
+      const k = parsedConfig.apiKey.trim()
+      if (k.length > 5) {
+        const providerName = parsedConfig.provider || 'custom'
+        const baseURL = parsedConfig.baseURL || 'https://api.openai.com/v1'
+        const safeCheck = isSafeApiBaseUrl(baseURL)
+        if (!safeCheck.safe) {
+          console.warn('[getProviderCandidates] Rejected unsafe BYOK baseURL:', baseURL, safeCheck.reason)
+        } else {
+          const model = parsedConfig.model || 'gpt-4o-mini'
+          const toolModel = parsedConfig.toolModel || model
+          candidates.push({
+            name: `User BYOK [${providerName}: ${toolModel}]`,
+            baseURL,
+            apiKey: k,
+            model,
+            toolModel
+          })
+        }
+      }
     }
   }
 
@@ -333,7 +370,8 @@ async function generateCaptionWithProvider(
   comparisonSymbols: ComparisonSymbolObject[],
   toolName: string,
   aiState: MutableAIState,
-  contextData: string | undefined
+  contextData: string | undefined,
+  userApiKey?: string
 ): Promise<string> {
   const stockString =
     comparisonSymbols.length === 0
@@ -442,7 +480,7 @@ Language: reply in the same language the user used most recently. If Chinese, re
   // Ordinary card captions remain a single-provider, 1.5-second best-effort
   // path. Evidence synthesis is a separate answer task and gets a bounded
   // second provider without nesting another RSC stream.
-  const candidates = getProviderCandidates().slice(
+  const candidates = getProviderCandidates(userApiKey).slice(
     0,
     isResearchSynthesis ? 2 : 1
   )
@@ -552,7 +590,8 @@ async function safeGenerateCaption(
   comparisonSymbols: ComparisonSymbolObject[],
   toolName: string,
   aiState: MutableAIState,
-  contextData: string | undefined
+  contextData: string | undefined,
+  userApiKey?: string
 ): Promise<string> {
   try {
     return await generateCaptionWithProvider(
@@ -560,7 +599,8 @@ async function safeGenerateCaption(
       comparisonSymbols,
       toolName,
       aiState,
-      contextData
+      contextData,
+      userApiKey
     )
   } catch (err: any) {
     console.warn(
@@ -593,12 +633,13 @@ async function safeGenerateCaption(
   }
 }
 
-async function generateCaption(
+async function _generateCaption(
   symbol: string,
   comparisonSymbols: ComparisonSymbolObject[],
   toolName: string,
   aiState: MutableAIState,
-  contextData?: string
+  contextData?: string,
+  userApiKey?: string
 ): Promise<string> {
   try {
     const answer = await safeGenerateCaption(
@@ -606,7 +647,8 @@ async function generateCaption(
       comparisonSymbols,
       toolName,
       aiState,
-      contextData
+      contextData,
+      userApiKey
     )
     return await appendContextualFollowups(
       answer,
@@ -616,7 +658,8 @@ async function generateCaption(
         question: getLatestUserQuestion(aiState) || symbol,
         resultContext: contextData
       },
-      aiState
+      aiState,
+      userApiKey
     )
   } catch (error) {
     console.warn(
@@ -626,6 +669,8 @@ async function generateCaption(
     return getSmartFallbackCaption(symbol, toolName)
   }
 }
+
+const generateCaption = _generateCaption
 
 function getLatestUserQuestion(aiState: MutableAIState): string {
   return (
@@ -648,7 +693,8 @@ async function generateContextualFollowups(
     question: string
     resultContext?: string
     company?: string
-  }
+  },
+  userApiKey?: string
 ): Promise<string[]> {
   const context = buildFollowupContext(aiState.get().messages || [], input)
   let partialSuggestions: string[] = []
@@ -667,7 +713,7 @@ Recent conversation and tool records:
 ${context.transcript || 'none'}
 `
 
-  for (const candidate of getProviderCandidates().slice(0, 1)) {
+  for (const candidate of getProviderCandidates(userApiKey).slice(0, 1)) {
     try {
       const client = createOpenAI({
         baseURL: candidate.baseURL,
@@ -705,9 +751,10 @@ async function appendContextualFollowups(
     resultContext?: string
     company?: string
   },
-  aiState: MutableAIState
+  aiState: MutableAIState,
+  userApiKey?: string
 ): Promise<string> {
-  const suggestions = await generateContextualFollowups(aiState, input)
+  const suggestions = await generateContextualFollowups(aiState, input, userApiKey)
   return serializeFollowups(answer, suggestions)
 }
 
@@ -825,6 +872,15 @@ async function submitUserMessage(content: string, userApiKey?: string) {
   'use server'
 
   const aiState = getMutableAIState<typeof AI>()
+
+  // 閉包綁定使用者自備金鑰 (BYOK)，確保各工具呼叫 generateCaption 時自動使用
+  const generateCaption = (
+    sym: string,
+    comp: ComparisonSymbolObject[],
+    tool: string,
+    state: MutableAIState,
+    ctx?: string
+  ) => _generateCaption(sym, comp, tool, state, ctx, userApiKey)
 
   aiState.update({
     ...aiState.get(),
@@ -965,6 +1021,7 @@ async function submitUserMessage(content: string, userApiKey?: string) {
   // Action lifetime even when each individual provider eventually times out.
   const candidates = getProviderCandidates(userApiKey).slice(0, 2)
   let lastError: any = null
+  const failedCandidates: Array<{ name: string; error: string; isQuota: boolean; isAuth: boolean }> = []
 
   for (const candidate of candidates) {
     try {
@@ -3680,10 +3737,60 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
         err?.message || err
       )
       lastError = err
+
+      const errMsg = String(err?.message || err || '').toLowerCase()
+      const isQuota =
+        errMsg.includes('429') ||
+        errMsg.includes('quota') ||
+        errMsg.includes('insufficient_quota') ||
+        errMsg.includes('rate limit') ||
+        errMsg.includes('rate_limit') ||
+        errMsg.includes('exceeded your current quota') ||
+        errMsg.includes('resource has been exhausted')
+      const isAuth =
+        errMsg.includes('401') ||
+        errMsg.includes('unauthorized') ||
+        errMsg.includes('invalid api key') ||
+        errMsg.includes('incorrect api key')
+
+      failedCandidates.push({
+        name: candidate.name,
+        error: err?.message || String(err),
+        isQuota,
+        isAuth
+      })
     }
   }
 
   // If all fallback models failed:
+  const hasQuotaFailure = failedCandidates.some(c => c.isQuota)
+  const hasAuthFailure = failedCandidates.some(c => c.isAuth)
+
+  if (hasQuotaFailure || hasAuthFailure) {
+    const errorDetails = failedCandidates
+      .map(c => `• ${c.name}: ${c.error}`)
+      .join('\n')
+
+    return {
+      id: nanoid(),
+      display: (
+        <BotCard>
+          <QuotaExceededCard
+            errorDetails={errorDetails}
+            isUnauthorized={hasAuthFailure && !hasQuotaFailure}
+          />
+          <BotCaption
+            content={
+              hasAuthFailure && !hasQuotaFailure
+                ? '以上是目前金鑰驗證狀態。請確認您的 API Key 是否正確且具有足夠權限。'
+                : '以上是目前模型額度狀態。伺服器預設免費額度已暫時耗盡，您可以點擊上方卡片填入自備金鑰（BYOK，伺服器不留存）繼續使用。'
+            }
+          />
+        </BotCard>
+      )
+    }
+  }
+
   return {
     id: nanoid(),
     display: (

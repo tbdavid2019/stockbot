@@ -4,6 +4,27 @@
 
 ---
 
+## [2026-10-13] - 實作 BYOK (Bring Your Own Key) 自備金鑰機制與硬核 SSRF 防護
+
+### ✨ 新增 (Added)
+
+- **🔑 前端自備金鑰機制 (BYOK - Bring Your Own Key，伺服器零留存保證)**：
+  - **純本機儲存架構 ([`lib/hooks/use-user-api-key.ts`](lib/hooks/use-user-api-key.ts))**：使用者自備的 API Key 僅留存於瀏覽器 `localStorage`，伺服器記憶體單次無狀態轉發，完成即銷毀，絕不寫入硬碟、資料庫或日誌。
+  - **多提供商智慧辨識與切換 ([`components/api-key-dialog.tsx`](components/api-key-dialog.tsx))**：支援 OpenAI (`sk-`)、Groq (`gsk_`)、Google Gemini (`AIza`)、DeepSeek (`sk-`) 與自訂端點 (Custom)，貼上金鑰自動識別提供商，並支援手動切換與進階自訂 Base URL / Model。
+  - **即時連線測試端點 ([`app/api/test-key/route.ts`](app/api/test-key/route.ts))**：提供無狀態連線測試，儲存前即時驗證金鑰授權與額度狀態。
+  - **優雅額度耗盡卡片 ([`components/stocks/quota-exceeded-card.tsx`](components/stocks/quota-exceeded-card.tsx))**：當系統預設免費額度耗盡 (429) 或金鑰未授權 (401) 時，渲染原生卡片並提供一鍵填入自備金鑰按鈕。
+  - **全鏈路覆蓋貫穿**：主要對話串流、各工具解說文字生成 (`generateCaption`)、自主上下文追問 (`generateContextualFollowups`) 以及 13 位大師綜合判讀 (`/api/analysis-summary`) 全面貫穿支援使用者自備金鑰。
+
+### 🛡️ 安全加固 (Security Hardening)
+
+- **🛡️ 嚴格 SSRF (伺服器端請求偽造) 防護模組 ([`lib/security-url.ts`](lib/security-url.ts))**：
+  - 封鎖所有私有 IPv4 網段（`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`）與雲端 Metadata 網段（`169.254.0.0/16`）。
+  - 封鎖 IPv6 本機迴路（`::1`）、Link-local（`fe80::`）、Unique-local（`fc00::`）及 `::ffff:` 映射。
+  - 封鎖常見 Wildcard DNS 隧道服務（`*.nip.io`, `*.sslip.io`, `*.xip.io` 等）。
+  - 經 Codex 與 OpenCode 滲透向量複查實測，所有私有位址與隧道繞過均 100% 成功攔截。
+
+---
+
 ## [2026-10-08] - 整合 Cloudflare Clef-Flash System One 決策推論引擎（A/B/C/D 落地場景與高可用容錯架構）
 
 ### ✨ 新增 (Added)

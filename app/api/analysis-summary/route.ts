@@ -2,6 +2,7 @@ import { generateText } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
+import { isSafeApiBaseUrl } from '@/lib/security-url'
 import {
   evaluateSystemOne,
   type ChoiceAnswer,
@@ -19,7 +20,12 @@ interface SummaryProvider {
   model: string
 }
 
-function getSummaryProviders(): SummaryProvider[] {
+function getSummaryProviders(userKeyConfig?: {
+  apiKey?: string
+  provider?: string
+  baseURL?: string
+  model?: string
+}): SummaryProvider[] {
   const providers: SummaryProvider[] = []
   const add = (
     name: string,
@@ -34,6 +40,22 @@ function getSummaryProviders(): SummaryProvider[] {
       apiKey,
       model
     })
+  }
+
+  // 0. 使用者自備金鑰 (BYOK - 最優先)
+  if (userKeyConfig?.apiKey && userKeyConfig.apiKey.trim().length > 5) {
+    const targetBaseURL = userKeyConfig.baseURL || 'https://api.openai.com/v1'
+    const safeCheck = isSafeApiBaseUrl(targetBaseURL)
+    if (safeCheck.safe) {
+      add(
+        `User BYOK [${userKeyConfig.provider || 'custom'}]`,
+        targetBaseURL,
+        userKeyConfig.apiKey.trim(),
+        userKeyConfig.model || 'gpt-4o-mini'
+      )
+    } else {
+      console.warn('[analysis-summary] Rejected unsafe BYOK baseURL:', targetBaseURL, safeCheck.reason)
+    }
   }
 
   add(
@@ -318,7 +340,17 @@ ${consensusMetrics ? `\n【System 1 客觀量化共識指標】：\n- 委員會�
 Language: ${locale.toLowerCase().startsWith('en') ? 'English' : 'Traditional Chinese (繁體中文)'}.
 The result is research commentary, not personalized investment advice.`
 
-    const providers = getSummaryProviders().slice(0, 2)
+    const userKeyHeader = request.headers.get('x-user-key-config')
+    let userKeyConfig: any = null
+    if (userKeyHeader) {
+      try {
+        userKeyConfig = JSON.parse(userKeyHeader)
+      } catch (e) {
+        console.warn('[analysis-summary] Failed to parse x-user-key-config header:', e)
+      }
+    }
+
+    const providers = getSummaryProviders(userKeyConfig).slice(0, 2)
     for (const provider of providers) {
       try {
         const client = createOpenAI({

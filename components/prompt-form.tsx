@@ -19,8 +19,10 @@ import { nanoid } from 'nanoid'
 import { useRouter } from 'next/navigation'
 
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
+import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
 import { CHAT_NEW_EVENT } from '@/lib/chat-history'
 import { toast } from 'sonner'
+import { KeyRound } from 'lucide-react'
 
 interface AttachedDocument {
   filename: string
@@ -43,7 +45,7 @@ export function PromptForm({
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { submitUserMessage } = useActions()
   const [_, setMessages] = useUIState<typeof AI>()
-  const [apiKey, setApiKey] = useLocalStorage('groqKey', '')
+  const { serializedConfig, hasCustomKey, openDialog } = useUserApiKey()
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
   const [attachedDoc, setAttachedDoc] = React.useState<AttachedDocument | null>(
@@ -154,7 +156,7 @@ export function PromptForm({
     ])
 
     // Submit to AI
-    const responseMessage = await submitUserMessage(fullPromptPayload, apiKey)
+    const responseMessage = await submitUserMessage(fullPromptPayload, serializedConfig)
     setMessages(currentMessages => [...currentMessages, responseMessage])
   }
 
@@ -247,6 +249,33 @@ export function PromptForm({
               {lang === 'en'
                 ? 'Upload financial report, annual report, PDF or spreadsheet'
                 : '上傳財報、年報、PDF 或 Excel 文件解讀'}
+            </TooltipContent>
+          </Tooltip>
+
+          {/* BYOK 自備金鑰設定按鈕 */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className={`size-8 rounded-full p-0 transition-colors ${
+                  hasCustomKey
+                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 dark:text-emerald-400'
+                    : 'bg-background hover:text-orange-600 hover:border-orange-300'
+                }`}
+                onClick={() => openDialog()}
+              >
+                <KeyRound className="size-4" />
+                <span className="sr-only">
+                  {lang === 'en' ? 'API Key Settings (BYOK)' : '自備金鑰設定 (BYOK)'}
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {hasCustomKey
+                ? (lang === 'en' ? 'BYOK Active · Click to manage keys' : '自備金鑰已啟用 · 點擊管理金鑰')
+                : (lang === 'en' ? 'Custom API Key (BYOK, server zero storage)' : '設定自備 API 金鑰 (BYOK，伺服器不儲存)')}
             </TooltipContent>
           </Tooltip>
         </div>
