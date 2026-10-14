@@ -1,5 +1,5 @@
-import { getEndOfDay } from '@/lib/utils'
-import { searchWeb2MD } from '@/lib/2md'
+import { getEndOfDay } from '../utils.ts'
+import { searchWeb2MD } from '../2md.ts'
 
 export interface EarningsCallItem {
   id: string
@@ -634,7 +634,424 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
 ]
 
 /**
- * Searches live 2MD web for recent or upcoming earnings call announcements
+ * BigGo Finance API Configuration
+ * Endpoint: https://api.biggo.com/api/v1/finance/stock/earnings-calls
+ */
+const BIGGO_API_BASE = 'https://api.biggo.com/api/v1/finance'
+const BIGGO_HEADERS: Record<string, string> = {
+  Accept: 'application/json',
+  Site: 'finance.biggo.com.tw',
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+}
+
+export interface BigGoRawCallItem {
+  call_id: string
+  title: string
+  stock_id?: string
+  region?: string
+  asset_type?: string
+  name?: string
+  image?: string | null
+  date: string
+  duration?: number | null
+  has_video?: boolean
+  has_audio?: boolean
+  has_slides?: boolean
+  has_transcript?: boolean
+}
+
+export interface BigGoCallDetail {
+  call_id: string
+  date: string
+  title: string
+  duration?: number | null
+  summary?: string
+  takeaways?: string
+  outlook?: string
+  qa_highlights?: string
+  financial_highlights?: string
+  news?: {
+    title?: string
+    summary?: string
+    image?: string
+    header_og_image?: string
+  }
+}
+
+/**
+ * Normalizes stock code, market type, and timezone from BigGo raw call item
+ */
+function parseBigGoStockMetadata(item: BigGoRawCallItem): {
+  symbol: string
+  market: 'TWSE' | 'TPEX' | 'US' | 'OTHER'
+  timezone: 'Asia/Taipei' | 'America/New_York'
+} {
+  const stockId = (item.stock_id || '').toUpperCase().trim()
+  const region = (item.region || '').toLowerCase().trim()
+  const title = item.title || ''
+
+  if (stockId === 'SPCX' || title.includes('SPCX') || title.includes('SpaceX') || title.includes('太空探索')) {
+    return {
+      symbol: 'SPCX',
+      market: 'US',
+      timezone: 'America/New_York'
+    }
+  }
+
+  if (stockId.endsWith('.TWO')) {
+    return {
+      symbol: stockId.replace('.TWO', ''),
+      market: 'TPEX',
+      timezone: 'Asia/Taipei'
+    }
+  }
+  if (stockId.endsWith('.TW')) {
+    return {
+      symbol: stockId.replace('.TW', ''),
+      market: 'TWSE',
+      timezone: 'Asia/Taipei'
+    }
+  }
+  if (region === 'tw' || /^\d{4}$/.test(stockId)) {
+    return {
+      symbol: stockId || 'TWSE',
+      market: 'TWSE',
+      timezone: 'Asia/Taipei'
+    }
+  }
+  if (region === 'us' || /^[A-Z]{1,5}$/.test(stockId)) {
+    return {
+      symbol: stockId || 'US',
+      market: 'US',
+      timezone: 'America/New_York'
+    }
+  }
+  return {
+    symbol: stockId || 'OTHER',
+    market: 'OTHER',
+    timezone: 'Asia/Taipei'
+  }
+}
+
+/**
+ * Extracts financial period string (e.g. "FY2027 Q2", "2026 Q3") from title or date
+ */
+function extractFinancialPeriod(title: string, date: string): string | undefined {
+  if (!title) return undefined
+
+  // Match e.g. FY2027 第二季 / FY2026 第四季 / 2026會計年度第三季 / 2027財年第二季
+  const fyZhMatch = title.match(/(?:FY)?(202\d)\s*(?:會計年度|財年|年度)?\s*第([一二三四1-4])季/)
+  if (fyZhMatch) {
+    const qMap: Record<string, string> = {
+      '一': 'Q1',
+      '二': 'Q2',
+      '三': 'Q3',
+      '四': 'Q4',
+      '1': 'Q1',
+      '2': 'Q2',
+      '3': 'Q3',
+      '4': 'Q4'
+    }
+    return `FY${fyZhMatch[1]} ${qMap[fyZhMatch[2]] || fyZhMatch[2]}`
+  }
+
+  // Match e.g. Q3 2026 or 2026 Q3
+  const qEnMatch = title.match(/(?:Q([1-4])\s*(?:FY)?(202\d)|(?:FY)?(202\d)\s*Q([1-4]))/i)
+  if (qEnMatch) {
+    if (qEnMatch[1] && qEnMatch[2]) {
+      return `${qEnMatch[2]} Q${qEnMatch[1]}`
+    }
+    if (qEnMatch[3] && qEnMatch[4]) {
+      return `${qEnMatch[3]} Q${qEnMatch[4]}`
+    }
+  }
+
+  // Fallback to quarter from conference date if year is 2024-2029
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m] = date.split('-').map(Number)
+    const q = Math.ceil(m / 3)
+    return `${y} Q${q}`
+  }
+
+  return undefined
+}
+
+/**
+ * Parses executive guidance, revenue targets, gross margin, and capex from BigGo detail
+ */
+function parseBigGoGuidance(detail?: BigGoCallDetail | null): EarningsCallItem['guidanceHighlights'] | undefined {
+  if (!detail) return undefined
+
+  const outlookText = detail.outlook || ''
+  const takeawaysText = detail.takeaways || detail.summary || ''
+
+  // Margin pattern: 毛利率 or Gross Margin
+  const marginMatch = outlookText.match(/(?:毛利率|Gross Margin)[：:]\s*([^\n]+)/i)
+  // Capex pattern: 資本支出 or CapEx or Capital Expenditures
+  const capexMatch = outlookText.match(/(?:資本支出|CapEx|Capital Expenditures)[：:]\s*([^\n]+)/i)
+  // Revenue pattern: 營收 or Revenue
+  const revMatch = outlookText.match(/(?:營收|Revenue)[：:]\s*([^\n]+)/i)
+
+  const highlights: string[] = []
+  if (takeawaysText) {
+    const lines = takeawaysText
+      .split('\n')
+      .map(l => l.replace(/^[-*•\d.]\s*/, '').trim())
+      .filter(l => l.length > 5 && !l.startsWith('#'))
+    highlights.push(...lines.slice(0, 5))
+  }
+
+  const revenueOutlook = revMatch
+    ? `營收展望：${revMatch[1].trim()}`
+    : (outlookText.split('\n')[0]?.trim() || undefined)
+
+  const marginOutlook = marginMatch
+    ? `毛利率目標：${marginMatch[1].trim()}`
+    : undefined
+
+  const capexOutlook = capexMatch
+    ? `資本支出規劃：${capexMatch[1].trim()}`
+    : undefined
+
+  if (!revenueOutlook && !marginOutlook && !capexOutlook && highlights.length === 0) {
+    return undefined
+  }
+
+  return {
+    revenueOutlook,
+    marginOutlook,
+    capexOutlook,
+    highlights: highlights.length > 0 ? highlights : undefined
+  }
+}
+
+/**
+ * Maps a BigGo raw call item into a unified EarningsCallItem
+ */
+function mapBigGoItemToEarningsCall(
+  item: BigGoRawCallItem,
+  detail?: BigGoCallDetail | null,
+  slidesUrl?: string,
+  videoUrl?: string
+): EarningsCallItem {
+  const meta = parseBigGoStockMetadata(item)
+  const financialPeriod = extractFinancialPeriod(item.title, item.date)
+  const guidance = parseBigGoGuidance(detail)
+
+  const isTw = meta.timezone === 'Asia/Taipei'
+  const defaultConfTime = isTw ? '14:00' : '17:00'
+  const session = isTw ? 'during-hours' : 'after-close'
+  const status = computeConferenceStatus(item.date, meta.timezone, defaultConfTime)
+
+  const locationOrPlatform = item.has_video
+    ? '線上視訊會議 (Video Webcast)'
+    : item.has_audio
+    ? '線上電話會議 (Audio Webcast)'
+    : '法人說明會 (實體/線上同步)'
+
+  return {
+    id: item.call_id,
+    symbol: meta.symbol,
+    companyName: item.name || item.title.replace(/\s*(?:202\d|FY202\d).+$/, '').trim() || meta.symbol,
+    market: meta.market,
+    conferenceDate: item.date,
+    conferenceTime: defaultConfTime,
+    timezone: meta.timezone,
+    session,
+    status,
+    title: item.title,
+    financialPeriod,
+    locationOrPlatform,
+    webcastUrl: videoUrl || undefined,
+    presentationDeckUrl: slidesUrl || undefined,
+    irUrl: `https://finance.biggo.com.tw/earnings-call?q=${encodeURIComponent(item.stock_id || meta.symbol)}`,
+    guidanceHighlights: guidance
+  }
+}
+
+/**
+ * Enriches a BigGo raw call item with detail, presentation slides PDF, and video webcast URL
+ */
+async function enrichBigGoCallItem(item: BigGoRawCallItem): Promise<EarningsCallItem> {
+  const promises: Promise<any>[] = []
+
+  // 1. Fetch detail (summary, outlook, QA)
+  const detailUrl = `${BIGGO_API_BASE}/stock/earnings-calls/detail?call_id=${encodeURIComponent(item.call_id)}&stock_id=${encodeURIComponent(item.stock_id || '')}&region=tw`
+  promises.push(
+    fetch(detailUrl, {
+      headers: BIGGO_HEADERS,
+      signal: AbortSignal.timeout(3000)
+    })
+      .then(r => (r.ok ? r.json() : null))
+      .then(j => j?.data as BigGoCallDetail | undefined)
+      .catch(() => null)
+  )
+
+  // 2. Fetch slides if flagged
+  if (item.has_slides) {
+    const slidesUrl = `${BIGGO_API_BASE}/stock/earnings-calls/file?type=slides&call_id=${encodeURIComponent(item.call_id)}&region=tw`
+    promises.push(
+      fetch(slidesUrl, {
+        headers: BIGGO_HEADERS,
+        signal: AbortSignal.timeout(3000)
+      })
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => (j?.data?.list?.[0]?.url || j?.data?.url) as string | undefined)
+        .catch(() => null)
+    )
+  } else {
+    promises.push(Promise.resolve(null))
+  }
+
+  // 3. Fetch video if flagged
+  if (item.has_video) {
+    const videoUrl = `${BIGGO_API_BASE}/stock/earnings-calls/file?type=video&call_id=${encodeURIComponent(item.call_id)}&region=tw`
+    promises.push(
+      fetch(videoUrl, {
+        headers: BIGGO_HEADERS,
+        signal: AbortSignal.timeout(3000)
+      })
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => j?.data?.url as string | undefined)
+        .catch(() => null)
+    )
+  } else {
+    promises.push(Promise.resolve(null))
+  }
+
+  const [detail, slidesUrl, videoUrl] = await Promise.all(promises)
+  return mapBigGoItemToEarningsCall(item, detail, slidesUrl, videoUrl)
+}
+
+/**
+ * Fetches earnings calls from BigGo Finance for a specific stock ticker or query
+ */
+async function fetchBigGoEarningsBySymbol(query: string): Promise<EarningsCallItem[]> {
+  try {
+    const isTw4 = /^\d{4}$/.test(query)
+    const tasks: Promise<BigGoRawCallItem[]>[] = []
+
+    // 1. General search query
+    tasks.push(
+      fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?q=${encodeURIComponent(query)}&page=1&size=50`, {
+        headers: BIGGO_HEADERS,
+        signal: AbortSignal.timeout(4000)
+      })
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => (j?.data?.list || []) as BigGoRawCallItem[])
+        .catch(() => [])
+    )
+
+    // 2. Direct TW stock ID endpoint if 4 digits
+    if (isTw4) {
+      tasks.push(
+        fetch(`${BIGGO_API_BASE}/stock/${query}.TW/earnings-calls/list?region=tw`, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+          .then(r => (r.ok ? r.json() : null))
+          .then(j => (j?.data?.list || []) as BigGoRawCallItem[])
+          .catch(() => [])
+      )
+    }
+
+    const lists = await Promise.all(tasks)
+    const map = new Map<string, BigGoRawCallItem>()
+    for (const list of lists) {
+      for (const item of list) {
+        if (!map.has(item.call_id)) {
+          map.set(item.call_id, item)
+        }
+      }
+    }
+
+    const rawItems = Array.from(map.values())
+    if (rawItems.length === 0) return []
+
+    // Enrich top 3 items with complete guidance highlights, slide PDFs, and video links
+    const topEnriched = await Promise.all(rawItems.slice(0, 3).map(enrichBigGoCallItem))
+    const restMapped = rawItems.slice(3).map(i => mapBigGoItemToEarningsCall(i))
+
+    return [...topEnriched, ...restMapped]
+  } catch (err) {
+    console.warn('[EarningsCall] fetchBigGoEarningsBySymbol error:', err)
+    return []
+  }
+}
+
+/**
+ * Fetches multi-window earnings call dashboard from BigGo Finance (-18 days to +18 days)
+ */
+async function fetchBigGoMultiWindowDashboard(market?: 'TW' | 'US' | 'ALL'): Promise<EarningsCallItem[]> {
+  try {
+    const today = new Date()
+    const windows: { start: string; end: string }[] = []
+
+    // 6 windows of 6-day spans: -18 to +18 days
+    for (let i = -3; i < 3; i++) {
+      const s = new Date(today.getTime() + i * 6 * 86400000)
+      const e = new Date(today.getTime() + (i + 1) * 6 * 86400000)
+      windows.push({
+        start: s.toISOString().split('T')[0],
+        end: e.toISOString().split('T')[0]
+      })
+    }
+
+    const marketParam = market === 'TW' ? '&market=tw' : market === 'US' ? '&market=us' : ''
+
+    const fetchWindow = async (w: { start: string; end: string }) => {
+      try {
+        const url = `${BIGGO_API_BASE}/stock/earnings-calls/list?start_date=${w.start}&end_date=${w.end}${marketParam}`
+        const res = await fetch(url, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+        if (!res.ok) return []
+        const json = await res.json()
+        return (json?.data?.list || []) as BigGoRawCallItem[]
+      } catch {
+        return []
+      }
+    }
+
+    const windowLists = await Promise.all(windows.map(fetchWindow))
+    const map = new Map<string, BigGoRawCallItem>()
+    for (const list of windowLists) {
+      for (const item of list) {
+        if (!map.has(item.call_id)) {
+          map.set(item.call_id, item)
+        }
+      }
+    }
+
+    const rawItems = Array.from(map.values())
+    if (rawItems.length === 0) return []
+
+    // Sort chronologically to identify upcoming and live calls
+    const mapped = rawItems.map(i => mapBigGoItemToEarningsCall(i))
+    const liveOrUpcoming = mapped.filter(i => i.status === 'live' || i.status === 'today' || i.status === 'upcoming')
+
+    // Enrich top 5 most urgent calls with guidance and slide PDFs
+    const urgentCallIds = new Set(liveOrUpcoming.slice(0, 5).map(i => i.id))
+    const enrichedResults = await Promise.all(
+      rawItems.map(item => {
+        if (urgentCallIds.has(item.call_id)) {
+          return enrichBigGoCallItem(item)
+        }
+        return Promise.resolve(mapBigGoItemToEarningsCall(item))
+      })
+    )
+
+    return enrichedResults
+  } catch (err) {
+    console.warn('[EarningsCall] fetchBigGoMultiWindowDashboard error:', err)
+    return []
+  }
+}
+
+/**
+ * Searches live 2MD web for recent or upcoming earnings call announcements (fallback)
  */
 async function searchLiveEarningsAnnouncements(query: string): Promise<EarningsCallItem[]> {
   try {
@@ -663,7 +1080,6 @@ async function searchLiveEarningsAnnouncements(query: string): Promise<EarningsC
         }
       }
 
-      // If no valid date is verified, mark as '待確認' and avoid guessing today's date
       if (!confDate) {
         confDate = '待確認'
       }
@@ -704,7 +1120,7 @@ async function searchLiveEarningsAnnouncements(query: string): Promise<EarningsC
 export async function fetchEarningsCalls(
   params: FetchEarningsCallsParams = {}
 ): Promise<EarningsCallDashboardResult> {
-  const { symbol, market = 'ALL', limit = 20 } = params
+  const { symbol, market = 'ALL', limit = 100 } = params
   const cleanSym = symbol ? symbol.trim().toUpperCase().replace(/^(?:TWSE|TPEX|NASDAQ|NYSE|AMEX):/, '') : ''
   const cacheKey = `${cleanSym || 'all'}_${market}_${limit}`
   const now = Date.now()
@@ -722,26 +1138,86 @@ export async function fetchEarningsCalls(
   }
 
   const fetchPromise = (async () => {
-    let pool = [...VERIFIED_CORPORATE_EARNINGS]
+    let pool: EarningsCallItem[] = []
 
-    // Filter by symbol if specified
     if (cleanSym) {
-      const filtered = pool.filter(item => {
-        return item.symbol.toUpperCase() === cleanSym ||
-               item.companyName.toUpperCase() === cleanSym ||
-               (cleanSym.length >= 2 && item.companyName.toUpperCase().includes(cleanSym))
-      })
+      // --- Targeted Symbol Query ---
+      const [bigGoItems, verifiedMatches] = await Promise.all([
+        fetchBigGoEarningsBySymbol(cleanSym),
+        Promise.resolve(
+          VERIFIED_CORPORATE_EARNINGS.filter(item => {
+            return (
+              item.symbol.toUpperCase() === cleanSym ||
+              item.companyName.toUpperCase() === cleanSym ||
+              (cleanSym.length >= 2 && item.companyName.toUpperCase().includes(cleanSym))
+            )
+          })
+        )
+      ])
 
-      if (filtered.length > 0) {
-        pool = filtered
-      } else {
-        // Sanitize symbol to alphanumeric/Chinese characters
+      // Combine BigGo live results + verified benchmarks (deduplicating by symbol + date)
+      const mergedMap = new Map<string, EarningsCallItem>()
+      for (const item of bigGoItems) {
+        const key = `${item.symbol}_${item.conferenceDate}`
+        mergedMap.set(key, item)
+      }
+      for (const item of verifiedMatches) {
+        const key = `${item.symbol}_${item.conferenceDate}`
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, item)
+        } else {
+          // Enrich BigGo item with hardcoded high-fidelity IR links if missing
+          const existing = mergedMap.get(key)!
+          mergedMap.set(key, {
+            ...existing,
+            webcastUrl: existing.webcastUrl || item.webcastUrl,
+            presentationDeckUrl: existing.presentationDeckUrl || item.presentationDeckUrl,
+            irUrl: item.irUrl || existing.irUrl,
+            guidanceHighlights: existing.guidanceHighlights || item.guidanceHighlights
+          })
+        }
+      }
+
+      pool = Array.from(mergedMap.values())
+
+      // Fallback to 2MD search if neither returned results
+      if (pool.length === 0) {
         const sanitizedSymbol = cleanSym.replace(/[^\w\u4e00-\u9fa5]/g, '')
         const searchQuery = `${sanitizedSymbol} 法人說明會 OR earnings call 2026 簡報 日程`
-        const liveItems = await searchLiveEarningsAnnouncements(searchQuery)
-        // Set pool strictly to search results (even if empty, don't fallback to irrelevant companies)
-        pool = liveItems
+        pool = await searchLiveEarningsAnnouncements(searchQuery)
       }
+    } else {
+      // --- General Dashboard Query (Multi-window BigGo + Verified directory) ---
+      const [bigGoDashboardItems] = await Promise.all([
+        fetchBigGoMultiWindowDashboard(market)
+      ])
+
+      const mergedMap = new Map<string, EarningsCallItem>()
+
+      // 1. Add BigGo items
+      for (const item of bigGoDashboardItems) {
+        const key = `${item.symbol}_${item.conferenceDate}`
+        mergedMap.set(key, item)
+      }
+
+      // 2. Add verified corporate earnings benchmark directory
+      for (const item of VERIFIED_CORPORATE_EARNINGS) {
+        const key = `${item.symbol}_${item.conferenceDate}`
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, item)
+        } else {
+          const existing = mergedMap.get(key)!
+          mergedMap.set(key, {
+            ...existing,
+            webcastUrl: existing.webcastUrl || item.webcastUrl,
+            presentationDeckUrl: existing.presentationDeckUrl || item.presentationDeckUrl,
+            irUrl: item.irUrl || existing.irUrl,
+            guidanceHighlights: existing.guidanceHighlights || item.guidanceHighlights
+          })
+        }
+      }
+
+      pool = Array.from(mergedMap.values())
     }
 
     // Filter by market if specified
@@ -761,9 +1237,11 @@ export async function fetchEarningsCalls(
 
     // Split into categories
     const liveAndToday = recomputed.filter(i => i.status === 'live' || i.status === 'today')
-    const upcoming = recomputed.filter(i => i.status === 'upcoming')
+    const upcoming = recomputed
+      .filter(i => i.status === 'upcoming')
       .sort((a, b) => a.conferenceDate.localeCompare(b.conferenceDate))
-    const replays = recomputed.filter(i => i.status === 'replay')
+    const replays = recomputed
+      .filter(i => i.status === 'replay')
       .sort((a, b) => b.conferenceDate.localeCompare(a.conferenceDate))
 
     const all = [...liveAndToday, ...upcoming, ...replays].slice(0, limit)
@@ -779,7 +1257,7 @@ export async function fetchEarningsCalls(
       upcoming,
       replays,
       all,
-      source: 'MOPS / TWSE / TPEX / Yahoo Finance / Corporate IR'
+      source: 'BigGo Finance / MOPS / TWSE / TPEX / Yahoo Finance / Corporate IR'
     }
 
     // Save to cache
@@ -801,3 +1279,4 @@ export async function fetchEarningsCalls(
 }
 
 export const fetchEarningsCallDashboard = fetchEarningsCalls
+

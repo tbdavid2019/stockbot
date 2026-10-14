@@ -40,7 +40,8 @@ const DEFAULT_ANALYSTS = [
   'bill_ackman',
   'fundamentals_analyst',
   'phil_fisher',
-  'stanley_druckenmiller'
+  'stanley_druckenmiller',
+  'decision_model'
 ]
 
 function parsePythonJson(text: string): any {
