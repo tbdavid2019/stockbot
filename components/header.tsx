@@ -73,7 +73,7 @@ export function Header() {
             <span className="text-sm">🎙️</span>
             <span className="hidden sm:inline font-semibold">法說會總覽</span>
             <span className="sm:hidden font-semibold">法說會</span>
-            <span className="hidden md:inline-flex items-center rounded bg-indigo-200/70 px-1 py-0.2 text-xs font-mono text-indigo-900 dark:bg-indigo-900/70 dark:text-indigo-200 font-bold">
+            <span className="hidden md:inline-flex items-center rounded bg-indigo-200/70 px-1 py-0.5 text-xs font-mono text-indigo-900 dark:bg-indigo-900/70 dark:text-indigo-200 font-bold">
               MOPS
             </span>
           </a>

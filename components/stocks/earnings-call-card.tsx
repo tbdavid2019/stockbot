@@ -11,16 +11,28 @@ interface DeckAnalysisState {
   isOpen: boolean
 }
 
-export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }) {
+const DEFAULT_CARD_DATA: EarningsCallDashboardResult = {
+  asOfDate: '即時',
+  marketFilter: 'ALL',
+  totalCount: 0,
+  liveAndToday: [],
+  upcoming: [],
+  replays: [],
+  all: [],
+  source: 'MOPS / TWSE / Corporate IR'
+}
+
+export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult }) {
+  const safeData = data || DEFAULT_CARD_DATA
   const { config: userKeyConfig } = useUserApiKey()
-  const [marketFilter, setMarketFilter] = React.useState<'ALL' | 'TW' | 'US'>(data.marketFilter || 'ALL')
+  const [marketFilter, setMarketFilter] = React.useState<'ALL' | 'TW' | 'US'>(safeData.marketFilter || 'ALL')
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'live' | 'upcoming' | 'replay'>('all')
   const [searchQuery, setSearchQuery] = React.useState('')
   const [analyses, setAnalyses] = React.useState<Record<string, DeckAnalysisState>>({})
 
   // Filter items dynamically
   const filteredItems = React.useMemo(() => {
-    let items = data.all || []
+    let items = safeData.all || []
 
     if (marketFilter === 'TW') {
       items = items.filter(i => i.market === 'TWSE' || i.market === 'TPEX')
@@ -47,11 +59,11 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
     }
 
     return items
-  }, [data.all, marketFilter, statusFilter, searchQuery])
+  }, [safeData.all, marketFilter, statusFilter, searchQuery])
 
   // Count badges
   const counts = React.useMemo(() => {
-    let pool = data.all || []
+    let pool = safeData.all || []
     if (marketFilter === 'TW') {
       pool = pool.filter(i => i.market === 'TWSE' || i.market === 'TPEX')
     } else if (marketFilter === 'US') {
@@ -63,7 +75,7 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
       upcoming: pool.filter(i => i.status === 'upcoming').length,
       replay: pool.filter(i => i.status === 'replay').length
     }
-  }, [data.all, marketFilter])
+  }, [safeData.all, marketFilter])
 
   // Trigger one-click AI presentation analysis
   const handleAnalyzeDeck = async (item: EarningsCallItem) => {
@@ -137,16 +149,16 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
               法人說明會 & Earnings Calls
             </span>
             <span className="text-xs text-muted-foreground bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full font-mono">
-              基準日期: {data.asOfDate}
+              基準日期: {safeData.asOfDate}
             </span>
-            {data.symbol && (
+            {safeData.symbol && (
               <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                目標標的: {data.symbol}
+                目標標的: {safeData.symbol}
               </span>
             )}
           </div>
           <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 flex items-center gap-2">
-            <span>{data.companyName ? `${data.companyName} 法說會時程與指引` : '全球法人說明會與業績展望一覽'}</span>
+            <span>{safeData.companyName ? `${safeData.companyName} 法說會時程與指引` : '全球法人說明會與業績展望一覽'}</span>
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
             整合公開資訊觀測站 (MOPS)、TWSE/TPEX 官方 Webcast 與美股 Earnings Call，提供法說會日程、影音回放、簡報下載與 2MD AI 指引萃取。
@@ -156,7 +168,7 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
         {/* Source attribution */}
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-2.5 text-xs shrink-0 bg-slate-50/50 dark:bg-zinc-900/50">
           <div className="text-muted-foreground font-medium">數據渠道</div>
-          <div className="font-semibold text-slate-700 dark:text-slate-300 mt-0.5">{data.source}</div>
+          <div className="font-semibold text-slate-700 dark:text-slate-300 mt-0.5">{safeData.source}</div>
         </div>
       </header>
 

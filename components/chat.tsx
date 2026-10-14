@@ -72,6 +72,11 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
 
     // Check if ?q= query param was passed from earnings-call or quick-link
     if (typeof window !== 'undefined') {
+      // Normalize /chat/[id] URL back to / so browser refresh does not trap user in an old session
+      if (window.location.pathname.startsWith('/chat/')) {
+        window.history.replaceState({}, '', '/')
+      }
+
       const params = new URLSearchParams(window.location.search)
       const q = params.get('q')
       if (q && q.trim()) {
@@ -113,9 +118,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
           messages: target.messages || []
         })
         setMessages(createUIStateFromStoredMessages(target.messages || []))
-        if (typeof window !== 'undefined') {
-          window.history.replaceState({}, '', `/chat/${target.id}`)
-        }
+        // Maintain clean URL at / so page refresh doesn't trap the user in this session
       }
     }
 

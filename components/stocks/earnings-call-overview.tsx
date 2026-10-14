@@ -5,7 +5,24 @@ import type { EarningsCallDashboardResult } from '@/lib/quant/earnings-call'
 import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
 import Link from 'next/link'
 
-export function EarningsCallOverview({ initialData }: { initialData: EarningsCallDashboardResult }) {
+const DEFAULT_DASHBOARD: EarningsCallDashboardResult = {
+  asOfDate: '即時',
+  marketFilter: 'ALL',
+  totalCount: 0,
+  liveAndToday: [],
+  upcoming: [],
+  replays: [],
+  all: [],
+  source: 'MOPS / TWSE / TPEX / Yahoo Finance / Corporate IR'
+}
+
+export function EarningsCallOverview({ initialData }: { initialData?: EarningsCallDashboardResult }) {
+  const safeData: EarningsCallDashboardResult = initialData || DEFAULT_DASHBOARD
+  const totalCount = safeData.totalCount || safeData.all?.length || 0
+  const liveCount = safeData.liveAndToday?.length || 0
+  const upcomingCount = safeData.upcoming?.length || 0
+  const replayCount = safeData.replays?.length || 0
+
   return (
     <div className="min-h-screen bg-muted/30 pb-20 pt-4 sm:pt-6">
       <div className="mx-auto max-w-6xl px-3 sm:px-6">
@@ -34,7 +51,7 @@ export function EarningsCallOverview({ initialData }: { initialData: EarningsCal
               <span>MOPS · TWSE · TPEX · US Earnings Calls</span>
             </span>
             <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-mono text-slate-600 dark:bg-zinc-800 dark:text-slate-300">
-              基準日：{initialData.asOfDate}
+              基準日：{safeData.asOfDate}
             </span>
           </div>
 
@@ -50,32 +67,32 @@ export function EarningsCallOverview({ initialData }: { initialData: EarningsCal
             <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-zinc-900/50">
               <div className="text-muted-foreground text-xs font-medium">總追蹤會議</div>
               <div className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5 font-mono">
-                {initialData.totalCount || initialData.all.length} 場
+                {totalCount} 場
               </div>
             </div>
             <div className="rounded-xl border border-rose-100 bg-rose-50/40 p-3 dark:border-rose-950/40 dark:bg-rose-950/20">
               <div className="text-rose-700 dark:text-rose-400 text-xs font-semibold">🔴 今日與進行中</div>
               <div className="text-lg sm:text-xl font-bold text-rose-700 dark:text-rose-300 mt-0.5 font-mono">
-                {initialData.liveAndToday.length} 場
+                {liveCount} 場
               </div>
             </div>
             <div className="rounded-xl border border-sky-100 bg-sky-50/40 p-3 dark:border-sky-950/40 dark:bg-sky-950/20">
               <div className="text-sky-700 dark:text-sky-400 text-xs font-semibold">🔵 即將舉行</div>
               <div className="text-lg sm:text-xl font-bold text-sky-700 dark:text-sky-300 mt-0.5 font-mono">
-                {initialData.upcoming.length} 場
+                {upcomingCount} 場
               </div>
             </div>
             <div className="rounded-xl border border-slate-100 bg-slate-50/70 p-3 dark:border-slate-800 dark:bg-zinc-900/50">
               <div className="text-muted-foreground text-xs font-medium">⚪ 歷史回放</div>
               <div className="text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mt-0.5 font-mono">
-                {initialData.replays.length} 場
+                {replayCount} 場
               </div>
             </div>
           </div>
         </div>
 
         {/* Main Earnings Call Card Component */}
-        <EarningsCallCard data={initialData} />
+        <EarningsCallCard data={safeData} />
       </div>
     </div>
   )

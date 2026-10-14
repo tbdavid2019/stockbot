@@ -408,7 +408,7 @@ export function ChatPanel({
               <div className="flex items-center gap-2">
                 <a
                   href="/earnings-call"
-                  className="hidden sm:inline-flex items-center gap-1 rounded-full border border-indigo-200/90 bg-indigo-50/80 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 transition-colors"
+                  className="hidden sm:inline-flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
                 >
                   <span>🎙️</span>
                   <span>法說會總覽</span>
@@ -416,7 +416,7 @@ export function ChatPanel({
                 </a>
                 <button
                   type="button"
-                  className="shrink-0 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-background px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-muted hover:text-foreground dark:border-slate-800 dark:text-slate-300 transition-colors"
+                  className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-background px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted hover:text-foreground transition-colors"
                   onClick={handleShuffle}
                   aria-label={lang === 'zh' ? '換一批提示' : 'Show new prompts'}
                 >
@@ -439,13 +439,7 @@ export function ChatPanel({
                   return (
                     <div
                       key={`${lang}-${example.heading}-${index}`}
-                      className={`cursor-pointer rounded-xl border p-3 sm:p-3.5 shadow-2xs transition-all ${
-                        isEarningsCall
-                          ? 'border-indigo-200/90 bg-indigo-50/30 hover:border-indigo-400 hover:bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/20 dark:hover:border-indigo-700'
-                          : isMacro
-                          ? 'border-sky-200/90 bg-sky-50/30 hover:border-sky-400 hover:bg-sky-50/60 dark:border-sky-900/60 dark:bg-sky-950/20 dark:hover:border-sky-700'
-                          : 'border-slate-200/90 bg-white hover:border-slate-300 hover:bg-slate-50/80 dark:border-slate-800 dark:bg-zinc-950 dark:hover:border-slate-700 dark:hover:bg-zinc-900'
-                      }`}
+                      className="group cursor-pointer rounded-xl border border-border/80 bg-card p-3 sm:p-3.5 shadow-2xs transition-all hover:border-foreground/30 hover:bg-muted/40"
                       onClick={async () => {
                         setMessages(currentMessages => [
                           ...currentMessages,
@@ -465,22 +459,25 @@ export function ChatPanel({
                         ])
                       }}
                     >
-                      <div className="flex items-center gap-1.5 mb-1">
-                        {isEarningsCall && (
-                          <span className="shrink-0 inline-flex items-center rounded-md bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                            🎙️ 法說日程
+                      <div className="flex items-center gap-2 mb-1">
+                        {isEarningsCall ? (
+                          <span className="shrink-0 inline-flex items-center rounded-md bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                            🎙️ 法說
+                          </span>
+                        ) : isMacro ? (
+                          <span className="shrink-0 inline-flex items-center rounded-md bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                            ⚡ 總經
+                          </span>
+                        ) : (
+                          <span className="shrink-0 inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground border border-border/60">
+                            💡 研調
                           </span>
                         )}
-                        {isMacro && (
-                          <span className="shrink-0 inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                            ⚡ 即時總經
-                          </span>
-                        )}
-                        <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+                        <h4 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate">
                           {example.heading}
                         </h4>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-normal line-clamp-2">
+                      <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 mt-1">
                         {example.subheading}
                       </p>
                     </div>

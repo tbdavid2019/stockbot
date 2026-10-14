@@ -11,6 +11,11 @@ export const metadata = {
 }
 
 export default async function EarningsCallPage() {
-  const initialData = await fetchEarningsCallDashboard({ market: 'ALL' })
+  let initialData
+  try {
+    initialData = await fetchEarningsCallDashboard({ market: 'ALL' })
+  } catch (err) {
+    console.error('Failed to load initial earnings call dashboard:', err)
+  }
   return <EarningsCallOverview initialData={initialData} />
 }

@@ -515,3 +515,5 @@ export async function fetchEarningsCalls(
 
   return fetchPromise
 }
+
+export const fetchEarningsCallDashboard = fetchEarningsCalls
