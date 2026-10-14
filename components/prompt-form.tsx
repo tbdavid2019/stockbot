@@ -128,7 +128,7 @@ export function PromptForm({
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 dark:bg-indigo-950/50 dark:border-indigo-800 dark:text-indigo-300 text-xs font-semibold">
             <span>📑 附件財報/文件：{currentDoc.filename}</span>
             {currentDoc.pages ? (
-              <span className="text-[10px] opacity-75">
+              <span className="text-xs opacity-75">
                 ({currentDoc.pages} 頁)
               </span>
             ) : null}
@@ -288,7 +288,7 @@ export function PromptForm({
               {attachedDoc.filename}
             </span>
             {attachedDoc.pages && (
-              <span className="rounded bg-indigo-200/60 px-1 py-0.2 text-[10px] dark:bg-indigo-900/60">
+              <span className="rounded bg-indigo-200/60 px-1.5 py-0.5 text-xs dark:bg-indigo-900/60">
                 {attachedDoc.pages} {lang === 'en' ? 'pages' : '頁'}
               </span>
             )}

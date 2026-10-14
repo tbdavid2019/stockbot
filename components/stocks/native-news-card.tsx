@@ -76,11 +76,11 @@ export function NativeStockNewsCard({ symbol, initialNews }: NativeNewsCardProps
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base">
                 {formattedSymbol || symbol} 即時財經新聞與重大動態
               </h3>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                 即時更新
               </span>
             </div>
-            <p className="text-[11px] text-muted-foreground mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               由 2MD 全網情報大腦實時聚合主流財經媒體與最新快訊
             </p>
           </div>
@@ -111,12 +111,12 @@ export function NativeStockNewsCard({ symbol, initialNews }: NativeNewsCardProps
                   {item.title}
                 </h4>
                 {item.publisher && (
-                  <span className="shrink-0 text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                  <span className="shrink-0 text-xs font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
                     {item.publisher}
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
                 {item.description}
               </p>
             </a>

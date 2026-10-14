@@ -303,13 +303,13 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
                 </div>
 
                 {/* Info Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400 mb-3 bg-white dark:bg-zinc-950/60 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800/80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-3 bg-white dark:bg-zinc-950/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-center gap-1.5">
                     <span className="font-medium text-slate-500">開會時間：</span>
                     <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
                       {item.conferenceDate} {item.conferenceTime || ''}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       ({item.timezone === 'Asia/Taipei' ? '台北時區' : '美東時區'})
                     </span>
                   </div>
@@ -321,8 +321,8 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
 
                 {/* Guidance Highlights preview if present */}
                 {item.guidanceHighlights && (
-                  <div className="mb-3 rounded-lg border border-indigo-100 dark:border-indigo-950/50 bg-indigo-50/30 dark:bg-indigo-950/20 p-2.5 text-xs space-y-1.5">
-                    <div className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1">
+                  <div className="mb-3 rounded-xl border border-indigo-100 dark:border-indigo-950/50 bg-indigo-50/30 dark:bg-indigo-950/20 p-3.5 text-xs sm:text-sm space-y-2">
+                    <div className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1 text-sm">
                       <span>🧭 官方指引重點摘要</span>
                     </div>
                     {item.guidanceHighlights.revenueOutlook && (
@@ -429,16 +429,16 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
                     )}
 
                     {analysis.summary && !analysis.loading && (
-                      <div className="rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-gradient-to-b from-indigo-50/30 to-white dark:from-indigo-950/20 dark:to-zinc-950 p-4 text-xs text-slate-800 dark:text-slate-200">
+                      <div className="rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-gradient-to-b from-indigo-50/30 to-white dark:from-indigo-950/20 dark:to-zinc-950 p-4 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
                         <div className="flex items-center justify-between mb-2 pb-2 border-b border-indigo-100 dark:border-indigo-900/40">
-                          <span className="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5 text-sm">
+                          <span className="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5 text-sm sm:text-base">
                             <span>⚡ 2MD AI 法說會簡報深度萃取報告</span>
                           </span>
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-xs text-muted-foreground">
                             由 2MD AnyDoc 原生解析
                           </span>
                         </div>
-                        <div className="prose prose-xs dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed">
+                        <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed">
                           {analysis.summary}
                         </div>
                       </div>

@@ -176,34 +176,34 @@ export function ApiKeyDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-lg overflow-hidden border border-border/80 bg-background/95 p-0 shadow-2xl backdrop-blur-xl sm:rounded-2xl">
+      <DialogContent className="max-w-xl sm:max-w-xl overflow-hidden border border-border/80 bg-background/98 p-0 shadow-2xl backdrop-blur-2xl sm:rounded-2xl">
         {/* Header 頂部導角裝飾 */}
-        <div className="relative border-b border-border/60 bg-muted/30 px-6 py-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400">
-              <KeyRound className="size-5" />
+        <div className="relative border-b border-border/60 bg-muted/30 px-6 py-5 sm:px-7 sm:py-6">
+          <div className="flex items-center gap-3">
+            <div className="flex size-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400">
+              <KeyRound className="size-5.5" />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                 自備金鑰設定 (BYOK)
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
                 自備 API Key 暢享無限制分析 · 伺服器零留存保證
               </DialogDescription>
             </div>
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-4 space-y-4">
+        <div className="max-h-[75vh] overflow-y-auto px-6 py-5 sm:px-7 sm:py-6 space-y-5">
           {/* 安全保證卡片 */}
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3.5 text-xs">
-            <div className="flex items-start gap-2.5">
-              <ShieldCheck className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4">
+            <div className="flex items-start gap-3">
+              <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <div className="font-semibold text-emerald-700 dark:text-emerald-400">
+                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                   純本機儲存 · 伺服器絕不留存
                 </div>
-                <p className="text-muted-foreground text-[11px] leading-relaxed">
+                <p className="text-xs sm:text-[13px] leading-relaxed text-muted-foreground">
                   您的金鑰僅儲存於您目前的瀏覽器 LocalStorage。發起分析時僅透過伺服器記憶體無狀態轉發，完成即銷毀，絕不寫入伺服器硬碟或資料庫。
                 </p>
               </div>
@@ -211,11 +211,11 @@ export function ApiKeyDialog() {
           </div>
 
           {/* Provider 選擇分頁 */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-foreground">
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">
               選擇模型提供商 (Provider)
             </label>
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
               {(['openai', 'groq', 'gemini', 'deepseek', 'custom'] as ApiKeyProvider[]).map(
                 p => {
                   const preset = PROVIDER_PRESETS[p]
@@ -225,14 +225,14 @@ export function ApiKeyDialog() {
                       key={p}
                       type="button"
                       onClick={() => handleProviderChange(p)}
-                      className={`relative flex items-center justify-between rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                      className={`relative flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-all ${
                         isSelected
-                          ? 'border-orange-500/60 bg-orange-500/10 font-semibold text-orange-600 dark:text-orange-400 shadow-sm'
+                          ? 'border-orange-500/60 bg-orange-500/10 font-bold text-orange-600 dark:text-orange-400 shadow-sm'
                           : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                     >
                       <span className="truncate">{preset.name.split(' ')[0]}</span>
-                      {isSelected && <Check className="size-3.5 text-orange-500 shrink-0" />}
+                      {isSelected && <Check className="size-4 text-orange-500 shrink-0" />}
                     </button>
                   )
                 }
@@ -241,9 +241,9 @@ export function ApiKeyDialog() {
           </div>
 
           {/* API Key 輸入框 */}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-foreground">
+              <label className="text-sm font-semibold text-foreground">
                 {PROVIDER_PRESETS[provider].name} API Key
               </label>
               {provider === 'groq' && (
@@ -251,9 +251,9 @@ export function ApiKeyDialog() {
                   href="https://console.groq.com/keys"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
                 >
-                  免費取得 Groq Key <ExternalLink className="size-2.5" />
+                  免費取得 Groq Key <ExternalLink className="size-3" />
                 </a>
               )}
               {provider === 'gemini' && (
@@ -261,9 +261,9 @@ export function ApiKeyDialog() {
                   href="https://aistudio.google.com/app/apikey"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
                 >
-                  免費取得 Gemini Key <ExternalLink className="size-2.5" />
+                  免費取得 Gemini Key <ExternalLink className="size-3" />
                 </a>
               )}
               {provider === 'openai' && (
@@ -271,9 +271,9 @@ export function ApiKeyDialog() {
                   href="https://platform.openai.com/api-keys"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
                 >
-                  前往 OpenAI 控制台 <ExternalLink className="size-2.5" />
+                  前往 OpenAI 控制台 <ExternalLink className="size-3" />
                 </a>
               )}
               {provider === 'deepseek' && (
@@ -281,9 +281,9 @@ export function ApiKeyDialog() {
                   href="https://platform.deepseek.com/api_keys"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
                 >
-                  前往 DeepSeek 平台 <ExternalLink className="size-2.5" />
+                  前往 DeepSeek 平台 <ExternalLink className="size-3" />
                 </a>
               )}
             </div>
@@ -294,18 +294,18 @@ export function ApiKeyDialog() {
                 value={apiKey}
                 onChange={e => handleKeyChange(e.target.value)}
                 placeholder={PROVIDER_PRESETS[provider].placeholder}
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-9 font-mono text-xs text-foreground placeholder:text-muted-foreground/60 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="h-11 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 pr-10 font-mono text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
               />
               <button
                 type="button"
                 onClick={() => setShowKey(!showKey)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 title={showKey ? '隱藏金鑰' : '顯示金鑰'}
               >
                 {showKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground leading-normal mt-1">
               支援智慧貼上識別（貼入 gsk_ 或 AIza 自動辨識提供商）。
             </p>
           </div>
@@ -315,38 +315,38 @@ export function ApiKeyDialog() {
             <button
               type="button"
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               {showAdvanced ? (
-                <ChevronUp className="size-3.5" />
+                <ChevronUp className="size-4" />
               ) : (
-                <ChevronDown className="size-3.5" />
+                <ChevronDown className="size-4" />
               )}
               <span>進階端點與模型自訂設定</span>
             </button>
 
             {showAdvanced && (
-              <div className="mt-3 space-y-3 rounded-lg border border-border/60 bg-muted/20 p-3 text-xs">
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">API Base URL</label>
+              <div className="mt-3 space-y-3.5 rounded-xl border border-border/60 bg-muted/20 p-4">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-foreground">API Base URL</label>
                   <input
                     type="text"
                     value={baseURL}
                     onChange={e => setBaseURL(e.target.value)}
                     placeholder="https://api.openai.com/v1"
-                    className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 font-mono text-xs text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="h-10 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="font-semibold text-foreground">Model 名稱</label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold text-foreground">Model 名稱</label>
                   <input
                     type="text"
                     value={model}
                     onChange={e => setModel(e.target.value)}
                     placeholder={PROVIDER_PRESETS[provider].defaultModel}
-                    className="w-full rounded-md border border-border bg-background px-2.5 py-1.5 font-mono text-xs text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="h-10 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                   />
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground leading-normal">
                     若為自訂端點（如 OpenRouter / Ollama），請確保模型名稱支援 Function Calling。
                   </p>
                 </div>
@@ -357,50 +357,50 @@ export function ApiKeyDialog() {
           {/* 連線測試結果反饋 */}
           {testResult && (
             <div
-              className={`rounded-lg border p-2.5 text-xs ${
+              className={`rounded-xl border p-3.5 text-sm ${
                 testResult.success
                   ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
                   : 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-300'
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 {testResult.success ? (
-                  <Check className="size-4 shrink-0" />
+                  <Check className="size-4.5 shrink-0" />
                 ) : (
-                  <AlertCircle className="size-4 shrink-0" />
+                  <AlertCircle className="size-4.5 shrink-0" />
                 )}
-                <span className="font-medium">{testResult.message}</span>
+                <span className="font-semibold leading-normal">{testResult.message}</span>
               </div>
             </div>
           )}
         </div>
 
         {/* 底部按鈕區 */}
-        <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-6 py-3.5">
+        <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-6 py-4 sm:px-7">
           <div>
             {hasCustomKey && (
               <button
                 type="button"
                 onClick={handleClear}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/20 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-500/10 dark:text-red-400"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-500/20 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-500/10 dark:text-red-400 transition-colors"
                 title="清除目前金鑰，恢復使用伺服器預設免費額度"
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-4" />
                 清除自備金鑰
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               disabled={isTesting || !apiKey.trim()}
               onClick={handleTestConnection}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
             >
               {isTesting ? (
                 <>
-                  <Loader2 className="size-3.5 animate-spin" />
+                  <Loader2 className="size-4 animate-spin" />
                   測試中...
                 </>
               ) : (
@@ -411,9 +411,9 @@ export function ApiKeyDialog() {
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-orange-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-orange-700 active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-orange-700 active:scale-[0.98]"
             >
-              <Sparkles className="size-3.5" />
+              <Sparkles className="size-4" />
               儲存並啟用
             </button>
           </div>

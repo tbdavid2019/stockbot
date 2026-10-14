@@ -523,7 +523,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
               {batchStatusText || '正在調度大師模型與財報數據...'}
             </p>
           </div>
-          <span className="text-[11px] text-slate-400">
+          <span className="text-xs text-slate-400">
             （第 1/3 批核心大師研判中，已執行 {elapsedSeconds}{' '}
             秒，即將呈現首屏）
           </span>

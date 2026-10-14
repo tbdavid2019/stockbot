@@ -19,10 +19,13 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: [
-          'Maple Mono',
           'var(--font-geist-sans)',
           'PingFang TC',
+          'Noto Sans TC',
+          'Heiti TC',
           'Microsoft JhengHei',
+          'system-ui',
+          '-apple-system',
           'sans-serif'
         ],
         mono: [

@@ -269,7 +269,7 @@ export function ChatHistorySheet({
             <span className="text-base">📜</span>
             <span className="hidden sm:inline">歷史紀錄</span>
             {sessions.length > 0 && (
-              <span className="ml-0.5 rounded-full bg-slate-200 px-1.5 py-0.2 text-[10px] font-bold text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <span className="ml-0.5 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
                 {sessions.length}
               </span>
             )}
@@ -290,7 +290,7 @@ export function ChatHistorySheet({
                 對話歷史紀錄
               </SheetTitle>
               {sessions.length > 0 && (
-                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
                   {sessions.length} 筆對話
                 </span>
               )}
@@ -341,8 +341,8 @@ export function ChatHistorySheet({
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground space-y-2">
               <span className="text-3xl">📭</span>
-              <p className="text-xs font-medium">目前尚無歷史紀錄</p>
-              <p className="text-[11px] text-muted-foreground/80 max-w-[200px]">
+              <p className="text-sm font-medium">目前尚無歷史紀錄</p>
+              <p className="text-xs text-muted-foreground/80 max-w-[220px] leading-relaxed">
                 開始向 888 StockBot 詢問股票、行情或大師投資研調，系統將自動保存於本機。
               </p>
             </div>
@@ -362,7 +362,7 @@ export function ChatHistorySheet({
 
         {/* Footer */}
         <div className="border-t bg-muted/10 p-3">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <div className="flex items-center gap-1">
               <span>🔒 本機瀏覽器儲存</span>
             </div>
@@ -373,7 +373,7 @@ export function ChatHistorySheet({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 gap-1 px-2 text-[11px] text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
+                    className="h-7 gap-1 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/30"
                   >
                     <IconTrash className="size-3" />
                     <span>清除全部</span>
@@ -411,7 +411,7 @@ export function ChatHistorySheet({
 
     return (
       <div className="space-y-1">
-        <div className="px-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="px-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           {title}
         </div>
         <div className="space-y-1">
@@ -503,7 +503,7 @@ export function ChatHistorySheet({
                       </div>
                     </div>
 
-                    <div className="mt-1 flex items-center justify-between text-[10px] text-muted-foreground">
+                    <div className="mt-1 flex items-center justify-between text-xs text-muted-foreground">
                       <span>
                         {formatSessionTime(
                           session.updatedAt || session.createdAt

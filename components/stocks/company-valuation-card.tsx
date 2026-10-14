@@ -97,7 +97,7 @@ export function CompanyValuationCard({ symbol, price, data }: Props) {
                     }`}
                   >
                     <div className="font-semibold">{money(cell.sharePrice)}</div>
-                    <div className="text-[11px] text-muted-foreground">
+                    <div className="text-xs font-mono text-muted-foreground">
                       {percent(cell.upsideDownside)}
                     </div>
                   </td>

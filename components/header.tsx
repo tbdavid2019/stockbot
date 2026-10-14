@@ -80,7 +80,7 @@ export function Header() {
               oli-™股靈精怪 Stock
             </a>
           </div>
-          <div className="max-w-[140px] truncate text-[9px] leading-tight text-orange-600 sm:hidden">
+          <div className="max-w-[180px] truncate text-xs leading-tight text-orange-600 sm:hidden">
             {lang === 'en'
               ? 'Reference only · Advice: '
               : '僅供參考；建議：'}

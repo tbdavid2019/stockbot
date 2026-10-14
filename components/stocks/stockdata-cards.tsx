@@ -31,7 +31,7 @@ function titleFromRow(row: StockdataRecord, fallback: string) {
 
 function SourceMeta({ result }: { result: StockdataResult<unknown> }) {
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
       <span className="rounded-full border px-2 py-0.5">Stockdata REST</span>
       <span>狀態：{result.status}</span>
       {result.source.asOf && <span>資料截至：{result.source.asOf}</span>}
@@ -56,7 +56,7 @@ function ResultShell({
       <header className="mb-3 border-b border-slate-100 pb-3 dark:border-slate-800">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h3 className="font-bold text-slate-900 dark:text-slate-100">{title}</h3>
-          <span className="rounded-full bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">外部量化資料</span>
+          <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">外部量化資料</span>
         </div>
         <SourceMeta result={result} />
       </header>

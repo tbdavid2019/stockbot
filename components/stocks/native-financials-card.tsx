@@ -184,20 +184,20 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
   const getSignalBadge = (sig?: string) => {
     if (sig === 'bullish') {
       return (
-        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">
           🟢 優於同業
         </span>
       )
     }
     if (sig === 'bearish') {
       return (
-        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">
+        <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-rose-100 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300">
           🔴 具挑戰
         </span>
       )
     }
     return (
-      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+      <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
         ⚪ 資料不足
       </span>
     )

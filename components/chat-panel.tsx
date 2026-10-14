@@ -361,7 +361,7 @@ export function ChatPanel({
                 <span className="text-sm font-medium text-muted-foreground">
                   {promptLabels[promptLabelIndex]}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-orange-100 px-1.5 py-0.5 text-[10px] font-medium text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
                   {promptModes[promptLabelIndex % promptModes.length]}
                 </span>
               </div>
@@ -416,7 +416,7 @@ export function ChatPanel({
                     >
                       <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base flex items-center gap-1.5">
                         {isMacro && (
-                          <span className="shrink-0 inline-flex items-center rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                          <span className="shrink-0 inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
                             ⚡ 即時總經
                           </span>
                         )}
