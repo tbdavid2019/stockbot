@@ -31,40 +31,40 @@ export const PROVIDER_PRESETS: Record<
   openai: {
     name: 'OpenAI',
     defaultBaseURL: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o-mini',
-    defaultToolModel: 'gpt-4o-mini',
+    defaultModel: '',
+    defaultToolModel: '',
     placeholder: 'sk-proj-... 或 sk-...',
     keyPrefixHint: 'sk-'
   },
   groq: {
     name: 'Groq (極速推理)',
     defaultBaseURL: 'https://api.groq.com/openai/v1',
-    defaultModel: 'openai/gpt-oss-20b',
-    defaultToolModel: 'openai/gpt-oss-20b',
+    defaultModel: '',
+    defaultToolModel: '',
     placeholder: 'gsk_...',
     keyPrefixHint: 'gsk_'
   },
   gemini: {
     name: 'Google Gemini',
     defaultBaseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-    defaultModel: 'gemini-2.5-flash',
-    defaultToolModel: 'gemini-2.5-flash',
+    defaultModel: 'gemini-flash-latest',
+    defaultToolModel: 'gemini-flash-latest',
     placeholder: 'AIza...',
     keyPrefixHint: 'AIza'
   },
   deepseek: {
     name: 'DeepSeek',
     defaultBaseURL: 'https://api.deepseek.com/v1',
-    defaultModel: 'deepseek-chat',
-    defaultToolModel: 'deepseek-chat',
+    defaultModel: '',
+    defaultToolModel: '',
     placeholder: 'sk-...',
     keyPrefixHint: 'sk-'
   },
   custom: {
     name: '自訂相容端點 (Custom)',
     defaultBaseURL: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o-mini',
-    defaultToolModel: 'gpt-4o-mini',
+    defaultModel: '',
+    defaultToolModel: '',
     placeholder: '自訂 API Key',
     keyPrefixHint: ''
   }
@@ -83,7 +83,7 @@ export function detectProviderFromKey(key: string, currentProvider?: ApiKeyProvi
     }
     return 'openai'
   }
-  return currentProvider === 'custom' ? 'custom' : 'custom'
+  return currentProvider || 'custom'
 }
 
 /**
@@ -97,6 +97,11 @@ export function getStoredApiKeyConfig(): UserApiKeyConfig | null {
     if (raw) {
       const parsed = JSON.parse(raw) as UserApiKeyConfig
       if (parsed && typeof parsed.apiKey === 'string' && parsed.apiKey.trim().length > 0) {
+        // Upgrade the former Gemini preset while preserving explicitly chosen models.
+        if (parsed.provider === 'gemini' && (!parsed.baseURL || parsed.baseURL.replace(/\/+$/, '') === PROVIDER_PRESETS.gemini.defaultBaseURL.replace(/\/+$/, ''))) {
+          if (!parsed.model || parsed.model === 'gemini-2.5-flash') parsed.model = PROVIDER_PRESETS.gemini.defaultModel
+          if (!parsed.toolModel || parsed.toolModel === 'gemini-2.5-flash') parsed.toolModel = parsed.model
+        }
         return parsed
       }
     }
@@ -172,7 +177,7 @@ export function useUserApiKey() {
         apiKey: newConfig.apiKey.trim(),
         baseURL: newConfig.baseURL?.trim() || PROVIDER_PRESETS[newConfig.provider].defaultBaseURL,
         model: newConfig.model?.trim() || PROVIDER_PRESETS[newConfig.provider].defaultModel,
-        toolModel: newConfig.toolModel?.trim() || PROVIDER_PRESETS[newConfig.provider].defaultToolModel
+        toolModel: newConfig.toolModel?.trim() || newConfig.model?.trim() || ''
       }
       window.localStorage.setItem(USER_API_KEY_STORAGE_KEY, JSON.stringify(cleaned))
       // 保持 groqKey 相容性

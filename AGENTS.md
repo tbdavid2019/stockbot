@@ -246,3 +246,10 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 ### 品牌 Logo
 
 目前採用純橘色底、白色「888／Stock Bot」的 `public/stockbot-logo-v3.png`；網站使用 256px 的 `public/stockbot-logo.png`。頁首、聊天頭像、favicon 與 PWA 圖示統一使用此版本，圖示 URL 帶 `v=3` 更新快取。
+
+### BYOK 即時模型清單與 Gemini Latest
+
+- BYOK 設定在輸入金鑰或變更端點後，透過 `POST /api/byok-models` 即時取得供應商 `/models`；Gemini 使用原生 `v1beta/models`，包含分頁及 `generateContent` 篩選。
+- Gemini 預設 `gemini-flash-latest`，由 Google 自動指向最新 Flash；既有官方端點的 `gemini-2.5-flash` 預設設定於讀取時升級為 latest。其他供應商要求明確選擇或手動輸入模型，沿用已儲存的自訂模型。
+- 模型清單採 no-store、8 秒逾時、SSRF 校驗與禁止重新導向。金鑰只在請求記憶體中轉送，錯誤回覆不包含上游原始訊息；失敗時顯示重試與手動輸入，保留使用者選項。
+- `/models` 的可見性不代表支援工具呼叫；模型選定後仍需測試實際對話能力。

@@ -31,6 +31,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
+import type { ByokModel } from '@/lib/byok-models'
 
 export function ApiKeyDialog() {
   const { config, hasCustomKey, saveConfig, clearConfig } = useUserApiKey()
@@ -43,6 +44,10 @@ export function ApiKeyDialog() {
   const [model, setModel] = React.useState('')
   const [showKey, setShowKey] = React.useState(false)
   const [showAdvanced, setShowAdvanced] = React.useState(false)
+  const [models, setModels] = React.useState<ByokModel[]>([])
+  const [isLoadingModels, setIsLoadingModels] = React.useState(false)
+  const [modelListError, setModelListError] = React.useState('')
+  const [modelListVersion, setModelListVersion] = React.useState(0)
 
   // 測試連線狀態
   const [isTesting, setIsTesting] = React.useState(false)
@@ -77,6 +82,35 @@ export function ApiKeyDialog() {
     }
   }, [isOpen, config])
 
+  // Reload for this key and endpoint; cancellation prevents stale provider results.
+  React.useEffect(() => {
+    setModels([])
+    setModelListError('')
+    setIsLoadingModels(false)
+    if (!isOpen || apiKey.trim().length < 5 || !baseURL.trim()) return
+    const controller = new AbortController()
+    setIsLoadingModels(true)
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch('/api/byok-models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: apiKey.trim(), baseURL: baseURL.trim() }),
+          signal: controller.signal,
+          cache: 'no-store'
+        })
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error || '模型清單載入失敗')
+        if (!controller.signal.aborted) setModels(data.models)
+      } catch (error) {
+        if (!controller.signal.aborted) setModelListError(error instanceof Error ? error.message : '模型清單載入失敗')
+      } finally {
+        if (!controller.signal.aborted) setIsLoadingModels(false)
+      }
+    }, 600)
+    return () => { clearTimeout(timer); controller.abort() }
+  }, [isOpen, apiKey, baseURL, modelListVersion])
+
   // 切換 Provider 時自動填入預設 BaseURL 與 Model
   const handleProviderChange = (newProvider: ApiKeyProvider) => {
     setProvider(newProvider)
@@ -103,6 +137,10 @@ export function ApiKeyDialog() {
   const handleTestConnection = async () => {
     if (!apiKey.trim()) {
       toast.error('請先輸入 API Key 再進行連線測試')
+      return
+    }
+    if (!model.trim()) {
+      toast.error('請先選擇模型或手動輸入模型名稱')
       return
     }
 
@@ -149,6 +187,10 @@ export function ApiKeyDialog() {
   const handleSave = () => {
     if (!apiKey.trim()) {
       toast.error('請輸入有效的 API Key')
+      return
+    }
+    if (!model.trim()) {
+      toast.error('請先選擇模型或手動輸入模型名稱')
       return
     }
 
@@ -310,6 +352,49 @@ export function ApiKeyDialog() {
             </p>
           </div>
 
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <label htmlFor="byok-model" className="text-sm font-semibold text-foreground">模型</label>
+              <button
+                type="button"
+                onClick={() => setModelListVersion(value => value + 1)}
+                disabled={isLoadingModels || apiKey.trim().length < 5}
+                className="text-xs text-orange-600 hover:underline disabled:opacity-50 dark:text-orange-400"
+              >
+                {isLoadingModels ? '載入中…' : '重新載入模型清單'}
+              </button>
+            </div>
+            {models.length > 0 && (
+              <select
+                aria-label="供應商可用模型"
+                value={models.some(item => item.id === model) ? model : ''}
+                onChange={event => setModel(event.target.value)}
+                className="h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              >
+                <option value="" disabled>選擇模型（{models.length} 個）</option>
+                {models.map(item => <option key={item.id} value={item.id}>{item.name === item.id ? item.id : `${item.name} · ${item.id}`}</option>)}
+              </select>
+            )}
+            <input
+              id="byok-model"
+              type="text"
+              value={model}
+              onChange={event => setModel(event.target.value)}
+              placeholder="從清單選擇，或輸入模型 ID"
+              className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+            />
+            <p className="text-xs leading-normal text-muted-foreground" role="status">
+              {isLoadingModels ? '正在向供應商取得此金鑰可用的模型…'
+                : modelListError || (models.length > 0 ? '清單由供應商即時回傳。選擇支援文字對話與工具呼叫的模型，再測試連線。' : '輸入 API Key 後會自動載入可用模型；也可手動輸入模型 ID。')}
+            </p>
+            {provider === 'gemini' && model === 'gemini-flash-latest' && (
+              <p className="text-xs text-muted-foreground">自動跟隨 Google 最新 Flash 模型。</p>
+            )}
+            {models.length > 0 && model.trim() && !models.some(item => item.id === model.trim()) && (
+              <p className="text-xs text-amber-700 dark:text-amber-400">目前設定的模型未出現在這次清單，請重新選擇或測試自訂模型。</p>
+            )}
+          </div>
+
           {/* 進階設定開關 */}
           <div className="pt-1">
             <button
@@ -322,7 +407,7 @@ export function ApiKeyDialog() {
               ) : (
                 <ChevronDown className="size-4" />
               )}
-              <span>進階端點與模型自訂設定</span>
+              <span>進階 API 端點設定</span>
             </button>
 
             {showAdvanced && (
@@ -336,19 +421,6 @@ export function ApiKeyDialog() {
                     placeholder="https://api.openai.com/v1"
                     className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                   />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold text-foreground">Model 名稱</label>
-                  <input
-                    type="text"
-                    value={model}
-                    onChange={e => setModel(e.target.value)}
-                    placeholder={PROVIDER_PRESETS[provider].defaultModel}
-                    className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
-                  />
-                  <p className="text-xs text-muted-foreground leading-normal">
-                    若為自訂端點（如 OpenRouter / Ollama），請確保模型名稱支援 Function Calling。
-                  </p>
                 </div>
               </div>
             )}
@@ -394,7 +466,7 @@ export function ApiKeyDialog() {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              disabled={isTesting || !apiKey.trim()}
+              disabled={isTesting || !apiKey.trim() || !model.trim()}
               onClick={handleTestConnection}
               className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 shadow-2xs"
             >
@@ -411,7 +483,8 @@ export function ApiKeyDialog() {
             <button
               type="button"
               onClick={handleSave}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-orange-700 active:scale-[0.98]"
+              disabled={!apiKey.trim() || !model.trim()}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-orange-700 active:scale-[0.98] disabled:opacity-50"
             >
               <Sparkles className="size-4" />
               儲存並啟用

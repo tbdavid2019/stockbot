@@ -180,11 +180,11 @@ function getProviderCandidates(userKeyOrConfig?: string | any): ProviderCandidat
           })
         } else if (trimmed.startsWith('AIza')) {
           candidates.push({
-            name: `User Gemini Key [gemini-2.5-flash]`,
+            name: `User Gemini Key [gemini-flash-latest]`,
             baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
             apiKey: trimmed,
-            model: 'gemini-2.5-flash',
-            toolModel: 'gemini-2.5-flash'
+            model: 'gemini-flash-latest',
+            toolModel: 'gemini-flash-latest'
           })
         }
       }
@@ -194,14 +194,14 @@ function getProviderCandidates(userKeyOrConfig?: string | any): ProviderCandidat
 
     if (parsedConfig && parsedConfig.apiKey && typeof parsedConfig.apiKey === 'string') {
       const k = parsedConfig.apiKey.trim()
-      if (k.length > 5) {
+      if (k.length > 5 && typeof parsedConfig.model === 'string' && parsedConfig.model.trim()) {
         const providerName = parsedConfig.provider || 'custom'
         const baseURL = parsedConfig.baseURL || 'https://api.openai.com/v1'
         const safeCheck = isSafeApiBaseUrl(baseURL)
         if (!safeCheck.safe) {
           console.warn('[getProviderCandidates] Rejected unsafe BYOK baseURL:', baseURL, safeCheck.reason)
         } else {
-          const model = parsedConfig.model || 'gpt-4o-mini'
+          const model = parsedConfig.model.trim()
           const toolModel = parsedConfig.toolModel || model
           candidates.push({
             name: `User BYOK [${providerName}: ${toolModel}]`,
@@ -326,7 +326,7 @@ function getProviderCandidates(userKeyOrConfig?: string | any): ProviderCandidat
     const geminiUrl =
       process.env.GEMINI_BASE_URL ||
       'https://generativelanguage.googleapis.com/v1beta/openai/'
-    const geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+    const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-latest'
     candidates.push({
       name: `Google Gemini [${geminiModel}]`,
       baseURL: geminiUrl,

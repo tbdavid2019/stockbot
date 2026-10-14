@@ -51,7 +51,7 @@ function getSummaryProviders(userKeyConfig?: {
         `User BYOK [${userKeyConfig.provider || 'custom'}]`,
         targetBaseURL,
         userKeyConfig.apiKey.trim(),
-        userKeyConfig.model || 'gpt-4o-mini'
+        userKeyConfig.model
       )
     } else {
       console.warn('[analysis-summary] Rejected unsafe BYOK baseURL:', targetBaseURL, safeCheck.reason)

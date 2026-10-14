@@ -40,9 +40,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const testModel = (model && typeof model === 'string' && model.trim()) 
-      ? model.trim() 
-      : 'gpt-4o-mini'
+    if (typeof model !== 'string' || !model.trim()) {
+      return NextResponse.json({ success: false, error: '請先載入模型清單並選擇模型，或手動輸入模型名稱。' }, { status: 400 })
+    }
+    const testModel = model.trim()
 
     const client = createOpenAI({
       baseURL: testBaseURL,

@@ -45,7 +45,7 @@ export function PromptForm({
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const { submitUserMessage } = useActions()
   const [_, setMessages] = useUIState<typeof AI>()
-  const { serializedConfig } = useUserApiKey()
+  const { serializedConfig, config: userKeyConfig, openDialog } = useUserApiKey()
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
 
   const [attachedDoc, setAttachedDoc] = React.useState<AttachedDocument | null>(
@@ -113,6 +113,12 @@ export function PromptForm({
   const handleSubmitForm = async () => {
     const value = input.trim()
     if (!value && !attachedDoc) return
+
+    if (userKeyConfig && !userKeyConfig.model?.trim()) {
+      toast.error('請先在自備金鑰設定選擇模型')
+      openDialog()
+      return
+    }
 
     const currentDoc = attachedDoc
     setInput('')
