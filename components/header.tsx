@@ -50,10 +50,11 @@ export function Header() {
             type="button"
             onClick={handleNewChat}
             className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs sm:text-sm font-semibold text-orange-600 hover:bg-orange-500/20 dark:text-orange-400 transition-colors shadow-2xs"
+            title={lang === 'zh' ? '開啟新對話' : 'Start New Chat'}
           >
             <Plus className="size-3.5" />
-            <span className="hidden sm:inline">新對話</span>
-            <span className="sm:hidden">新</span>
+            <span className="hidden sm:inline">{lang === 'zh' ? '新對話' : 'New Chat'}</span>
+            <span className="sm:hidden">{lang === 'zh' ? '新' : 'New'}</span>
           </button>
 
           <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
@@ -67,11 +68,11 @@ export function Header() {
           <a
             href="/earnings-call"
             className="flex items-center gap-1.5 rounded-lg border border-indigo-200/90 bg-indigo-50/80 px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-semibold text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/80 transition-all shadow-2xs"
-            title="法人說明會總覽 (Earnings Calls) · MOPS / TWSE / 美股即時日程與簡報"
+            title={lang === 'zh' ? '法人說明會總覽 (Earnings Calls) · MOPS / TWSE / 美股即時日程與簡報' : 'Earnings Calls & Webcasts · MOPS / TWSE / US Corporate Earnings'}
           >
             <Radio className="size-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="hidden sm:inline font-semibold">法說會總覽</span>
-            <span className="sm:hidden font-semibold">法說會</span>
+            <span className="hidden sm:inline font-semibold">{lang === 'zh' ? '法說會總覽' : 'Earnings Calls'}</span>
+            <span className="sm:hidden font-semibold">{lang === 'zh' ? '法說會' : 'Calls'}</span>
             <span className="hidden md:inline-flex items-center rounded bg-indigo-200/70 px-1 py-0.5 text-xs font-mono text-indigo-900 dark:bg-indigo-900/70 dark:text-indigo-200 font-bold">
               MOPS
             </span>
@@ -136,7 +137,15 @@ export function Header() {
             type="button"
             className="flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border/80 bg-background px-2 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-muted shadow-2xs"
             aria-pressed={layoutMode === 'wide'}
-            title={layoutMode === 'wide' ? '切換窄版' : '切換寬版'}
+            title={
+              lang === 'zh'
+                ? layoutMode === 'wide'
+                  ? '切換窄版'
+                  : '切換寬版'
+                : layoutMode === 'wide'
+                  ? 'Switch to Narrow View'
+                  : 'Switch to Wide View'
+            }
             onClick={() => {
               const nextMode = layoutMode === 'wide' ? 'narrow' : 'wide'
               setLayoutMode(nextMode)
@@ -149,7 +158,13 @@ export function Header() {
               <Maximize2 className="size-3.5 text-muted-foreground" />
             )}
             <span className="hidden sm:inline">
-              {layoutMode === 'wide' ? '窄版' : '寬版'}
+              {lang === 'zh'
+                ? layoutMode === 'wide'
+                  ? '窄版'
+                  : '寬版'
+                : layoutMode === 'wide'
+                  ? 'Narrow'
+                  : 'Wide'}
             </span>
           </button>
           <ThemeToggle />

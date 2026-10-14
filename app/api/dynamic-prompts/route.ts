@@ -297,33 +297,33 @@ function buildMacroPrompts(macroData: GlobalMacroDashboardResult | null): {
 
   const macroPromptsZh: ExamplePrompt[] = [
     {
-      heading: '🎙️ 近期台股/美股法人說明會 (Earnings Calls)',
+      heading: '近期台股/美股法人說明會 (Earnings Calls)',
       subheading: '即時掌握台積電、聯發科、輝達法說日程、影音直播與簡報下載',
       message: '近期台股與美股有哪些法人說明會？'
     },
     {
       heading: upcomingEvent
-        ? `📅 今晚總經焦點：${upcomingEvent.event}`
-        : '📅 今晚有什麼重大總經數據？',
+        ? `今晚總經焦點：${upcomingEvent.event}`
+        : '今晚有什麼重大總經數據？',
       subheading: upcomingEvent
         ? `距公布約 ${upcomingEvent.time} · 預估 ${upcomingEvent.forecast || '—'} · 前值 ${upcomingEvent.previous || '—'}`
         : '即時掌握非農 (NFP)、CPI、PMI、零售銷售與央行決議時程',
       message: '今晚有什麼重大總經數據？'
     },
     {
-      heading: '🌐 美股盤前期貨與經濟日曆',
+      heading: '美股盤前期貨與經濟日曆',
       subheading: spFuture
         ? `S&P期指 ${spFuture.last} (${spFuture.changePercent || ''}) · VIX ${vixFuture?.last || ''} · ${sentiment?.bias || '盤前掃描'}`
         : '美股三大期指盤前行情、恐慌指數 VIX 與跨資產風向',
       message: '美股盤前期貨與經濟日曆'
     },
     {
-      heading: '⚡ 非農就業公布時間與預期',
+      heading: '非農就業公布時間與預期',
       subheading: '美國非農就業報告 (NFP)、失業率與華爾街預估分析',
       message: '非農就業公布時間與重大經濟日曆'
     },
     {
-      heading: '🛢️ 大宗商品與 10Y 美債殖利率',
+      heading: '大宗商品與 10Y 美債殖利率',
       subheading: `10Y美債 ${tenYear?.last || '4.76%'} · 黃金 ${gold?.last || '$4,523'} · 原油 ${oil?.last || '$91.6'}`,
       message: '目前大宗商品與美債殖利率走勢如何？'
     }
@@ -331,33 +331,33 @@ function buildMacroPrompts(macroData: GlobalMacroDashboardResult | null): {
 
   const macroPromptsEn: ExamplePrompt[] = [
     {
-      heading: '🎙️ Corporate Earnings Calls & Webcasts',
+      heading: 'Corporate Earnings Calls & Webcasts',
       subheading: 'Live earnings conference calendar, guidance highlights & slide deck downloads',
       message: 'Show me upcoming corporate earnings calls and investor conferences'
     },
     {
       heading: upcomingEvent
-        ? `📅 Tonight's Macro Focus: ${upcomingEvent.event}`
-        : '📅 Key Economic Events Tonight',
+        ? `Tonight's Macro Focus: ${upcomingEvent.event}`
+        : 'Key Economic Events Tonight',
       subheading: upcomingEvent
         ? `In ${upcomingEvent.time} · Cons: ${upcomingEvent.forecast || '—'} · Prev: ${upcomingEvent.previous || '—'}`
         : 'Live global economic calendar, CPI, NFP & central bank policy',
       message: 'What are the key global economic events and data releases tonight?'
     },
     {
-      heading: '🌐 US Pre-Market Futures & Macro Calendar',
+      heading: 'US Pre-Market Futures & Macro Calendar',
       subheading: spFuture
         ? `S&P Futures ${spFuture.last} (${spFuture.changePercent || ''}) · VIX ${vixFuture?.last || ''}`
         : 'Live S&P, Nasdaq futures and Risk-On / Risk-Off sentiment',
       message: 'Show me US pre-market futures and economic calendar'
     },
     {
-      heading: '⚡ Nonfarm Payrolls (NFP) Schedule',
+      heading: 'Nonfarm Payrolls (NFP) Schedule',
       subheading: 'Jobs report countdown, unemployment consensus & expectations',
       message: 'When is the Nonfarm Payrolls (NFP) release and what is expected?'
     },
     {
-      heading: '🛢️ Commodities & 10Y Treasury Yield',
+      heading: 'Commodities & 10Y Treasury Yield',
       subheading: `10Y Yield ${tenYear?.last || '4.76%'} · Gold ${gold?.last || '$4,523'} · WTI ${oil?.last || '$91.6'}`,
       message: 'How are global commodities and US Treasury yields moving today?'
     }

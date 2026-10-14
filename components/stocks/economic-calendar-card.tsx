@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import type { GlobalMacroDashboardResult } from '@/lib/quant/investing-macro'
-import { Calendar } from 'lucide-react'
+import { Calendar, Globe } from 'lucide-react'
 
 export function EconomicCalendarCard({
   data
@@ -59,7 +59,8 @@ export function EconomicCalendarCard({
       {/* Cross-Asset Macro & Futures Grid */}
       <div className="mb-6">
         <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-3 flex items-center gap-1.5">
-          <span>🌐 跨資產即時盤前與總經指標 (Futures & Yields)</span>
+          <Globe className="size-3.5 text-sky-600 dark:text-sky-400" />
+          <span>跨資產即時盤前與總經指標 (Futures & Yields)</span>
         </h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
           {/* Indices Futures */}

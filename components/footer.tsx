@@ -7,7 +7,10 @@ import { cn } from '@/lib/utils'
 import { ExternalLink } from '@/components/external-link'
 import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
 
+import { useLocalStorage } from '@/lib/hooks/use-local-storage'
+
 export function FooterText({ className, ...props }: React.ComponentProps<'div'>) {
+  const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const { openDialog, hasCustomKey, config } = useUserApiKey()
 
   return (
@@ -19,7 +22,7 @@ export function FooterText({ className, ...props }: React.ComponentProps<'div'>)
       {...props}
     >
       <div className="flex items-center gap-1.5">
-        <span>技術提供</span>
+        <span>{lang === 'zh' ? '技術提供' : 'Powered by'}</span>
         <ExternalLink href="https://david888.com">david888.com</ExternalLink>
       </div>
 
@@ -35,7 +38,11 @@ export function FooterText({ className, ...props }: React.ComponentProps<'div'>)
             ? 'border border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
             : 'border border-border/80 bg-background/90 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-orange-400'
         )}
-        title="自備 API Key 暢享無限制分析 · 伺服器零留存保證 (BYOK)"
+        title={
+          lang === 'zh'
+            ? '自備 API Key 暢享無限制分析 · 伺服器零留存保證 (BYOK)'
+            : 'Bring Your Own Key (BYOK) · Zero server retention'
+        }
       >
         <KeyRound className="size-3.5 text-orange-500 dark:text-orange-400" />
         {hasCustomKey ? (
@@ -44,10 +51,12 @@ export function FooterText({ className, ...props }: React.ComponentProps<'div'>)
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500"></span>
             </span>
-            <span>自備金鑰 ({config?.provider?.toUpperCase()})</span>
+            <span>
+              {lang === 'zh' ? '自備金鑰' : 'BYOK'} ({config?.provider?.toUpperCase()})
+            </span>
           </span>
         ) : (
-          <span>自備金鑰 (BYOK)</span>
+          <span>{lang === 'zh' ? '自備金鑰 (BYOK)' : 'Custom API Key (BYOK)'}</span>
         )}
       </button>
     </div>

@@ -32,7 +32,8 @@ import {
   IconClose,
   IconCopy
 } from '@/components/ui/icons'
-import { TrendingUp } from 'lucide-react'
+import { TrendingUp, History, Inbox } from 'lucide-react'
+import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import {
   ChatSession,
   getChatSessions,
@@ -94,6 +95,7 @@ export function ChatHistorySheet({
   onNewChat,
   trigger
 }: ChatHistorySheetProps) {
+  const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const [isOpen, setIsOpen] = useState(false)
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -265,10 +267,10 @@ export function ChatHistorySheet({
             variant="ghost"
             size="sm"
             className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-semibold text-slate-700 hover:text-slate-900 dark:text-slate-200 dark:hover:text-white"
-            title="查看對話歷史紀錄 (Chat History)"
+            title={lang === 'zh' ? '查看對話歷史紀錄 (Chat History)' : 'View Chat History'}
           >
-            <span className="text-base">📜</span>
-            <span className="hidden sm:inline">歷史紀錄</span>
+            <History className="size-4 text-muted-foreground" />
+            <span className="hidden sm:inline">{lang === 'zh' ? '歷史紀錄' : 'History'}</span>
             {sessions.length > 0 && (
               <span className="ml-0.5 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-bold text-slate-700 dark:bg-zinc-800 dark:text-zinc-300">
                 {sessions.length}
@@ -288,11 +290,11 @@ export function ChatHistorySheet({
             <div className="flex items-center gap-2">
               <TrendingUp className="size-5 text-primary" />
               <SheetTitle className="text-base font-bold">
-                對話歷史紀錄
+                {lang === 'zh' ? '對話歷史紀錄' : 'Chat History'}
               </SheetTitle>
               {sessions.length > 0 && (
                 <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
-                  {sessions.length} 筆對話
+                  {sessions.length} {lang === 'zh' ? '筆對話' : 'chats'}
                 </span>
               )}
             </div>
@@ -306,13 +308,13 @@ export function ChatHistorySheet({
             className="w-full justify-start gap-2 bg-[#F55036] text-white hover:bg-[#e0452c] shadow-sm font-semibold text-xs"
           >
             <IconPlus className="size-4" />
-            <span>開啟新對話 (Start New Chat)</span>
+            <span>{lang === 'zh' ? '開啟新對話 (New Chat)' : 'Start New Chat'}</span>
           </Button>
 
           <div className="relative">
             <Input
               type="text"
-              placeholder="搜尋歷史對話或關鍵字..."
+              placeholder={lang === 'zh' ? '搜尋歷史對話或關鍵字...' : 'Search chat history...'}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="h-8 pl-8 text-xs bg-background"
@@ -341,10 +343,14 @@ export function ChatHistorySheet({
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
           {sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground space-y-2">
-              <span className="text-3xl">📭</span>
-              <p className="text-sm font-medium">目前尚無歷史紀錄</p>
+              <Inbox className="size-8 text-muted-foreground/60" />
+              <p className="text-sm font-medium">
+                {lang === 'zh' ? '目前尚無歷史紀錄' : 'No chat history yet'}
+              </p>
               <p className="text-xs text-muted-foreground/80 max-w-[220px] leading-relaxed">
-                開始向 888 StockBot 詢問股票、行情或大師投資研調，系統將自動保存於本機。
+                {lang === 'zh'
+                  ? '開始向 888 StockBot 詢問股票、行情或大師投資研調，系統將自動保存於本機。'
+                  : 'Ask 888 StockBot about stocks, market signals, or master investor models to build history.'}
               </p>
             </div>
           ) : filteredSessions.length === 0 ? (
