@@ -184,77 +184,10 @@ export function PromptForm({
         }}
       />
 
-      <div className="relative flex max-h-60 w-full grow flex-col overflow-hidden bg-background pl-[84px] pr-14 sm:border sm:pl-[92px] sm:pr-16">
-        {/* Left Action Buttons */}
-        <div className="absolute left-2 top-[14px] flex items-center gap-1.5 sm:left-3">
-          {/* New Chat Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="size-8 rounded-full bg-background p-0"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent(CHAT_NEW_EVENT))
-                  window.location.href = '/'
-                }}
-              >
-                <IconPlus className="size-4" />
-                <span className="sr-only">New Chat</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {lang === 'en' ? 'Start New Chat' : '開啟新對話 (New Chat)'}
-            </TooltipContent>
-          </Tooltip>
-
-          {/* Upload Document / PDF / Financial Report Button */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                disabled={isUploading}
-                className="size-8 rounded-full bg-background p-0 hover:text-indigo-600 hover:border-indigo-300"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {isUploading ? (
-                  <div className="size-3.5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-                ) : (
-                  <svg
-                    className="size-4 text-slate-700 dark:text-slate-200"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                    />
-                  </svg>
-                )}
-                <span className="sr-only">
-                  {lang === 'en'
-                    ? 'Upload financial report, annual report, or PDF'
-                    : '上傳財報、年報、PDF或文件'}
-                </span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {lang === 'en'
-                ? 'Upload financial report, annual report, PDF or spreadsheet'
-                : '上傳財報、年報、PDF 或 Excel 文件解讀'}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
+      <div className="flex flex-col rounded-2xl border border-slate-200/90 bg-background p-2 sm:p-2.5 shadow-sm transition-all focus-within:border-slate-400 focus-within:ring-1 focus-within:ring-slate-300 dark:border-slate-800 dark:bg-zinc-950 dark:focus-within:border-slate-700">
         {/* Attached Document Preview Chip */}
         {attachedDoc && (
-          <div className="mt-2.5 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1 text-xs text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">
+          <div className="mb-2 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1 text-xs text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">
             <span className="text-sm">📄</span>
             <span className="font-semibold truncate max-w-[220px] sm:max-w-xs">
               {attachedDoc.filename}
@@ -270,53 +203,123 @@ export function PromptForm({
               className="ml-auto text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
               title={lang === 'en' ? 'Remove attachment' : '移除附件'}
             >
-              <IconClose className="size-3" />
+              <IconClose className="size-3.5" />
             </button>
           </div>
         )}
 
-        {/* Input Textarea */}
-        <Textarea
-          ref={inputRef}
-          tabIndex={0}
-          onKeyDown={onKeyDown}
-          placeholder={
-            attachedDoc
-              ? lang === 'en'
-                ? 'Enter analysis prompt (e.g., analyze margins, free cash flow & master investor evaluation)...'
-                : '輸入分析要求（例如：請幫我分析這份財報的毛利率與自由現金流，並以巴菲特觀點評估）'
-              : lang === 'zh'
-                ? '輸入訊息或點擊 📎 上傳財報/PDF 解讀...（例如：台積電股價、TSLA 值得買嗎）'
-                : 'Send a message or click 📎 to upload financial report/PDF... (e.g. Apple stock price, Should I buy TSLA?)'
-          }
-          className="min-h-[60px] w-full resize-none bg-transparent px-0 py-[1.3rem] text-base focus-within:outline-none"
-          autoFocus
-          spellCheck={false}
-          autoComplete="off"
-          autoCorrect="off"
-          name="message"
-          rows={1}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-        />
+        <div className="flex items-end gap-1.5 sm:gap-2">
+          {/* Left Action Buttons */}
+          <div className="flex shrink-0 items-center gap-1 sm:gap-1.5 pb-1">
+            {/* New Chat Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="size-8 rounded-full bg-background p-0 border-slate-200 dark:border-slate-800 hover:bg-muted"
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent(CHAT_NEW_EVENT))
+                    window.location.href = '/'
+                  }}
+                >
+                  <IconPlus className="size-4" />
+                  <span className="sr-only">New Chat</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {lang === 'en' ? 'Start New Chat' : '開啟新對話 (New Chat)'}
+              </TooltipContent>
+            </Tooltip>
 
-        {/* Submit Button */}
-        <div className="absolute right-0 top-[13px] sm:right-4">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="submit"
-                size="icon"
-                disabled={(input === '' && !attachedDoc) || isUploading}
-              >
-                <div className="rotate-180">
-                  <IconArrowDown />
-                </div>
-                <span className="sr-only">Send message</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>傳送訊息 (Send message)</TooltipContent>
-          </Tooltip>
+            {/* Upload Document / PDF / Financial Report Button */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  disabled={isUploading}
+                  className="size-8 rounded-full bg-background p-0 hover:text-indigo-600 hover:border-indigo-300 dark:border-slate-800 dark:hover:border-indigo-700"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {isUploading ? (
+                    <div className="size-3.5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+                  ) : (
+                    <svg
+                      className="size-4 text-slate-700 dark:text-slate-200"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                      />
+                    </svg>
+                  )}
+                  <span className="sr-only">
+                    {lang === 'en'
+                      ? 'Upload financial report, annual report, or PDF'
+                      : '上傳財報、年報、PDF或文件'}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {lang === 'en'
+                  ? 'Upload financial report, annual report, PDF or spreadsheet'
+                  : '上傳財報、年報、PDF 或 Excel 文件解讀'}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          {/* Input Textarea */}
+          <Textarea
+            ref={inputRef}
+            tabIndex={0}
+            onKeyDown={onKeyDown}
+            placeholder={
+              attachedDoc
+                ? lang === 'en'
+                  ? 'Enter analysis prompt (e.g., analyze margins, free cash flow & master investor evaluation)...'
+                  : '輸入分析要求（例如：請幫我分析這份財報的毛利率與自由現金流，並以巴菲特觀點評估）'
+                : lang === 'zh'
+                  ? '輸入訊息或點擊 📎 上傳財報/PDF 解讀...（例如：台積電股價、TSLA 值得買嗎）'
+                  : 'Send a message or click 📎 to upload financial report/PDF... (e.g. Apple stock price, Should I buy TSLA?)'
+            }
+            className="flex-1 min-h-[44px] max-h-48 resize-none bg-transparent px-2 py-2 text-sm sm:text-base leading-relaxed focus-within:outline-none placeholder:text-muted-foreground/60"
+            autoFocus
+            spellCheck={false}
+            autoComplete="off"
+            autoCorrect="off"
+            name="message"
+            rows={1}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+          />
+
+          {/* Submit Button */}
+          <div className="flex shrink-0 items-center pb-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="submit"
+                  size="icon"
+                  className="size-8 sm:size-9 rounded-xl shadow-2xs"
+                  disabled={(input.trim() === '' && !attachedDoc) || isUploading}
+                >
+                  <div className="rotate-180">
+                    <IconArrowDown className="size-4" />
+                  </div>
+                  <span className="sr-only">Send message</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>傳送訊息 (Send message)</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
     </form>

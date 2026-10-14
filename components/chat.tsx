@@ -69,6 +69,16 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
       }
     }
     hasHydratedRef.current = true
+
+    // Check if ?q= query param was passed from earnings-call or quick-link
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const q = params.get('q')
+      if (q && q.trim()) {
+        setInput(q.trim())
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    }
   }, [id, setAIState, setMessages])
 
   // 2. Persist chat session to localStorage whenever AI messages update

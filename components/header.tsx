@@ -61,6 +61,22 @@ export function Header() {
 
           {/* Chat History Drawer Trigger */}
           <ChatHistorySheet />
+
+          <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
+
+          {/* Dedicated 法說會總覽 Navigation Link */}
+          <a
+            href="/earnings-call"
+            className="flex items-center gap-1.5 rounded-lg border border-indigo-200/90 bg-indigo-50/80 px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-semibold text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/80 transition-all shadow-2xs"
+            title="法人說明會總覽 (Earnings Calls) · MOPS / TWSE / 美股即時日程與簡報"
+          >
+            <span className="text-sm">🎙️</span>
+            <span className="hidden sm:inline font-semibold">法說會總覽</span>
+            <span className="sm:hidden font-semibold">法說會</span>
+            <span className="hidden md:inline-flex items-center rounded bg-indigo-200/70 px-1 py-0.2 text-xs font-mono text-indigo-900 dark:bg-indigo-900/70 dark:text-indigo-200 font-bold">
+              MOPS
+            </span>
+          </a>
         </div>
 
         <div className="flex min-w-0 shrink items-center gap-1.5 text-sm sm:gap-2">

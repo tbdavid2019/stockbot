@@ -15,6 +15,7 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
   const { config: userKeyConfig } = useUserApiKey()
   const [marketFilter, setMarketFilter] = React.useState<'ALL' | 'TW' | 'US'>(data.marketFilter || 'ALL')
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'live' | 'upcoming' | 'replay'>('all')
+  const [searchQuery, setSearchQuery] = React.useState('')
   const [analyses, setAnalyses] = React.useState<Record<string, DeckAnalysisState>>({})
 
   // Filter items dynamically
@@ -35,8 +36,18 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
       items = items.filter(i => i.status === 'replay')
     }
 
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      items = items.filter(
+        i =>
+          i.symbol.toLowerCase().includes(q) ||
+          i.companyName.toLowerCase().includes(q) ||
+          i.title.toLowerCase().includes(q)
+      )
+    }
+
     return items
-  }, [data.all, marketFilter, statusFilter])
+  }, [data.all, marketFilter, statusFilter, searchQuery])
 
   // Count badges
   const counts = React.useMemo(() => {
@@ -148,6 +159,28 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
           <div className="font-semibold text-slate-700 dark:text-slate-300 mt-0.5">{data.source}</div>
         </div>
       </header>
+
+      {/* Instant Search Bar */}
+      <div className="relative mb-4">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="搜尋股票代號或公司名稱（例如：2330、台積電、NVDA、廣達、聯發科）..."
+          className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 pl-10 pr-9 text-xs sm:text-sm text-slate-900 placeholder:text-muted-foreground focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-zinc-900/60 dark:text-slate-100 dark:focus:border-indigo-500 transition-colors shadow-2xs"
+        />
+        <span className="absolute left-3.5 top-3 text-xs sm:text-sm text-muted-foreground">🔍</span>
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3.5 top-2.5 rounded-full p-0.5 text-xs text-muted-foreground hover:bg-slate-200 dark:hover:bg-zinc-800 hover:text-foreground"
+            title="清除搜尋"
+          >
+            ✕
+          </button>
+        )}
+      </div>
 
       {/* Filter Tabs & Segment Controls */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -395,6 +428,15 @@ export function EarningsCallCard({ data }: { data: EarningsCallDashboardResult }
                       )}
                     </button>
                   )}
+
+                  <a
+                    href={`/?q=${encodeURIComponent(`${item.companyName} (${item.symbol}) 最新法說會重點與投資展望分析`)}`}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/80 transition-colors shadow-2xs"
+                    title="在對話中分析此法說會與投資價值"
+                  >
+                    <span>💬</span>
+                    <span>在 StockBot 分析</span>
+                  </a>
 
                   {item.irUrl && (
                     <a

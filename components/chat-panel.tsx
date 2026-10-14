@@ -277,13 +277,15 @@ export function ChatPanel({
   const [featuredEn, setFeaturedEn] =
     useState<ExampleMessage[]>(DEFAULT_FEATURED_EN)
 
-  // Use deterministic initial batch for SSR to prevent hydration mismatch; shuffled in useEffect
+  // Stable deterministic initial batch based on lang; NEVER flicker or swap automatically on mount
   const [visibleExamples, setVisibleExamples] = useState<ExampleMessage[]>(() =>
-    DEFAULT_PROMPTS_ZH.slice(0, 6)
+    lang === 'zh' ? DEFAULT_PROMPTS_ZH.slice(0, 6) : DEFAULT_PROMPTS_EN.slice(0, 6)
   )
   const [promptLabelIndex, setPromptLabelIndex] = useState(0)
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false)
+  const prevLangRef = React.useRef(lang)
 
+  // Background fetch only updates the cached pool for the NEXT shuffle; does NOT replace current visible cards!
   useEffect(() => {
     let isMounted = true
     async function loadDynamicPrompts() {
@@ -318,7 +320,16 @@ export function ChatPanel({
     return () => {
       isMounted = false
     }
-  }, [setCachedPromptsEn, setCachedPromptsZh])
+  }, [])
+
+  // Only switch visible prompts when the user explicitly switches language
+  useEffect(() => {
+    if (prevLangRef.current !== lang) {
+      prevLangRef.current = lang
+      const pool = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
+      setVisibleExamples(pool.slice(0, 6))
+    }
+  }, [lang, cachedPromptsZh, cachedPromptsEn])
 
   const currentExamples = lang === 'zh' ? cachedPromptsZh : cachedPromptsEn
   const currentFeatured = lang === 'zh' ? featuredZh : featuredEn
@@ -331,10 +342,12 @@ export function ChatPanel({
         ? DEFAULT_PROMPTS_ZH.slice(0, 6)
         : DEFAULT_PROMPTS_EN.slice(0, 6)
 
-  useEffect(() => {
-    setVisibleExamples(shufflePrompts(currentExamples, [], currentFeatured))
-    setPromptLabelIndex(Math.floor(Math.random() * promptLabels.length))
-  }, [currentExamples, currentFeatured, promptLabels.length])
+  const handleShuffle = useCallback(() => {
+    setVisibleExamples(
+      shufflePrompts(currentExamples, visibleExamples, currentFeatured)
+    )
+    setPromptLabelIndex(prev => (prev + 1) % promptLabels.length)
+  }, [currentExamples, visibleExamples, currentFeatured, promptLabels.length])
 
   const handleMarketQuoteSelect = useCallback(
     async (quote: MarketQuote) => {
@@ -383,33 +396,37 @@ export function ChatPanel({
       >
         {messages.length === 0 && (
           <div className="mb-4 px-3 sm:px-0">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                <span className="text-sm font-medium text-muted-foreground">
+            <div className="mb-2.5 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
                   {promptLabels[promptLabelIndex]}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-800 dark:bg-orange-950/70 dark:text-orange-300 border border-orange-200 dark:border-orange-900">
                   {promptModes[promptLabelIndex % promptModes.length]}
                 </span>
               </div>
-              <button
-                type="button"
-                className="shrink-0 rounded-full px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                onClick={() => {
-                  setVisibleExamples(
-                    shufflePrompts(currentExamples, visibleExamples, currentFeatured)
-                  )
-                  setPromptLabelIndex(
-                    Math.floor(Math.random() * promptLabels.length)
-                  )
-                }}
-                aria-label={lang === 'zh' ? '換一批提示' : 'Show new prompts'}
-              >
-                ↻ {lang === 'zh' ? '換一批' : 'Shuffle'}
-              </button>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/earnings-call"
+                  className="hidden sm:inline-flex items-center gap-1 rounded-full border border-indigo-200/90 bg-indigo-50/80 px-2.5 py-0.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 transition-colors"
+                >
+                  <span>🎙️</span>
+                  <span>法說會總覽</span>
+                  <span>➔</span>
+                </a>
+                <button
+                  type="button"
+                  className="shrink-0 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-background px-2.5 py-1 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-muted hover:text-foreground dark:border-slate-800 dark:text-slate-300 transition-colors"
+                  onClick={handleShuffle}
+                  aria-label={lang === 'zh' ? '換一批提示' : 'Show new prompts'}
+                >
+                  <span>↻</span>
+                  <span>{lang === 'zh' ? '換一批' : 'Shuffle'}</span>
+                </button>
+              </div>
             </div>
             {displayExamples.length > 0 && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 {displayExamples.map((example, index) => {
                   const isEarningsCall = /法說|法人說明會|earnings\s*call/i.test(
                     `${example.heading} ${example.message}`
@@ -422,12 +439,12 @@ export function ChatPanel({
                   return (
                     <div
                       key={`${lang}-${example.heading}-${index}`}
-                      className={`cursor-pointer rounded-lg border p-2.5 shadow-2xs transition-all sm:p-3.5 ${
+                      className={`cursor-pointer rounded-xl border p-3 sm:p-3.5 shadow-2xs transition-all ${
                         isEarningsCall
-                          ? 'border-amber-300/80 bg-amber-50/40 hover:border-amber-400 hover:bg-amber-50/80 dark:border-amber-800/70 dark:bg-amber-950/30 dark:hover:border-amber-600'
+                          ? 'border-indigo-200/90 bg-indigo-50/30 hover:border-indigo-400 hover:bg-indigo-50/60 dark:border-indigo-900/60 dark:bg-indigo-950/20 dark:hover:border-indigo-700'
                           : isMacro
-                          ? 'border-sky-300/80 bg-sky-50/40 hover:border-sky-400 hover:bg-sky-50/80 dark:border-sky-800/70 dark:bg-sky-950/30 dark:hover:border-sky-600'
-                          : 'border-slate-200/90 bg-white hover:border-blue-300 hover:bg-zinc-50 dark:border-slate-800 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900'
+                          ? 'border-sky-200/90 bg-sky-50/30 hover:border-sky-400 hover:bg-sky-50/60 dark:border-sky-900/60 dark:bg-sky-950/20 dark:hover:border-sky-700'
+                          : 'border-slate-200/90 bg-white hover:border-slate-300 hover:bg-slate-50/80 dark:border-slate-800 dark:bg-zinc-950 dark:hover:border-slate-700 dark:hover:bg-zinc-900'
                       }`}
                       onClick={async () => {
                         setMessages(currentMessages => [
@@ -448,22 +465,24 @@ export function ChatPanel({
                         ])
                       }}
                     >
-                      <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 mb-1">
                         {isEarningsCall && (
-                          <span className="shrink-0 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                          <span className="shrink-0 inline-flex items-center rounded-md bg-indigo-100 px-2 py-0.5 text-xs font-bold text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
                             🎙️ 法說日程
                           </span>
                         )}
                         {isMacro && (
-                          <span className="shrink-0 inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                          <span className="shrink-0 inline-flex items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-800 dark:bg-sky-950 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
                             ⚡ 即時總經
                           </span>
                         )}
-                        <span className="truncate">{example.heading}</span>
+                        <h4 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate">
+                          {example.heading}
+                        </h4>
                       </div>
-                      <div className="mt-0.5 line-clamp-2 text-xs text-zinc-600 dark:text-zinc-400 sm:text-sm">
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-normal line-clamp-2">
                         {example.subheading}
-                      </div>
+                      </p>
                     </div>
                   )
                 })}
