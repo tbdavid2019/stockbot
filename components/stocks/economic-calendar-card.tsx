@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import type { GlobalMacroDashboardResult } from '@/lib/quant/investing-macro'
+import { Calendar } from 'lucide-react'
 
 export function EconomicCalendarCard({
   data
@@ -151,7 +152,8 @@ export function EconomicCalendarCard({
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-            <span>📅 即時重大總體經濟日曆 (Economic Calendar)</span>
+            <Calendar className="size-4 text-primary" />
+            <span>即時重大總體經濟日曆 (Economic Calendar)</span>
           </h4>
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg text-xs self-start sm:self-auto">
             <button

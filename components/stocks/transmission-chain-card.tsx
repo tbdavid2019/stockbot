@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import type { TransmissionAnalysisResult } from '@/lib/deepear'
+import { Sparkles } from 'lucide-react'
 
 export function TransmissionChainCard({
   data
@@ -124,8 +125,8 @@ export function TransmissionChainCard({
       {/* Actionable Insights */}
       {data.actionableInsights && (
         <div className="rounded-xl border border-slate-200/70 bg-slate-50/70 dark:bg-zinc-900/60 dark:border-slate-800/80 p-4 flex items-start gap-3 text-xs sm:text-sm">
-          <div className="text-base text-cyan-600 dark:text-cyan-400 shrink-0 font-bold">
-            💡
+          <div className="p-1 rounded-md bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 shrink-0">
+            <Sparkles className="size-4" />
           </div>
           <div>
             <span className="font-bold text-slate-900 dark:text-slate-100">

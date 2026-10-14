@@ -17,7 +17,9 @@ import {
   Download,
   Sparkles,
   Compass,
-  ExternalLink
+  ExternalLink,
+  MessageSquare,
+  AlertCircle
 } from 'lucide-react'
 
 interface DeckAnalysisState {
@@ -508,7 +510,7 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/80 transition-colors shadow-2xs"
                     title="在對話中分析此法說會與投資價值"
                   >
-                    <span>💬</span>
+                    <MessageSquare className="size-3.5" />
                     <span>在 StockBot 分析</span>
                   </a>
 
@@ -554,8 +556,9 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                     )}
 
                     {analysis.error && (
-                      <div className="py-2.5 px-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
-                        ⚠️ {analysis.error}
+                      <div className="flex items-center gap-1.5 py-2.5 px-3 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-xs text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                        <AlertCircle className="size-4 shrink-0" />
+                        <span>{analysis.error}</span>
                       </div>
                     )}
 
@@ -563,7 +566,8 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                       <div className="rounded-xl border border-indigo-200/80 dark:border-indigo-900/60 bg-gradient-to-b from-indigo-50/30 to-white dark:from-indigo-950/20 dark:to-zinc-950 p-4 text-xs sm:text-sm text-slate-800 dark:text-slate-200">
                         <div className="flex items-center justify-between mb-2 pb-2 border-b border-indigo-100 dark:border-indigo-900/40">
                           <span className="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5 text-sm sm:text-base">
-                            <span>⚡ 2MD AI 法說會簡報深度萃取報告</span>
+                            <Sparkles className="size-4 text-amber-500 shrink-0" />
+                            <span>2MD AI 法說會簡報深度萃取報告</span>
                           </span>
                           <span className="text-xs text-muted-foreground">
                             由 2MD AnyDoc 原生解析

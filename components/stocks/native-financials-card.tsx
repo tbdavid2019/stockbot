@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { formatStockSymbol } from '@/lib/utils'
+import { BarChart3, TrendingUp, AlertCircle } from 'lucide-react'
 
 interface FinancialMetrics {
   pe?: number | string
@@ -209,7 +210,7 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
       <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-4 gap-3">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-base">
-            📊
+            <BarChart3 className="size-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
@@ -246,8 +247,9 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
           </span>
         </div>
       ) : error ? (
-        <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs sm:text-sm text-amber-800 dark:text-amber-300">
-          ⚠️ 暫時無法獲取結構化財報指標，下方已為您整合即時市場情報。
+        <div className="flex items-center gap-2 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-xs sm:text-sm text-amber-800 dark:text-amber-300">
+          <AlertCircle className="size-4 shrink-0" />
+          <span>暫時無法獲取結構化財報指標，下方已為您整合即時市場情報。</span>
         </div>
       ) : (
         <div className="space-y-4">
@@ -256,8 +258,9 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
             {/* 1. 估值指標 */}
             <div className="rounded-xl border border-slate-200/70 dark:border-slate-800 bg-white dark:bg-zinc-900/60 p-4 flex flex-col justify-between">
               <div className="flex items-center justify-between mb-2.5">
-                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
-                  📈 估值倍數 (Valuation)
+                <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <TrendingUp className="size-4 text-emerald-500 shrink-0" />
+                  <span>估值倍數 (Valuation)</span>
                 </span>
                 {getSignalBadge(metrics?.valuationSignal)}
               </div>

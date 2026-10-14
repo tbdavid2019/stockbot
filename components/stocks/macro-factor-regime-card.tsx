@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import type { MacroFactorRegimeResult } from '@/lib/quant/us-fddk'
+import { BarChart3, Sparkles } from 'lucide-react'
 
 export function MacroFactorRegimeCard({
   data
@@ -45,7 +46,8 @@ export function MacroFactorRegimeCard({
       {/* Benchmarks Comparison Table */}
       <div className="mb-4 overflow-x-auto">
         <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-3 flex items-center gap-1.5">
-          <span>📊 20 年跨資產 ETF 策略與基準對照 (扣除換手成本 10/50 bps)</span>
+          <BarChart3 className="size-4 text-emerald-500" />
+          <span>20 年跨資產 ETF 策略與基準對照 (扣除換手成本 10/50 bps)</span>
         </h4>
         <table className="w-full text-left text-xs sm:text-sm border-collapse">
           <thead>
@@ -91,7 +93,9 @@ export function MacroFactorRegimeCard({
       {/* Institutional Insights */}
       {data.institutionalInsights && (
         <div className="rounded-xl border border-slate-200/80 bg-slate-50/80 dark:bg-zinc-900/60 dark:border-slate-800 p-4 flex items-start gap-3 text-xs sm:text-sm">
-          <span className="text-lg">💡</span>
+          <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shrink-0">
+            <Sparkles className="size-4" />
+          </div>
           <div>
             <span className="font-bold text-slate-900 dark:text-slate-100">
               機構實證結論：

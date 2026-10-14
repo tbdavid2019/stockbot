@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm'
 
 import { MemoizedReactMarkdown } from '@/components/markdown'
 import { getStoredApiKeyConfig } from '@/lib/hooks/use-user-api-key'
+import { MessageSquare, Zap, FileText, BarChart3 } from 'lucide-react'
 
 interface AnalystSignal {
   signal: 'bullish' | 'bearish' | 'neutral'
@@ -713,8 +714,9 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
           {roundTable.discussion_summary && (
             <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
-              <span className="font-bold text-blue-900 dark:text-blue-300">
-                💬 辯論焦點：
+              <span className="font-bold text-blue-900 dark:text-blue-300 inline-flex items-center gap-1.5 mr-1">
+                <MessageSquare className="size-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>辯論焦點：</span>
               </span>
               {roundTable.discussion_summary}
             </div>
@@ -722,18 +724,20 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
           {roundTable.dissenting_opinions && (
             <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
-              <span className="font-bold text-amber-800 dark:text-amber-400">
-                ⚡ 分歧觀點：
+              <span className="font-bold text-amber-800 dark:text-amber-400 inline-flex items-center gap-1.5 mr-1">
+                <Zap className="size-3.5 text-amber-500 shrink-0" />
+                <span>分歧觀點：</span>
               </span>
               {roundTable.dissenting_opinions}
             </div>
           )}
 
-          {/* 📜 大師辯論交鋒過程 */}
+          {/* 大師辯論交鋒過程 */}
           {showTranscript && transcriptTurns.length > 0 && (
             <div className="mt-3.5 pt-3.5 border-t border-blue-200/60 dark:border-blue-800/40 space-y-2.5">
-              <div className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
-                📜 投資大師辯論對話過程：
+              <div className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <FileText className="size-4 text-slate-500 shrink-0" />
+                <span>投資大師辯論對話過程：</span>
               </div>
               <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
                 {transcriptTurns.map((turn, idx) => {
@@ -759,10 +763,11 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         </div>
       )}
 
-      {/* 📊 各分析師觀點信號 */}
+      {/* 各分析師觀點信號 */}
       <div className="space-y-3">
-        <h4 className="font-bold text-sm sm:text-base text-slate-800 dark:text-slate-200">
-          📊 各大師與專業分析師信號
+        <h4 className="font-bold text-sm sm:text-base text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+          <BarChart3 className="size-4 text-primary shrink-0" />
+          <span>各大師與專業分析師信號</span>
         </h4>
         <div className="grid gap-3 sm:grid-cols-2">
           {Object.entries(result.analyst_signals || {}).map(

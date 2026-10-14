@@ -32,6 +32,7 @@ import {
   IconClose,
   IconCopy
 } from '@/components/ui/icons'
+import { TrendingUp } from 'lucide-react'
 import {
   ChatSession,
   getChatSessions,
@@ -285,7 +286,7 @@ export function ChatHistorySheet({
         <SheetHeader className="border-b px-4 py-3 text-left">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl">📈</span>
+              <TrendingUp className="size-5 text-primary" />
               <SheetTitle className="text-base font-bold">
                 對話歷史紀錄
               </SheetTitle>

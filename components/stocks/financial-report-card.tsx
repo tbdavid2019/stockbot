@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { IconCopy, IconCheck } from '@/components/ui/icons'
+import { FileText, BarChart3 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface FinancialReportCardProps {
@@ -43,8 +44,8 @@ export function FinancialReportCard({
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm text-xl">
-            {isPdf ? '📑' : '📊'}
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+            {isPdf ? <FileText className="size-5" /> : <BarChart3 className="size-5" />}
           </div>
           <div className="min-w-0">
             <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 truncate">

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState, memo } from 'react'
 import { useTheme } from 'next-themes'
+import { Info } from 'lucide-react'
 
 type MarketPreset = {
   id: string
@@ -216,8 +217,9 @@ export function MarketHeatmap({}) {
           {MARKET_PRESETS.length} 個市場
         </span>
       </label>
-      <div className="text-xs leading-relaxed text-muted-foreground/80 -mt-1 px-0.5">
-        💡 提示：TradingView 原生嵌入組件目前僅提供美股與部分跨國板塊，未開放台股類股資料源；若需台股大盤點位與法人動態，請直接詢問「今天台股表現如何」或「台股市場概況」。
+      <div className="flex items-center gap-1.5 text-xs leading-relaxed text-muted-foreground/80 -mt-1 px-0.5">
+        <Info className="size-3.5 shrink-0 text-amber-500" />
+        <span>提示：TradingView 原生嵌入組件目前僅提供美股與部分跨國板塊，未開放台股類股資料源；若需台股大盤點位與法人動態，請直接詢問「今天台股表現如何」或「台股市場概況」。</span>
       </div>
 
       <div

@@ -1,4 +1,5 @@
 import type { InstitutionalFlowResult } from '@/lib/quant/institutional'
+import { Sparkles } from 'lucide-react'
 
 interface Props {
   symbol: string
@@ -161,7 +162,10 @@ export function InstitutionalFlowCard({ symbol, data }: Props) {
 
       {/* Signal Briefing */}
       <div className="mt-4 rounded-xl border border-blue-100/80 bg-blue-50/50 p-3.5 sm:p-4 text-xs sm:text-sm leading-relaxed text-blue-950 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-blue-200">
-        <span className="font-bold text-blue-900 dark:text-blue-100">💡 籌碼解讀：</span>
+        <span className="font-bold text-blue-900 dark:text-blue-100 inline-flex items-center gap-1.5 mr-1">
+          <Sparkles className="size-4 text-amber-500 inline shrink-0" />
+          <span>籌碼解讀：</span>
+        </span>
         {data.signals.description}
       </div>
 
