@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import http from 'node:http'
+import https from 'node:https'
 
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
@@ -7,23 +8,39 @@ import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
-// API 設定 - 分開 host 和 port 避免解析問題
-const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || 'dns.glsoft.ai'
-const AI_HEDGE_FUND_PORT = process.env.AI_HEDGE_FUND_PORT || '6000'
-const AI_HEDGE_FUND_FALLBACK_HOST = process.env.AI_HEDGE_FUND_FALLBACK_HOST || ''
+// API 設定 - 優先使用正式 HTTPS 域名，備援節點使用 dns.glsoft.ai:6000
+const AI_HEDGE_FUND_HOST = process.env.AI_HEDGE_FUND_HOST || 'hedgeapi.afpicapital.com'
+const AI_HEDGE_FUND_PORT = process.env.AI_HEDGE_FUND_PORT || (AI_HEDGE_FUND_HOST.includes('afpicapital.com') ? '443' : '6000')
+const AI_HEDGE_FUND_FALLBACK_HOST = process.env.AI_HEDGE_FUND_FALLBACK_HOST || 'dns.glsoft.ai'
+const AI_HEDGE_FUND_FALLBACK_PORT = process.env.AI_HEDGE_FUND_FALLBACK_PORT || '6000'
 
-// 預設核心分析師團隊 (涵蓋傳奇投資大師與全方位分析模型)
+interface TargetServer {
+  host: string
+  port: string | number
+}
+
+const TARGETS_TO_TRY: TargetServer[] = [
+  { host: AI_HEDGE_FUND_HOST, port: AI_HEDGE_FUND_PORT },
+  { host: AI_HEDGE_FUND_FALLBACK_HOST, port: AI_HEDGE_FUND_FALLBACK_PORT }
+].filter(t => Boolean(t.host))
+
+// 預設核心分析師團隊 (涵蓋全部 15 位傳奇投資大師與全方位量化分析模型)
 const DEFAULT_ANALYSTS = [
   'warren_buffett',
   'cathie_wood',
   'michael_burry',
   'technical_analyst',
   'valuation_analyst',
-  'fundamentals_analyst',
+  'sentiment_analyst',
+  'wsb',
+  'nancy_pelosi',
   'charlie_munger',
+  'ben_graham',
   'peter_lynch',
   'bill_ackman',
-  'wsb'
+  'fundamentals_analyst',
+  'phil_fisher',
+  'stanley_druckenmiller'
 ]
 
 function parsePythonJson(text: string): any {
@@ -51,9 +68,14 @@ function requestHedgeFundApi(
       headers['Content-Length'] = String(Buffer.byteLength(postData))
     }
 
+    const cleanHost = host.replace(/^https?:\/\//i, '').replace(/:\d+$/, '')
+    const portNum = Number(port)
+    const isHttps = portNum === 443 || host.startsWith('https://') || cleanHost.includes('afpicapital.com')
+    const client = isHttps ? https : http
+
     const options = {
-      hostname: host,
-      port: Number(port),
+      hostname: cleanHost,
+      port: portNum,
       path,
       method,
       headers,
@@ -118,15 +140,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: '無效或缺少 taskId 參數格式' }, { status: 400 })
     }
 
-    const hostsToTry = [AI_HEDGE_FUND_HOST, AI_HEDGE_FUND_FALLBACK_HOST].filter(Boolean)
     let taskData = null
     let lastError: any = null
 
-    for (const host of hostsToTry) {
+    for (const target of TARGETS_TO_TRY) {
       try {
         taskData = await requestHedgeFundApi(
-          host,
-          AI_HEDGE_FUND_PORT,
+          target.host,
+          target.port,
           `/api/task/${encodeURIComponent(taskId)}`,
           'GET',
           null,
@@ -235,27 +256,25 @@ export async function POST(request: NextRequest) {
     let data = null
     let lastError: any = null
 
-    const hostsToTry = [AI_HEDGE_FUND_HOST, AI_HEDGE_FUND_FALLBACK_HOST].filter(Boolean)
-
     // 優先嘗試異步端點 /api/analysis/async，若後端尚未支援則自動降級為同步
-    for (const host of hostsToTry) {
+    for (const target of TARGETS_TO_TRY) {
       try {
         if (isAsync) {
           try {
-            data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, '/api/analysis/async', 'POST', requestPayload, 15000)
+            data = await requestHedgeFundApi(target.host, target.port, '/api/analysis/async', 'POST', requestPayload, 15000)
             if (data) break
           } catch {
             // 後端若未重啟或不支援 async 端點，嘗試直接向 /api/analysis 傳送 async: true
-            data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, '/api/analysis', 'POST', requestPayload, 55000)
+            data = await requestHedgeFundApi(target.host, target.port, '/api/analysis', 'POST', requestPayload, 55000)
             if (data) break
           }
         } else {
-          data = await requestHedgeFundApi(host, AI_HEDGE_FUND_PORT, '/api/analysis', 'POST', requestPayload, 55000)
+          data = await requestHedgeFundApi(target.host, target.port, '/api/analysis', 'POST', requestPayload, 55000)
           if (data) break
         }
       } catch (err: any) {
         lastError = err
-        console.warn(`⚠️ Failed to connect to ${host}:`, err.message)
+        console.warn(`⚠️ Failed to connect to ${target.host}:${target.port}:`, err.message)
       }
     }
 

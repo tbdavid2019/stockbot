@@ -82,6 +82,8 @@ const ANALYST_DISPLAY_NAMES: { [key: string]: string } = {
   valuation_agent: '💰 估值分析師',
   valuation_analyst: '💰 估值分析師',
   valuation: '💰 估值分析師',
+  stanley_druckenmiller_agent: '🦅 史丹利·卓肯米勒 (拐點成長)',
+  stanley_druckenmiller: '🦅 史丹利·卓肯米勒 (拐點成長)',
   nancy_pelosi_agent: '🏛️ 國會交易追蹤',
   nancy_pelosi: '🏛️ 國會交易追蹤',
   wsb_agent: '🎰 WSB 散戶動能',
@@ -106,6 +108,8 @@ const SPEAKER_ICONS: { [key: string]: string } = {
   'Bill Ackman': '💼 比爾·艾克曼',
   'Peter Lynch': '📈 彼得·林區',
   'Ben Graham': '📚 班傑明·葛拉漢',
+  'Phil Fisher': '🔬 菲利普·費雪',
+  'Stanley Druckenmiller': '🦅 史丹利·卓肯米勒',
   'Nancy Pelosi': '🏛️ 國會代表'
 }
 
@@ -257,6 +261,9 @@ function formatReasoning(
         case 'phil_fisher':
         case 'phil_fisher_agent':
           return '針對研發實力、產業成長前景與經營管理品質進行質化調查，偏好具備持續高於同業成長潛力的標的。'
+        case 'stanley_druckenmiller':
+        case 'stanley_druckenmiller_agent':
+          return '鎖定基本面營收與營業利益率的二階正向拐點，評估市場預期落差與估值差距，捕捉非對稱勝率與嚴密下行保護。'
         case 'nancy_pelosi':
         case 'nancy_pelosi_agent':
           return '持續追蹤重大政策立法、政府採購預算與產業補貼動向，評估法規環境對該板塊龍頭的結構性激勵。'
@@ -414,11 +421,11 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       }
 
       // -------------------------------------------------------------
-      // 第 3 批：5 位價值與成長大師 (查理蒙格、班傑明葛拉漢、彼得林區、比爾艾克曼、基本面)
-      // 在背景進行追加，合併完成全部 13 位大師全維度分析！
+      // 第 3 批：7 位價值、成長與拐點大師 (查理蒙格、班傑明葛拉漢、彼得林區、比爾艾克曼、基本面、菲利普費雪、史丹利卓肯米勒)
+      // 在背景進行追加，合併完成全部 15 位大師全維度分析！
       // -------------------------------------------------------------
       setBatchStage(3)
-      setBatchStatusText('正在追加第 3 批：蒙格、葛拉漢、彼得林區與綜合研判...')
+      setBatchStatusText('正在追加第 3 批：蒙格、葛拉漢、彼得林區、費雪、卓肯米勒與綜合研判...')
 
       try {
         const batch3Analysts = [
@@ -426,7 +433,9 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           'ben_graham',
           'peter_lynch',
           'bill_ackman',
-          'fundamentals_analyst'
+          'fundamentals_analyst',
+          'phil_fisher',
+          'stanley_druckenmiller'
         ]
         const data3 = await executeBatchRequest(batch3Analysts, false)
 
@@ -449,7 +458,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
 
       setBatchStage(4)
       setBatchLoading(false)
-      setBatchStatusText('13 位大師全維度分析已完成')
+      setBatchStatusText('15 位大師全維度分析已完成')
     } catch (err) {
       setError(err instanceof Error ? err.message : '分析失敗，請稍後再試')
       setLoading(false)
