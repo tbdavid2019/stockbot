@@ -245,7 +245,9 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 
 ### 品牌 Logo
 
-目前採用純橘色底、白色「888／Stock Bot」的 `public/stockbot-logo-v3.png`；網站使用 256px 的 `public/stockbot-logo.png`。頁首、聊天頭像、favicon 與 PWA 圖示統一使用此版本，圖示 URL 帶 `v=3` 更新快取。
+目前採用純橘色底、白色「888／Stock Bot」的 `public/stockbot-logo-v3.png`；網站使用 256px 的 `public/stockbot-logo.png`。頁首、聊天頭像、favicon 與 PWA 圖示統一使用此版本。favicon metadata 直接指向 `stockbot-logo.png?v=4`，避免瀏覽器持續優先快取舊 `favicon.ico`。
+
+TradingView ticker 的外部 iframe 在載入期間會產生內建線條 skeleton；`components/tradingview/ticker-tape.tsx` 保持容器高度但在 iframe ready 前隱藏內容，避免首次載入閃出黑／灰線條。
 
 ### BYOK 即時模型清單與 Gemini Latest
 
