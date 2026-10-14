@@ -2933,7 +2933,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
                 </BotCard>
               )
 
-              const resolvedSym = symbol ? resolveStockSymbol(symbol) : undefined
+              const resolvedSym = symbol ? formatStockSymbol(symbol) : undefined
               const data = await fetchEarningsCalls({
                 symbol: resolvedSym,
                 market: market || 'ALL'
