@@ -4,6 +4,7 @@ import * as React from 'react'
 import type { EarningsCallDashboardResult, EarningsCallItem } from '@/lib/quant/earnings-call'
 import { computeConferenceStatus, formatDualTimezone } from '@/lib/quant/earnings-call'
 import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
+import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import {
   Search,
   X,
@@ -43,6 +44,7 @@ const DEFAULT_CARD_DATA: EarningsCallDashboardResult = {
 }
 
 export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult }) {
+  const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const safeData = data || DEFAULT_CARD_DATA
   const { config: userKeyConfig } = useUserApiKey()
   const [marketFilter, setMarketFilter] = React.useState<'ALL' | 'TW' | 'US'>(safeData.marketFilter || 'ALL')
@@ -165,11 +167,11 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
       try {
         json = await res.json()
       } catch {
-        throw new Error(`伺服器回應異常 (HTTP ${res.status})`)
+        throw new Error(lang === 'zh' ? `伺服器回應異常 (HTTP ${res.status})` : `Server response error (HTTP ${res.status})`)
       }
 
       if (!res.ok || !json?.success) {
-        throw new Error(json?.error || '解析法說會簡報失敗')
+        throw new Error(json?.error || (lang === 'zh' ? '解析法說會簡報失敗' : 'Failed to parse earnings presentation deck'))
       }
 
       setAnalyses(prev => ({
@@ -185,7 +187,7 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
         ...prev,
         [item.id]: {
           loading: false,
-          error: err?.message || '簡報解析連線中斷，請重試或點擊下載連結查閱。',
+          error: err?.message || (lang === 'zh' ? '簡報解析連線中斷，請重試或點擊下載連結查閱。' : 'Deck parsing connection interrupted. Please retry or click the download link.'),
           isOpen: true
         }
       }))
@@ -200,28 +202,40 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
               <Radio className="size-3" />
-              <span>法人說明會 & Earnings Calls</span>
+              <span>{lang === 'zh' ? '法人說明會 & Earnings Calls' : 'Corporate Earnings Calls & Webcasts'}</span>
             </span>
             <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-mono border border-border/60">
-              基準日期: {safeData.asOfDate}
+              {lang === 'zh' ? `基準日期: ${safeData.asOfDate}` : `As of: ${safeData.asOfDate}`}
             </span>
             {safeData.symbol && (
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                目標標的: {safeData.symbol}
+                {lang === 'zh' ? `目標標的: ${safeData.symbol}` : `Target: ${safeData.symbol}`}
               </span>
             )}
           </div>
           <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <span>{safeData.companyName ? `${safeData.companyName} 法說會時程與指引` : '全球法人說明會與業績展望一覽'}</span>
+            <span>
+              {safeData.companyName
+                ? lang === 'zh'
+                  ? `${safeData.companyName} 法說會時程與指引`
+                  : `${safeData.companyName} Earnings Call & Guidance`
+                : lang === 'zh'
+                  ? '全球法人說明會與業績展望一覽'
+                  : 'Corporate Earnings Calls & Outlook'}
+            </span>
           </h3>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
-            整合公開資訊觀測站 (MOPS)、TWSE/TPEX 官方 Webcast 與美股 Earnings Call，提供法說會日程、影音回放、簡報下載與 2MD AI 指引萃取。
+            {lang === 'zh'
+              ? '整合公開資訊觀測站 (MOPS)、TWSE/TPEX 官方 Webcast 與美股 Earnings Call，提供法說會日程、影音回放、簡報下載與 2MD AI 指引萃取。'
+              : 'Aggregating MOPS filings, TWSE/TPEX official webcasts, and US corporate earnings calls. Providing event schedules, webcast replays, slide deck downloads, and 2MD AI guidance extraction.'}
           </p>
         </div>
 
         {/* Source attribution */}
         <div className="rounded-xl border border-border/80 p-2.5 text-xs shrink-0 bg-muted/30">
-          <div className="text-muted-foreground font-medium">數據渠道</div>
+          <div className="text-muted-foreground font-medium">
+            {lang === 'zh' ? '數據渠道' : 'Data Sources'}
+          </div>
           <div className="font-semibold text-foreground/80 mt-0.5">{safeData.source}</div>
         </div>
       </header>
@@ -232,7 +246,11 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           type="text"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          placeholder="搜尋股票代號或公司名稱（例如：2330、台積電、NVDA、廣達、聯發科）..."
+          placeholder={
+            lang === 'zh'
+              ? '搜尋股票代號或公司名稱（例如：2330、台積電、NVDA、廣達、聯發科）...'
+              : 'Search ticker or company name (e.g. 2330, TSMC, NVDA, AAPL)...'
+          }
           className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 pl-10 pr-9 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:border-indigo-500 focus:bg-card focus:outline-none transition-colors shadow-2xs"
         />
         <Search className="absolute left-3.5 top-3 size-4 text-muted-foreground" />
@@ -240,8 +258,8 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           <button
             type="button"
             onClick={() => setSearchQuery('')}
-            className="absolute right-3.5 top-2.5 rounded-full p-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            title="清除搜尋"
+            className="absolute right-3.5 top-2.5 rounded-full p-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+            title={lang === 'zh' ? '清除搜尋' : 'Clear search'}
           >
             <X className="size-3.5" />
           </button>
@@ -255,68 +273,82 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           <button
             type="button"
             onClick={() => setMarketFilter('ALL')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
               marketFilter === 'ALL'
                 ? 'bg-card shadow-xs text-foreground font-bold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Globe className="size-3.5" />
-            <span>全部市場</span>
+            <span>{lang === 'zh' ? '全部市場' : 'All Markets'}</span>
           </button>
           <button
             type="button"
             onClick={() => setMarketFilter('TW')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
               marketFilter === 'TW'
                 ? 'bg-card shadow-xs text-foreground font-bold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Building2 className="size-3.5" />
-            <span>台灣市場 (MOPS/TWSE)</span>
+            <span>{lang === 'zh' ? '台灣市場 (MOPS/TWSE)' : 'Taiwan (TWSE/TPEX)'}</span>
           </button>
           <button
             type="button"
             onClick={() => setMarketFilter('US')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
               marketFilter === 'US'
                 ? 'bg-card shadow-xs text-foreground font-bold'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Landmark className="size-3.5" />
-            <span>美國市場 (Earnings Calls)</span>
+            <span>{lang === 'zh' ? '美國市場 (Earnings Calls)' : 'US (Earnings Calls)'}</span>
           </button>
         </div>
 
         {/* Timezone Mode Selector */}
         <div className="inline-flex items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border/80 text-xs shadow-2xs">
           <Clock className="size-3.5 text-muted-foreground ml-1.5 shrink-0" />
-          <span className="text-muted-foreground mr-1 hidden sm:inline">時區顯示：</span>
+          <span className="text-muted-foreground mr-1 hidden sm:inline">
+            {lang === 'zh' ? '時區顯示：' : 'Timezone:'}
+          </span>
           <button
             type="button"
             onClick={() => setTimezoneMode('local')}
-            className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+            className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
               timezoneMode === 'local'
                 ? 'bg-card shadow-xs text-foreground font-bold border border-border/80'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
-            title={`以您的所在地時區 (${userTimezone}) 顯示`}
+            title={
+              lang === 'zh'
+                ? `以您的所在地時區 (${userTimezone}) 顯示`
+                : `Display in your local timezone (${userTimezone})`
+            }
           >
-            <span>當地時間 ({userTimezone === 'Asia/Taipei' ? '台北 UTC+8' : userTimezone})</span>
+            <span>
+              {lang === 'zh'
+                ? `當地時間 (${userTimezone === 'Asia/Taipei' ? '台北 UTC+8' : userTimezone})`
+                : `Local (${userTimezone === 'Asia/Taipei' ? 'Taipei UTC+8' : userTimezone})`}
+            </span>
           </button>
           <button
             type="button"
             onClick={() => setTimezoneMode('market')}
-            className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+            className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
               timezoneMode === 'market'
                 ? 'bg-card shadow-xs text-foreground font-bold border border-border/80'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
-            title="以美東時區 (ET) 或台北時區 (CST) 原始開會時間顯示"
+            title={
+              lang === 'zh'
+                ? '以美東時區 (ET) 或台北時區 (CST) 原始開會時間顯示'
+                : 'Display in original market time (ET or Taipei CST)'
+            }
           >
-            <span>市場原始 (美東/台北)</span>
+            <span>{lang === 'zh' ? '市場原始 (美東/台北)' : 'Market Time (ET/Taipei)'}</span>
           </button>
         </div>
 
@@ -325,49 +357,49 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
-            className={`px-3 py-1 rounded-full border transition-all ${
+            className={`px-3 py-1 rounded-full border transition-all cursor-pointer ${
               statusFilter === 'all'
                 ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold shadow-2xs'
                 : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
-            全部 ({counts.all})
+            {lang === 'zh' ? '全部' : 'All'} ({counts.all})
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter('live')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all cursor-pointer ${
               statusFilter === 'live'
                 ? 'border-rose-600 bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 font-bold shadow-2xs'
                 : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
             <span className="size-1.5 rounded-full bg-rose-500" />
-            <span>今日/進行中 ({counts.live})</span>
+            <span>{lang === 'zh' ? '今日/進行中' : 'Live & Today'} ({counts.live})</span>
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter('upcoming')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all cursor-pointer ${
               statusFilter === 'upcoming'
                 ? 'border-sky-600 bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 font-bold shadow-2xs'
                 : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
             <span className="size-1.5 rounded-full bg-sky-500" />
-            <span>即將舉行 ({counts.upcoming})</span>
+            <span>{lang === 'zh' ? '即將舉行' : 'Upcoming'} ({counts.upcoming})</span>
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter('replay')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all cursor-pointer ${
               statusFilter === 'replay'
                 ? 'border-foreground/40 bg-muted text-foreground font-bold shadow-2xs'
                 : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
             <span className="size-1.5 rounded-full bg-slate-400" />
-            <span>歷史回放 ({counts.replay})</span>
+            <span>{lang === 'zh' ? '歷史回放' : 'Past Replays'} ({counts.replay})</span>
           </button>
         </div>
       </div>
@@ -375,7 +407,9 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
       {/* Conference Cards List */}
       {filteredItems.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center text-sm text-muted-foreground">
-          查無符合篩選條件的法人說明會或財報電話會議記錄。
+          {lang === 'zh'
+            ? '查無符合篩選條件的法人說明會或財報電話會議記錄。'
+            : 'No earnings calls found matching the current filters.'}
         </div>
       ) : (
         <div className="space-y-4">
@@ -401,7 +435,7 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                       {item.companyName}
                     </h4>
                     {item.financialPeriod && (
-                      <span className="text-xs text-muted-foreground font-medium">
+                      <span className="text-xs text-muted-foreground font-medium font-mono">
                         · {item.financialPeriod}
                       </span>
                     )}
@@ -415,25 +449,25 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
                           <span className="relative inline-flex size-2 rounded-full bg-rose-500"></span>
                         </span>
-                        <span>會議進行中 (Live)</span>
+                        <span>{lang === 'zh' ? '會議進行中 (Live)' : 'Live Webcast'}</span>
                       </span>
                     )}
                     {isToday && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
                         <span className="size-2 rounded-full bg-amber-500" />
-                        <span>今日召開</span>
+                        <span>{lang === 'zh' ? '今日召開' : 'Today'}</span>
                       </span>
                     )}
                     {isUpcoming && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/30">
                         <span className="size-2 rounded-full bg-sky-500" />
-                        <span>即將舉行</span>
+                        <span>{lang === 'zh' ? '即將舉行' : 'Upcoming'}</span>
                       </span>
                     )}
                     {!isLive && !isToday && !isUpcoming && (
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border/60">
                         <span className="size-2 rounded-full bg-slate-400" />
-                        <span>會議已結束 (可查回放)</span>
+                        <span>{lang === 'zh' ? '會議已結束 (可查回放)' : 'Completed (Replay)'}</span>
                       </span>
                     )}
                   </div>
@@ -448,7 +482,9 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-muted-foreground mb-3 bg-card p-3 rounded-xl border border-border/80">
                   <div className="flex flex-col gap-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-medium text-foreground/80 shrink-0">開會時間：</span>
+                      <span className="font-medium text-foreground/80 shrink-0">
+                        {lang === 'zh' ? '開會時間：' : 'Time: '}
+                      </span>
                       <span className="font-mono font-bold text-foreground text-sm">
                         {timezoneMode === 'local'
                           ? `${dualTz.localDate} ${dualTz.localTime}`
@@ -464,38 +500,54 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                       {timezoneMode === 'local' ? (
                         item.timezone === 'America/New_York' ? (
                           <>
-                            <span className="text-muted-foreground/80">美東原始：</span>
-                            <span className="font-mono font-medium text-foreground/80">{dualTz.marketDate} {dualTz.marketTime} ET</span>
+                            <span className="text-muted-foreground/80">
+                              {lang === 'zh' ? '美東原始：' : 'Market ET: '}
+                            </span>
+                            <span className="font-mono font-medium text-foreground/80">
+                              {dualTz.marketDate} {dualTz.marketTime} ET
+                            </span>
                             {dualTz.isCrossDay && (
                               <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold border border-amber-500/30">
-                                跨日{dualTz.dayDiffLabel}
+                                {lang === 'zh' ? `跨日${dualTz.dayDiffLabel}` : `Next Day ${dualTz.dayDiffLabel}`}
                               </span>
                             )}
                           </>
                         ) : (
-                          <span className="text-muted-foreground/80">台灣市場會議 (無時差)</span>
+                          <span className="text-muted-foreground/80">
+                            {lang === 'zh' ? '台灣市場會議 (無時差)' : 'Taiwan Market (No Time Diff)'}
+                          </span>
                         )
                       ) : (
                         item.timezone === 'America/New_York' ? (
                           <>
-                            <span className="text-muted-foreground/80">換算當地：</span>
-                            <span className="font-mono font-medium text-foreground/80">{dualTz.localDate} {dualTz.localTime} ({dualTz.localTzName})</span>
+                            <span className="text-muted-foreground/80">
+                              {lang === 'zh' ? '換算當地：' : 'Local: '}
+                            </span>
+                            <span className="font-mono font-medium text-foreground/80">
+                              {dualTz.localDate} {dualTz.localTime} ({dualTz.localTzName})
+                            </span>
                             {dualTz.isCrossDay && (
                               <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold border border-amber-500/30">
-                                跨日{dualTz.dayDiffLabel}
+                                {lang === 'zh' ? `跨日${dualTz.dayDiffLabel}` : `Next Day ${dualTz.dayDiffLabel}`}
                               </span>
                             )}
                           </>
                         ) : (
-                          <span className="text-muted-foreground/80">台灣市場會議 (無時差)</span>
+                          <span className="text-muted-foreground/80">
+                            {lang === 'zh' ? '台灣市場會議 (無時差)' : 'Taiwan Market (No Time Diff)'}
+                          </span>
                         )
                       )}
                     </div>
                   </div>
 
                   <div className="flex items-center gap-1.5 truncate sm:self-center">
-                    <span className="font-medium text-foreground/80 shrink-0">形式/地點：</span>
-                    <span className="truncate text-foreground/90">{item.locationOrPlatform || '線上會議 / Webcast'}</span>
+                    <span className="font-medium text-foreground/80 shrink-0">
+                      {lang === 'zh' ? '形式/地點：' : 'Venue/Format: '}
+                    </span>
+                    <span className="truncate text-foreground/90">
+                      {item.locationOrPlatform || (lang === 'zh' ? '線上會議 / Webcast' : 'Online Webcast')}
+                    </span>
                   </div>
                 </div>
 
@@ -504,23 +556,29 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                   <div className="mb-3 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-3.5 text-xs sm:text-sm space-y-2">
                     <div className="font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 text-sm">
                       <Compass className="size-4" />
-                      <span>官方指引重點摘要</span>
+                      <span>{lang === 'zh' ? '官方指引重點摘要' : 'Management Guidance Highlights'}</span>
                     </div>
                     {item.guidanceHighlights.revenueOutlook && (
                       <div className="text-foreground/90 leading-snug">
-                        <strong className="text-foreground">營收展望：</strong>
+                        <strong className="text-foreground">
+                          {lang === 'zh' ? '營收展望：' : 'Revenue Outlook: '}
+                        </strong>
                         {item.guidanceHighlights.revenueOutlook}
                       </div>
                     )}
                     {item.guidanceHighlights.marginOutlook && (
                       <div className="text-foreground/90 leading-snug">
-                        <strong className="text-foreground">毛利展望：</strong>
+                        <strong className="text-foreground">
+                          {lang === 'zh' ? '毛利展望：' : 'Margin Outlook: '}
+                        </strong>
                         {item.guidanceHighlights.marginOutlook}
                       </div>
                     )}
                     {item.guidanceHighlights.capexOutlook && (
                       <div className="text-foreground/90 leading-snug">
-                        <strong className="text-foreground">資本支出：</strong>
+                        <strong className="text-foreground">
+                          {lang === 'zh' ? '資本支出：' : 'CapEx: '}
+                        </strong>
                         {item.guidanceHighlights.capexOutlook}
                       </div>
                     )}
@@ -547,22 +605,22 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                       {isLive ? (
                         <>
                           <Radio className="size-3.5" />
-                          <span>觀看線上直播</span>
+                          <span>{lang === 'zh' ? '觀看線上直播' : 'Watch Live Webcast'}</span>
                         </>
                       ) : isToday ? (
                         <>
                           <Play className="size-3.5" />
-                          <span>今日會議直播</span>
+                          <span>{lang === 'zh' ? '今日會議直播' : 'Join Live Stream'}</span>
                         </>
                       ) : isUpcoming ? (
                         <>
                           <ExternalLink className="size-3.5" />
-                          <span>官方會議直播/議程</span>
+                          <span>{lang === 'zh' ? '官方會議直播/議程' : 'Official Webcast / Agenda'}</span>
                         </>
                       ) : (
                         <>
                           <History className="size-3.5" />
-                          <span>歷史影音回放</span>
+                          <span>{lang === 'zh' ? '歷史影音回放' : 'Replay Recording'}</span>
                         </>
                       )}
                     </a>
@@ -577,14 +635,14 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-card text-foreground hover:bg-muted border border-border transition-colors shadow-2xs"
                       >
                         <Download className="size-3.5" />
-                        <span>下載簡報 (PDF)</span>
+                        <span>{lang === 'zh' ? '下載簡報 (PDF)' : 'Deck (PDF)'}</span>
                       </a>
 
                       <button
                         type="button"
                         onClick={() => handleAnalyzeDeck(item)}
                         disabled={analysis?.loading}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-xs transition-all disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-xs transition-all disabled:opacity-50 cursor-pointer"
                       >
                         {analysis?.loading ? (
                           <>
@@ -592,12 +650,16 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span>2MD 解析簡報中...</span>
+                            <span>{lang === 'zh' ? '2MD 解析簡報中...' : 'Analyzing Deck (2MD)...'}</span>
                           </>
                         ) : (
                           <>
                             <Sparkles className="size-3.5" />
-                            <span>{analysis?.isOpen ? '收起 AI 指引' : 'AI 深度解析簡報'}</span>
+                            <span>
+                              {analysis?.isOpen
+                                ? lang === 'zh' ? '收起 AI 指引' : 'Hide Guidance'
+                                : lang === 'zh' ? 'AI 深度解析簡報' : 'AI Guidance Summary'}
+                            </span>
                           </>
                         )}
                       </button>
@@ -605,17 +667,25 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                   ) : (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-muted/60 border border-border/60">
                       <FileText className="size-3.5" />
-                      <span>{isUpcoming ? '簡報於法說會當日公布' : '簡報請洽官網 IR 專區'}</span>
+                      <span>
+                        {isUpcoming
+                          ? lang === 'zh' ? '簡報於法說會當日公布' : 'Deck releases on event day'
+                          : lang === 'zh' ? '簡報請洽官網 IR 專區' : 'Check Corporate IR for deck'}
+                      </span>
                     </span>
                   )}
 
                   <a
-                    href={`/?q=${encodeURIComponent(`${item.companyName} (${item.symbol}) 最新法說會重點與投資展望分析`)}`}
+                    href={`/?q=${encodeURIComponent(
+                      lang === 'zh'
+                        ? `${item.companyName} (${item.symbol}) 最新法說會重點與投資展望分析`
+                        : `Analyze latest earnings call and investment outlook for ${item.companyName} (${item.symbol})`
+                    )}`}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:text-indigo-300 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800/80 transition-colors shadow-2xs"
-                    title="在對話中分析此法說會與投資價值"
+                    title={lang === 'zh' ? '在對話中分析此法說會與投資價值' : 'Analyze this earnings call in StockBot chat'}
                   >
                     <MessageSquare className="size-3.5" />
-                    <span>在 StockBot 分析</span>
+                    <span>{lang === 'zh' ? '在 StockBot 分析' : 'Ask StockBot'}</span>
                   </a>
 
                   {(item.market === 'TWSE' || item.market === 'TPEX') && (
@@ -624,9 +694,9 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors ml-auto"
-                      title="公開資訊觀測站 (MOPS) 官方日程公告"
+                      title={lang === 'zh' ? '公開資訊觀測站 (MOPS) 官方日程公告' : 'MOPS Official Calendar Notice'}
                     >
-                      <span>MOPS 官方公告</span>
+                      <span>{lang === 'zh' ? 'MOPS 官方公告' : 'MOPS Filing'}</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="10" y1="14" y2="3"/></svg>
                     </a>
                   )}
@@ -639,8 +709,9 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                       className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors ${
                         item.market === 'TWSE' || item.market === 'TPEX' ? '' : 'ml-auto'
                       }`}
+                      title={lang === 'zh' ? '公司官方投資人關係網站' : 'Official Investor Relations Website'}
                     >
-                      <span>官網 IR 專區</span>
+                      <span>{lang === 'zh' ? '官網 IR 專區' : 'Corporate IR'}</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="10" y1="14" y2="3"/></svg>
                     </a>
                   )}
@@ -655,7 +726,11 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span>正在透過 2MD AnyDoc 秒級解析 PDF 簡報並由 AI 萃取指引...</span>
+                        <span>
+                          {lang === 'zh'
+                            ? '正在透過 2MD AnyDoc 秒級解析 PDF 簡報並由 AI 萃取指引...'
+                            : 'Parsing PDF presentation deck with 2MD AnyDoc and extracting guidance with AI...'}
+                        </span>
                       </div>
                     )}
 
@@ -671,10 +746,14 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                         <div className="flex items-center justify-between mb-2 pb-2 border-b border-indigo-100 dark:border-indigo-900/40">
                           <span className="font-bold text-indigo-700 dark:text-indigo-400 flex items-center gap-1.5 text-sm sm:text-base">
                             <Sparkles className="size-4 text-amber-500 shrink-0" />
-                            <span>2MD AI 法說會簡報深度萃取報告</span>
+                            <span>
+                              {lang === 'zh'
+                                ? '2MD AI 法說會簡報深度萃取報告'
+                                : '2MD AI Earnings Deck Intelligence Report'}
+                            </span>
                           </span>
                           <span className="text-xs text-muted-foreground">
-                            由 2MD AnyDoc 原生解析
+                            {lang === 'zh' ? '由 2MD AnyDoc 原生解析' : 'Parsed by 2MD AnyDoc'}
                           </span>
                         </div>
                         <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap leading-relaxed">

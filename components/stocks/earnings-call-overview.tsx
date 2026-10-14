@@ -4,6 +4,7 @@ import * as React from 'react'
 import type { EarningsCallDashboardResult } from '@/lib/quant/earnings-call'
 import { computeConferenceStatus } from '@/lib/quant/earnings-call'
 import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
+import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import Link from 'next/link'
 import { ArrowLeft, Radio, Calendar, History } from 'lucide-react'
 
@@ -19,6 +20,7 @@ const DEFAULT_DASHBOARD: EarningsCallDashboardResult = {
 }
 
 export function EarningsCallOverview({ initialData }: { initialData?: EarningsCallDashboardResult }) {
+  const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const safeData: EarningsCallDashboardResult = initialData || DEFAULT_DASHBOARD
 
   const [userTimezone, setUserTimezone] = React.useState<string>('Asia/Taipei')
@@ -74,13 +76,15 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
             className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-xs sm:text-sm font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
           >
             <ArrowLeft className="size-3.5 text-muted-foreground" />
-            <span>返回智慧聊天室</span>
+            <span>{lang === 'zh' ? '返回智慧聊天室' : 'Back to Chat'}</span>
           </Link>
 
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Link href="/" className="hover:underline">888 StockBot</Link>
             <span>/</span>
-            <span className="font-semibold text-foreground">法人說明會總覽</span>
+            <span className="font-semibold text-foreground">
+              {lang === 'zh' ? '法人說明會總覽' : 'Earnings Calls Dashboard'}
+            </span>
           </div>
         </div>
 
@@ -92,15 +96,17 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
               <span>MOPS · TWSE · TPEX · US Earnings Calls</span>
             </span>
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground border border-border/60">
-              基準日：{safeData.asOfDate}
+              {lang === 'zh' ? `基準日：${safeData.asOfDate}` : `As of: ${safeData.asOfDate}`}
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            全球法人說明會與業績展望總覽
+            {lang === 'zh' ? '全球法人說明會與業績展望總覽' : 'Corporate Earnings Calls & Guidance Outlook'}
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-3xl">
-            即時彙整公開資訊觀測站 (MOPS) 重大訊息、台灣證券交易所 (TWSE/TPEX) 官方影音 Webcast、各公司投資人關係 (IR) 簡報與美股重大財報電話會議。支援 2MD AnyDoc 引擎秒級萃取經營層指引 (Guidance) 與資本支出展望。
+            {lang === 'zh'
+              ? '即時彙整公開資訊觀測站 (MOPS) 重大訊息、台灣證券交易所 (TWSE/TPEX) 官方影音 Webcast、各公司投資人關係 (IR) 簡報與美股重大財報電話會議。支援 2MD AnyDoc 引擎秒級萃取經營層指引 (Guidance) 與資本支出展望。'
+              : 'Live aggregation of MOPS corporate filings, TWSE/TPEX official webcasts, corporate IR decks, and US corporate earnings calls. Powered by 2MD AnyDoc for instant management guidance and CapEx extraction.'}
           </p>
 
           {/* Quick Metrics Bar */}
@@ -108,10 +114,10 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
             <div className="rounded-xl border border-border/80 bg-muted/40 p-3">
               <div className="text-muted-foreground text-xs font-medium flex items-center gap-1.5">
                 <Calendar className="size-3.5 text-muted-foreground" />
-                <span>總追蹤會議</span>
+                <span>{lang === 'zh' ? '總追蹤會議' : 'Tracked Calls'}</span>
               </div>
               <div className="text-lg sm:text-xl font-bold text-foreground mt-0.5 font-mono">
-                {totalCount} 場
+                {totalCount} {lang === 'zh' ? '場' : 'events'}
               </div>
             </div>
             <div className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3">
@@ -120,28 +126,28 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
                   <span className="relative inline-flex size-2 rounded-full bg-rose-500"></span>
                 </span>
-                <span>今日與進行中</span>
+                <span>{lang === 'zh' ? '今日與進行中' : 'Live & Today'}</span>
               </div>
               <div className="text-lg sm:text-xl font-bold text-rose-700 dark:text-rose-300 mt-0.5 font-mono">
-                {liveCount} 場
+                {liveCount} {lang === 'zh' ? '場' : 'events'}
               </div>
             </div>
             <div className="rounded-xl border border-sky-500/20 bg-sky-500/10 p-3">
               <div className="flex items-center gap-1.5 text-sky-700 dark:text-sky-400 text-xs font-semibold">
                 <span className="size-2 rounded-full bg-sky-500"></span>
-                <span>即將舉行</span>
+                <span>{lang === 'zh' ? '即將舉行' : 'Upcoming'}</span>
               </div>
               <div className="text-lg sm:text-xl font-bold text-sky-700 dark:text-sky-300 mt-0.5 font-mono">
-                {upcomingCount} 場
+                {upcomingCount} {lang === 'zh' ? '場' : 'events'}
               </div>
             </div>
             <div className="rounded-xl border border-border/80 bg-muted/40 p-3">
               <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium">
                 <History className="size-3.5 text-muted-foreground" />
-                <span>歷史回放</span>
+                <span>{lang === 'zh' ? '歷史回放' : 'Past Replays'}</span>
               </div>
               <div className="text-lg sm:text-xl font-bold text-foreground/80 mt-0.5 font-mono">
-                {replayCount} 場
+                {replayCount} {lang === 'zh' ? '場' : 'events'}
               </div>
             </div>
           </div>
