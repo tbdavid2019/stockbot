@@ -134,8 +134,7 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     title: '台積公司 2026 年第三季線上法人說明會',
     financialPeriod: '2026 Q3',
     locationOrPlatform: '線上會議 (Global Audio Webcast)',
-    webcastUrl: 'https://investor.tsmc.com/chinese/quarterly-results/webcast',
-    presentationDeckUrl: 'https://investor.tsmc.com/sites/default/files/presentations/2026-10/TSMC_3Q26_Presentation.pdf',
+    webcastUrl: 'https://investor.tsmc.com/chinese/quarterly-results',
     irUrl: 'https://investor.tsmc.com/chinese',
     guidanceHighlights: {
       revenueOutlook: '官方指引待法說會當日 (14:00) 於簡報與 Webcast 中正式公布',
@@ -162,11 +161,10 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     financialPeriod: '2026 Q3',
     locationOrPlatform: '線上會議 (Audio Webcast)',
     webcastUrl: 'https://corp.mediatek.tw/investor-relations/financial-information/quarterly-earnings',
-    presentationDeckUrl: 'https://corp.mediatek.tw/hubfs/Investor_Relations/Financial_Results/2026/3Q26_Presentation.pdf',
     irUrl: 'https://corp.mediatek.tw/investor-relations',
     guidanceHighlights: {
       revenueOutlook: '旗艦天璣晶片出貨展望待法說會正式揭曉',
-      marginOutlook: '目標毛利率區間待管理層於法說簡報中更新',
+      marginOutlook: '目標毛利率區建待管理層於法說會中更新',
       capexOutlook: '持續聚焦客製化 AI ASIC 與車用晶片研發支出',
       highlights: [
         '雲端 CSP 客戶客製化 ASIC 專案進展',
@@ -188,7 +186,6 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     financialPeriod: '2026 Q3',
     locationOrPlatform: '實體與線上同步 (台北市內湖區 / Webcast)',
     webcastUrl: 'https://www.honhai.com/zh-tw/investor-relations/investor-conferences',
-    presentationDeckUrl: 'https://www.honhai.com/uploads/investor/2026/3Q26_HonHai_Conference_Deck.pdf',
     irUrl: 'https://www.honhai.com/zh-tw/investor-relations',
     guidanceHighlights: {
       revenueOutlook: '第四季營收指引待法說會管理層正式宣布',
@@ -213,7 +210,6 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     financialPeriod: '2026 Q3',
     locationOrPlatform: '線上電話會議',
     webcastUrl: 'https://www.quantatw.com/Quanta/chinese/investor/earnings.aspx',
-    presentationDeckUrl: 'https://www.quantatw.com/Quanta/chinese/investor/download/2026Q3_Presentation.pdf',
     irUrl: 'https://www.quantatw.com/Quanta/chinese/investor',
     guidanceHighlights: {
       revenueOutlook: '伺服器出貨展望依會議簡報公佈為準',
@@ -234,7 +230,6 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     financialPeriod: '2026 Q3',
     locationOrPlatform: '全球線上直播 (Webcast)',
     webcastUrl: 'https://www.aseglobal.com/zh-tw/investor-relations/financial-information/quarterly-results',
-    presentationDeckUrl: 'https://www.aseglobal.com/files/investor/2026/3Q26_ASE_Earnings_Presentation.pdf',
     irUrl: 'https://www.aseglobal.com/zh-tw/investor-relations'
   },
   // --- 🇺🇸 美國重要科技股與指數成分股 Earnings Call ---
@@ -251,8 +246,7 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     title: 'NVIDIA Q3 FY2027 Earnings Conference Call & Webcast',
     financialPeriod: 'Q3 FY2027',
     locationOrPlatform: 'Live Audio Webcast',
-    webcastUrl: 'https://events.q4inc.com/attendee/nvidia-q3-2027',
-    presentationDeckUrl: 'https://s201.q4cdn.com/141608511/files/doc_financials/2027/q3/NVIDIA_Q3FY27_CFO_Commentary.pdf',
+    webcastUrl: 'https://investor.nvidia.com/events-and-presentations/default.aspx',
     irUrl: 'https://investor.nvidia.com',
     guidanceHighlights: {
       revenueOutlook: '官方指引待盤後財報新聞稿與 CFO Commentary 正式公布',
@@ -276,9 +270,8 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     title: 'SpaceX Q3 2026 Post-IPO Earnings Conference Call',
     financialPeriod: '2026 Q3',
     locationOrPlatform: 'Live Global Audio Stream via X & IR Webcast',
-    webcastUrl: 'https://ir.spacex.com/events/q3-2026-earnings-call',
-    presentationDeckUrl: 'https://ir.spacex.com/financials/2026/SpaceX_Q3_2026_Investor_Deck.pdf',
-    irUrl: 'https://ir.spacex.com',
+    webcastUrl: 'https://www.spacex.com',
+    irUrl: 'https://www.spacex.com',
     guidanceHighlights: {
       revenueOutlook: 'Starlink 用戶增長與商業發射年度營收指引待電話會議宣布',
       capexOutlook: '星艦 (Starship) 軌道重複使用與火星前導任務資本支出規劃',
@@ -302,7 +295,6 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     financialPeriod: 'Q4 FY2026',
     locationOrPlatform: 'Live Audio Webcast',
     webcastUrl: 'https://www.apple.com/investor/earnings-call/',
-    presentationDeckUrl: 'https://s2.q4cdn.com/470140774/files/doc_financials/2026/q4/Apple_Q4_2026_Data_Summary.pdf',
     irUrl: 'https://investor.apple.com',
     guidanceHighlights: {
       revenueOutlook: '第四季營收指引待電話會議管理層評述',
@@ -325,8 +317,7 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     title: 'Microsoft FY27 Q1 Earnings Conference Call',
     financialPeriod: 'FY27 Q1',
     locationOrPlatform: 'Live Webcast via Microsoft Teams',
-    webcastUrl: 'https://www.microsoft.com/en-us/investor/events/fy-2027/earnings-fy-2027-q1.aspx',
-    presentationDeckUrl: 'https://view.officeapps.live.com/op/view.aspx?src=https://www.microsoft.com/en-us/Investor/earnings/FY-2027-Q1/PressReleaseAndWebcast',
+    webcastUrl: 'https://www.microsoft.com/en-us/investor/events/default.aspx',
     irUrl: 'https://www.microsoft.com/en-us/investor'
   },
   {
@@ -343,7 +334,6 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     financialPeriod: '2026 Q3',
     locationOrPlatform: 'Live Audio Webcast & X Spaces',
     webcastUrl: 'https://ir.tesla.com/events-and-presentations',
-    presentationDeckUrl: 'https://digitalassets.tesla.com/tesla-contents/image/upload/IR/TSLA-Q3-2026-Update.pdf',
     irUrl: 'https://ir.tesla.com'
   }
 ]

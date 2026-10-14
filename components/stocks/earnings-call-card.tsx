@@ -398,47 +398,65 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                       href={item.webcastUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-800/80 transition-colors"
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                        isLive
+                          ? 'bg-rose-600 text-white border-rose-600 hover:bg-rose-700 shadow-2xs animate-pulse'
+                          : isToday
+                          ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-100'
+                          : isUpcoming
+                          ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-100'
+                          : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-slate-300 hover:bg-slate-200'
+                      }`}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-                      {isLive ? '觀看線上直播' : '影音/錄音回放'}
+                      {isLive
+                        ? '🔴 觀看線上直播'
+                        : isToday
+                        ? '🟡 今日會議直播'
+                        : isUpcoming
+                        ? '官方會議直播/議程 ↗'
+                        : '⚪ 歷史影音回放 ↗'}
                     </a>
                   )}
 
-                  {item.presentationDeckUrl && (
-                    <a
-                      href={item.presentationDeckUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-slate-700 transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                      下載簡報 (PDF)
-                    </a>
-                  )}
+                  {item.presentationDeckUrl ? (
+                    <>
+                      <a
+                        href={item.presentationDeckUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-slate-700 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        下載簡報 (PDF)
+                      </a>
 
-                  {item.presentationDeckUrl && (
-                    <button
-                      type="button"
-                      onClick={() => handleAnalyzeDeck(item)}
-                      disabled={analysis?.loading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-sm transition-all disabled:opacity-50"
-                    >
-                      {analysis?.loading ? (
-                        <>
-                          <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span>2MD 解析簡報中...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>⚡</span>
-                          <span>{analysis?.isOpen ? '收起 AI 指引' : 'AI 深度解析簡報'}</span>
-                        </>
-                      )}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAnalyzeDeck(item)}
+                        disabled={analysis?.loading}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-sm transition-all disabled:opacity-50"
+                      >
+                        {analysis?.loading ? (
+                          <>
+                            <svg className="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>2MD 解析簡報中...</span>
+                          </>
+                        ) : (
+                          <>
+                            <span>⚡</span>
+                            <span>{analysis?.isOpen ? '收起 AI 指引' : 'AI 深度解析簡報'}</span>
+                          </>
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-zinc-900 border border-slate-200/60 dark:border-slate-800/60">
+                      📄 {isUpcoming ? '簡報於法說會當日公布' : '簡報請洽官網 IR 專區'}
+                    </span>
                   )}
 
                   <a
@@ -450,12 +468,27 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                     <span>在 StockBot 分析</span>
                   </a>
 
+                  {(item.market === 'TWSE' || item.market === 'TPEX') && (
+                    <a
+                      href="https://mops.twse.com.tw/mops/web/t100sb02_1"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors ml-auto"
+                      title="公開資訊觀測站 (MOPS) 官方日程公告"
+                    >
+                      <span>MOPS 官方公告</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="10" y1="14" y2="3"/></svg>
+                    </a>
+                  )}
+
                   {item.irUrl && (
                     <a
                       href={item.irUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors ml-auto"
+                      className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors ${
+                        item.market === 'TWSE' || item.market === 'TPEX' ? '' : 'ml-auto'
+                      }`}
                     >
                       <span>官網 IR 專區</span>
                       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="10" y1="14" y2="3"/></svg>
