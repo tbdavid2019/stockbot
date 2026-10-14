@@ -4,6 +4,35 @@
 
 ---
 
+## [2026-10-14] - 旗艦法說會 UI 重構：BigGo 風格雙欄日曆分組、真實企業 Logo、修復當日會議判定與高密度情報列
+
+### ✨ 介面重大重構與體驗飛躍 (Major UI/UX Overhaul via Impeccable)
+
+- **📅 BigGo 風格雙欄日曆日期分組 (Two-Column Responsive Calendar Grid in `<EarningsCallCard />`)**：
+  - 捨棄原先單調冗長的縱向大卡片列表，導入依開會日期（`YYYY-MM-DD`）為核心維度的**雙欄響應式日曆網格**（桌面端 `grid-cols-2`、手機端 `grid-cols-1`）。
+  - 清楚呈現日期與星期標題（如 `2026年10月14日 星期三`），並顯著標記 `🟢 今日召開 · 19 場`、`明日召開 · 1 場`、`昨日會議 · 15 場` 與各日場次計數。
+  - 支援雙檢視切換：**📅 兩欄日曆 (2-Col Calendar)** 與 **📋 時序清單 (Timeline List)**。
+- **🏢 官方真實企業高解析 Logo 與市場彩色徽章**：
+  - 串接 BigGo Image CDN 之官方企業高解析向量/點陣 Logo（`item.logoUrl`），提供 36px 圓形微陰影頭像。
+  - 具備優雅的破圖自動隱藏與台股 (TWSE/TPEX)、美股 (US)、日股 (JPX)、韓股 (KRX) 原生彩色代號徽章備援。
+- **⚡ 高密度緊湊情報列與一鍵展開抽屜 (High-Density Rows & Expandable Intelligence Drawer)**：
+  - 每一列高度精煉：粗體代號（如 `1319.TW`、`ASML`、`2685.T`、`2340.TW`、`2707.TW`、`2330.TW`）+ 本地化公司名稱 + 會議名稱 + 當地/市場原始開會時間與跨日時差標註。
+  - 右側整合捷徑徽章與按鈕：📄 **簡報下載 (PDF)**、🎙️ **線上視訊直播/回放**、💡 **官方營運指引**、🤖 **2MD AI 簡報解析**、💬 **問 StockBot**。
+  - 點擊即平滑展開抽屜：呈現營收/毛利率/資本支出展望、雙時區對照（當地時間 vs 市場原始）、2MD AnyDoc 萃取報告與 MOPS/官網外部連結。
+- **🎨 移除笨重贅餘 Hero 區塊 ([`components/stocks/earnings-call-overview.tsx`](components/stocks/earnings-call-overview.tsx))**：
+  - 徹底清除佔用 300px 螢幕高度的 4 塊巨型數字卡片與重複標題，改為緊湊整合於頂部的即時狀態膠囊列（今日召開、即將舉行、歷史回放、總追蹤場次），首屏即可直接瀏覽 10/14 與 10/13 法說會日曆。
+
+### 🐞 核心資料與狀態判定修復 (Fixed)
+
+- **🚨 徹底修復 10/14「今日會議漏抓/全數變歷史回放」重大問題 ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts))**：
+  - **根本原因**：原先 `computeConferenceStatus` 只要會議時間超過 +120 分鐘（例如台股法說會預設 14:00，至傍晚 18:41 已相差 281 分鐘），便硬編碼自動降級為 `replay`。這導致 10/14 當天全數 15~19 場會議在傍晚全被判定為「歷史回放」，使「今日/進行中」標籤顯示為 `(0)`，且 TSMC 10/15 被排序推到最前方。
+  - **修正方案**：建立跨時區日曆天核實機制。只要開會日期符合當前日曆天（`confDate === confTodayStr || confDate === userTodayStr`），在今日 24 小時內一律維持 `today`（若在會議前後 15~120 分鐘內則為 `live` 進行中），永不再於當天傍晚被降級為 `replay`。
+- **🌐 跨市場並行檢索多倍擴充與 Limit 提升**：
+  - 當 `market === 'ALL'` 時，同時並行撈取全市場、台灣 (`tw`)、美國 (`us`)、日本 (`jp`) 與韓國 (`kr`)，單次 roundtrip 即可獲取 250+ 場最新法說會與簡報。
+  - 預設傳回上限由 100 場提高至 250 場，完整保留最近兩至三週的完整歷史回放與未來時程。
+
+---
+
 ## [2026-10-14] - 支援 16 位 AI Hedge Fund 傳奇大師與量化決策模型對齊 (https://hedgeapi.afpicapital.com)
 
 ### ✨ 新增與對齊 (Added & Aligned)

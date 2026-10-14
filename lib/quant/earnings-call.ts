@@ -12,6 +12,11 @@ export interface EarningsCallItem {
   session?: 'before-open' | 'after-close' | 'during-hours' | 'unspecified'
   status: 'live' | 'today' | 'upcoming' | 'replay'
   title: string
+  logoUrl?: string // Official corporate logo from BigGo CDN
+  hasSlides?: boolean
+  hasVideo?: boolean
+  hasAudio?: boolean
+  hasTranscript?: boolean
   financialPeriod?: string // e.g. "2026 Q3"
   locationOrPlatform?: string // e.g. "線上法說會 / Webcast", "台北晶華酒店"
   webcastUrl?: string
@@ -209,25 +214,6 @@ export function computeConferenceStatus(
     return 'upcoming'
   }
 
-  const confUtc = parseZonedTimeToUtc(confDate, confTime, timeZone)
-  if (!confUtc) {
-    const todayStr = getNowDateString(timeZone)
-    return confDate >= todayStr ? 'upcoming' : 'replay'
-  }
-
-  const diffMs = now.getTime() - confUtc.getTime()
-  const diffMinutes = Math.floor(diffMs / 60000)
-
-  // Within 120 minutes of start time: live conference (🔴 進行中)
-  if (diffMinutes >= 0 && diffMinutes <= 120) {
-    return 'live'
-  }
-  // Conference ended more than 120 minutes ago: replay (⚪ 歷史回放)
-  if (diffMinutes > 120) {
-    return 'replay'
-  }
-
-  // Not started yet: check if it falls on today in either market timezone or user local timezone
   const confTodayStr = getNowDateString(timeZone)
   const userTodayStr = new Intl.DateTimeFormat('en-CA', {
     timeZone: userTimeZone,
@@ -236,14 +222,30 @@ export function computeConferenceStatus(
     day: '2-digit'
   }).format(now)
 
-  const confDateInUserTz = new Intl.DateTimeFormat('en-CA', {
-    timeZone: userTimeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).format(confUtc)
+  const confUtc = parseZonedTimeToUtc(confDate, confTime, timeZone)
 
-  if (confDate === confTodayStr || confDateInUserTz === userTodayStr) {
+  const confDateInUserTz = confUtc
+    ? new Intl.DateTimeFormat('en-CA', {
+        timeZone: userTimeZone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(confUtc)
+    : confDate
+
+  // Check if conference falls on today in either market timezone or user timezone
+  const isCalendarToday = confDate === confTodayStr || confDate === userTodayStr
+
+  if (isCalendarToday) {
+    if (confUtc) {
+      const diffMs = now.getTime() - confUtc.getTime()
+      const diffMinutes = Math.floor(diffMs / 60000)
+      // Within 15 minutes before start to 120 minutes after start: live conference (🔴 進行中)
+      if (diffMinutes >= -15 && diffMinutes <= 120) {
+        return 'live'
+      }
+    }
+    // Throughout the entire calendar day of today, it remains classified as 'today' (🟢 今日召開)
     return 'today'
   }
 
@@ -968,6 +970,11 @@ function mapBigGoItemToEarningsCall(
     session,
     status,
     title: item.title,
+    logoUrl: item.image || undefined,
+    hasSlides: item.has_slides,
+    hasVideo: item.has_video,
+    hasAudio: item.has_audio,
+    hasTranscript: item.has_transcript,
     financialPeriod,
     locationOrPlatform,
     webcastUrl: videoUrl || undefined,
@@ -1129,8 +1136,69 @@ async function fetchBigGoMultiWindowDashboard(
       }
     }
 
-    const windowLists = await Promise.all(windows.map(fetchWindow))
+    const pageTasks: Promise<BigGoRawCallItem[]>[] = []
+    if (!market || market === 'ALL') {
+      pageTasks.push(
+        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=100`, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
+          .catch(() => []),
+        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=60&market=tw`, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
+          .catch(() => []),
+        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=60&market=us`, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
+          .catch(() => []),
+        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=60&market=jp`, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
+          .catch(() => []),
+        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=40&market=kr`, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
+          .catch(() => [])
+      )
+    } else {
+      pageTasks.push(
+        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=100${marketParam}`, {
+          headers: BIGGO_HEADERS,
+          signal: AbortSignal.timeout(4000)
+        })
+          .then(res => (res.ok ? res.json() : null))
+          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
+          .catch(() => [])
+      )
+    }
+
+    const [allPageLists, ...windowLists] = await Promise.all([
+      Promise.all(pageTasks),
+      ...windows.map(fetchWindow)
+    ])
     const map = new Map<string, BigGoRawCallItem>()
+    for (const list of allPageLists) {
+      for (const item of list) {
+        if (!map.has(item.call_id)) {
+          map.set(item.call_id, item)
+        }
+      }
+    }
     for (const list of windowLists) {
       for (const item of list) {
         if (!map.has(item.call_id)) {
@@ -1234,7 +1302,7 @@ async function searchLiveEarningsAnnouncements(query: string): Promise<EarningsC
 export async function fetchEarningsCalls(
   params: FetchEarningsCallsParams = {}
 ): Promise<EarningsCallDashboardResult> {
-  const { symbol, market = 'ALL', limit = 100 } = params
+  const { symbol, market = 'ALL', limit = 250 } = params
   const cleanSym = symbol ? symbol.trim().toUpperCase().replace(/^(?:TWSE|TPEX|NASDAQ|NYSE|AMEX):/, '') : ''
   const cacheKey = `${cleanSym || 'all'}_${market}_${limit}`
   const now = Date.now()

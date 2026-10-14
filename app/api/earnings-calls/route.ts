@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const marketParam = (searchParams.get('market') || 'ALL').toUpperCase()
     const validMarkets = ['TW', 'US', 'JP', 'KR', 'OTHER', 'ALL'] as const
     const market = validMarkets.includes(marketParam as any) ? (marketParam as (typeof validMarkets)[number]) : 'ALL'
-    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '100', 10), 1), 200)
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '250', 10), 1), 300)
 
     const data = await fetchEarningsCalls({
       symbol,
