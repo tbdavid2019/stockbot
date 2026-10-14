@@ -243,6 +243,14 @@ export async function POST(request: NextRequest) {
       async: isAsync
     }
 
+    const rawCash = body.initialCash ?? body.initial_cash ?? body.capital ?? body.cash
+    if (rawCash !== undefined && rawCash !== null && rawCash !== '') {
+      const parsedCash = Number(String(rawCash).replace(/,/g, ''))
+      if (!isNaN(parsedCash) && parsedCash > 0) {
+        requestPayload.initialCash = parsedCash
+      }
+    }
+
     if (modelName) {
       requestPayload.modelName = modelName
     }
