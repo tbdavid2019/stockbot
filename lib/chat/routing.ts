@@ -238,7 +238,7 @@ export function inferDeterministicTool(
   }
 
   if (
-    /法說會|法人說明會|財報電話會議|earnings call|investor conference|法說日程|法說簡報|法說行事曆|業績說明會|業績發表會|webcast/i.test(
+    /法說|法人說明會|法人電話會議|財報電話會議|earnings\s*calls?|investor\s*conference|法說日程|法說簡報|法說行事曆|業績說明會|業績發表會|業績會|業績發布會|webcast/i.test(
       content
     )
   ) {
@@ -456,6 +456,7 @@ export async function inferSemanticToolWithClef(
               options_payoff: '選擇權/期權策略損益模擬曲線',
               sepa_strategy: 'SEPA動能策略、VCP型態、突破買點分析',
               market_overview: '整體大盤走勢、市場概況、熱門榜',
+              earnings_call: '查詢法人說明會日程、法說簡報、財報電話會議、影音Webcast直播',
               other_general: '其他一般對話或不明確問題'
             }
           }
@@ -508,6 +509,8 @@ export async function inferSemanticToolWithClef(
         return resolvedTicker ? 'analyzeSepaStrategy' : undefined
       case 'market_overview':
         return 'showMarketOverview'
+      case 'earnings_call':
+        return 'showEarningsCalls'
       default:
         return undefined
     }

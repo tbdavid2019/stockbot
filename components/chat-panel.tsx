@@ -30,6 +30,7 @@ interface ExampleMessage {
 }
 
 const promptLabelsZh = [
+  '🎙️ 近期台股/美股法人說明會與簡報',
   '📅 今晚重大總經與即時日曆',
   '🌐 盤前美股期指與跨資產風向',
   '⚡ 非農就業與央行政策時程',
@@ -41,6 +42,7 @@ const promptLabelsZh = [
 ]
 
 const promptLabelsEn = [
+  '🎙️ Corporate Earnings Calls & Webcasts',
   '📅 Global Economic Calendar Tonight',
   '🌐 US Pre-Market Futures & Macro Radar',
   '⚡ NFP & Central Bank Decisions',
@@ -52,6 +54,7 @@ const promptLabelsEn = [
 ]
 
 const promptModesZh = [
+  '🎙️ 法說日程',
   '📅 總經日曆',
   '🌐 盤前風向',
   '🎲 隨機靈感',
@@ -60,6 +63,7 @@ const promptModesZh = [
   '⚡ 快問快答'
 ]
 const promptModesEn = [
+  '🎙️ Earnings Calls',
   '📅 Macro Calendar',
   '🌐 Pre-market Scan',
   '🎲 Random picks',
@@ -69,6 +73,11 @@ const promptModesEn = [
 ]
 
 const DEFAULT_FEATURED_ZH: ExampleMessage[] = [
+  {
+    heading: '🎙️ 近期台股/美股法人說明會 (Earnings Calls)',
+    subheading: '即時掌握台積電、聯發科、輝達法說日程、影音直播與簡報下載',
+    message: '近期台股與美股有哪些法人說明會？'
+  },
   {
     heading: '📅 今晚有什麼重大總經數據？',
     subheading: '即時掌握非農 (NFP)、CPI、PMI、零售銷售與央行決議時程',
@@ -83,6 +92,11 @@ const DEFAULT_FEATURED_ZH: ExampleMessage[] = [
 
 const DEFAULT_FEATURED_EN: ExampleMessage[] = [
   {
+    heading: '🎙️ Corporate Earnings Calls & Webcasts',
+    subheading: 'Live earnings conference calendar, guidance highlights & slide deck downloads',
+    message: 'Show me upcoming corporate earnings calls and investor conferences'
+  },
+  {
     heading: '📅 Key Economic Events Tonight',
     subheading: 'Live global economic calendar, CPI, NFP & central bank policy',
     message: 'What are the key global economic events and data releases tonight?'
@@ -96,6 +110,11 @@ const DEFAULT_FEATURED_EN: ExampleMessage[] = [
 
 const DEFAULT_PROMPTS_ZH: ExampleMessage[] = [
   ...DEFAULT_FEATURED_ZH,
+  {
+    heading: '台積電 (2330) 法人說明會日程與簡報',
+    subheading: '查看法說會官方簡報 (PDF)、影音直播與經營層指引',
+    message: '查詢台積電 (2330) 最近的法人說明會與簡報'
+  },
   {
     heading: '台積電 (2330) 即時股價',
     subheading: '查詢現價行情與即時跳動點位',
@@ -384,14 +403,21 @@ export function ChatPanel({
             {displayExamples.length > 0 && (
               <div className="grid grid-cols-2 gap-2">
                 {displayExamples.map((example, index) => {
-                  const isMacro = /總經|期指|非農|日曆|大宗商品|宏觀|Macro|NFP|Futures/i.test(
+                  const isEarningsCall = /法說|法人說明會|earnings\s*call/i.test(
                     `${example.heading} ${example.message}`
                   )
+                  const isMacro =
+                    !isEarningsCall &&
+                    /總經|期指|非農|日曆|大宗商品|宏觀|Macro|NFP|Futures/i.test(
+                      `${example.heading} ${example.message}`
+                    )
                   return (
                     <div
                       key={`${lang}-${example.heading}-${index}`}
                       className={`cursor-pointer rounded-lg border p-2.5 shadow-2xs transition-all sm:p-3.5 ${
-                        isMacro
+                        isEarningsCall
+                          ? 'border-amber-300/80 bg-amber-50/40 hover:border-amber-400 hover:bg-amber-50/80 dark:border-amber-800/70 dark:bg-amber-950/30 dark:hover:border-amber-600'
+                          : isMacro
                           ? 'border-sky-300/80 bg-sky-50/40 hover:border-sky-400 hover:bg-sky-50/80 dark:border-sky-800/70 dark:bg-sky-950/30 dark:hover:border-sky-600'
                           : 'border-slate-200/90 bg-white hover:border-blue-300 hover:bg-zinc-50 dark:border-slate-800 dark:bg-zinc-950 dark:hover:border-blue-700 dark:hover:bg-zinc-900'
                       }`}
@@ -415,6 +441,11 @@ export function ChatPanel({
                       }}
                     >
                       <div className="line-clamp-2 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-base flex items-center gap-1.5">
+                        {isEarningsCall && (
+                          <span className="shrink-0 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                            🎙️ 法說日程
+                          </span>
+                        )}
                         {isMacro && (
                           <span className="shrink-0 inline-flex items-center rounded-full bg-sky-100 px-2 py-0.5 text-xs font-bold text-sky-700 dark:bg-sky-950/80 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
                             ⚡ 即時總經
@@ -435,7 +466,7 @@ export function ChatPanel({
 
         <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:border md:py-4">
           <PromptForm input={input} setInput={setInput} />
-          <FooterText className="hidden sm:block" />
+          <FooterText />
         </div>
       </div>
     </div>
