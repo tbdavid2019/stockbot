@@ -1138,7 +1138,7 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
 6. If an explicit ticker is present and the user asks for a financial summary, valuation, any financial-statement line item, ratio, growth comparison, valuation multiple, or accounting term (including unfamiliar ones), call answerFinancialMetric. Do not expose a raw search-results card for a financial question.
 
 ### 🧠 多輪續問與標的繼承 (Multi-Turn Context & Symbol Resolution)
-1. 當使用者在多輪對話中進行追問（例如點擊或輸入「啟動 13 位傳奇大師多維投資價值評估」、「多位大師進行投資分析」、「查看走勢圖」、「財務狀況如何」、「相關概念股」、「該買嗎」），而當前提問未指明股票名稱/代碼時：
+1. 當使用者在多輪對話中進行追問（例如點擊或輸入「啟動 16 位傳奇大師多維投資價值評估」、「多位大師進行投資分析」、「查看走勢圖」、「財務狀況如何」、「相關概念股」、「該買嗎」），而當前提問未指明股票名稱/代碼時：
    - 必須自主從上方對話歷史 (Conversation History) 中提取最新討論的標的代碼（例如上一輪若在詢問「小米 HKEX:1810」或「統一 1216」，此處自動推導 symbol 為 "HKEX:1810" 或 "TWSE:1216"）。
    - 絕不能調用失敗或返回未知，請精確繼承上下文標的並調用對應工具（如 analyzeStockWithAI、showStockChart、showStockFinancials、searchFinancialWeb 等）。
 
@@ -1156,13 +1156,13 @@ Users may provide a Chinese name, English company name, brand name, or an incomp
    - 當使用者提供財報/年報 PDF 連結或線上公開報告時，調用 readFinancialReport(url, symbol) 進行全文萃取與分析。
    - 當使用者上傳財報/PDF/Excel/Word 文件時，2MD AnyDoc 引擎已將全文萃取並傳入對話中。
    - 必須結構化剖析：三大財務報表（損益表、資產負債表、現金流量表）、關鍵比率（毛利率、營業利益率、淨利率、ROE、ROIC、FCF）、YoY/QoQ 成長動能、管理層指引 (Guidance) 與下行風險因子。
-3. **多維大師分析 (Master Consensus)**：遇到投資價值評估時調用 analyzeStockWithAI 獲取 13 位傳奇大師觀點。
+3. **多維大師分析 (Master Consensus)**：遇到投資價值評估時調用 analyzeStockWithAI 獲取 16 位傳奇大師與量化模型觀點。
 4. **自主發布執行器 (David888 WikiPublisher 鐵律)**：
    - 當使用者要求產出長篇研究報告、深度估值模型、投資備忘錄 (Investment Memo) 或多章節分析時，自動調用 publishToDavid888Wiki(title, content, theme) 發布至 David888 Wiki。
    - 👑 **排版鐵律 (Mandatory Structure)**：content 內容【第一行必須以 # Document Title 開頭】！嚴禁在前面加上任何對話性閒聊或開場白（例如嚴禁加上「好的，這是為您整理的...」）。[TOC] 與 > 執行摘要 必須緊隨在 # Document Title 之後！Mermaid 流程圖節點文字必須用雙引號包裹如 NODE["Label"]。
 
 ### Legendary Master & Multi-Analyst Valuation
-When the user asks whether a stock is worth buying, whether to invest, wants professional analysis, or asks questions like "should I buy TSLA?", "is NVDA a good investment?", "分析一下特斯拉", "AAPL值得買嗎", "多位大師進行投資分析", "啟動 13 位大師評估", you MUST use the analyzeStockWithAI tool to provide multi-master valuation and strategy analysis from legendary investors.
+When the user asks whether a stock is worth buying, whether to invest, wants professional analysis, or asks questions like "should I buy TSLA?", "is NVDA a good investment?", "分析一下特斯拉", "AAPL值得買嗎", "多位大師進行投資分析", "啟動 16 位大師評估", you MUST use the analyzeStockWithAI tool to provide multi-master valuation and strategy analysis from legendary investors.
 If that request already includes a ticker, call analyzeStockWithAI immediately. A search result card is not a substitute for the requested multi-master analysis card.
 
 ### Guidelines:
@@ -2087,7 +2087,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           analyzeStockWithAI: {
             description:
-              'Provide comprehensive legendary investor strategy evaluation and multi-master valuation from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for multi-master analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議, 大師分析, 13位大師, 評估. If the request contains an explicit ticker, including a ticker in parentheses after a company name, call this tool directly and do not search again. Search only when no ticker can be resolved, or inherit the active ticker from conversation history.',
+              'Provide comprehensive legendary investor strategy evaluation and multi-master valuation from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for multi-master analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議, 大師分析, 16位大師, 13位大師, 評估. If the request contains an explicit ticker, including a ticker in parentheses after a company name, call this tool directly and do not search again. Search only when no ticker can be resolved, or inherit the active ticker from conversation history.',
             parameters: z.object({
               symbol: z
                 .string()

@@ -48,7 +48,7 @@
 - 🎯 **確定性對話路由**：訊息已包含 ticker 時，股價、圖表、財務、新聞與大師分析會直接呼叫指定卡片；不會再用 2MD 搜尋卡取代明確的大師分析要求
 - 📌 **財務用語直接回答**：詢問 EBITDA、YoY/QoQ、TTM、EPS、FCF、ROIC、margin、ratio、估值倍數或其他財報科目時，後端優先讀取 Yahoo Finance Fundamentals 年度、季度與 TTM 結構化序列，直接計算同比、近四季合計與 CAGR；上方顯示精簡來源卡，下方回覆數值、期間、幣別與口徑，不再把搜尋摘要當成財務答案
 - 🧾 **財務摘要直接回答**：「最新財務數據與估值」等多指標需求同樣走證據合成；台股會先由 AnswerBook Market Data 將代號解析回公司名，再並行查詢財報、估值與投資人關係來源。
-- 🧠 **大師分析綜合判讀**：13 位大師三批資料完成後，由獨立合成流程整理多數共識、關鍵分歧、數字證據與風險，避免只把原始觀點卡丟給使用者自行閱讀
+- 🧠 **大師分析綜合判讀**：16 位大師三批資料完成後，由獨立合成流程整理多數共識、關鍵分歧、數字證據與風險，避免只把原始觀點卡丟給使用者自行閱讀
 - 🛡️ **Vercel 卡片穩定性**：金融卡與 caption 已解除巢狀 RSC 串流，首頁與歷史對話 page function 設定 60 秒上限；卡片即時資料不再阻塞 Server Action，避免 `Connection closed.` 連帶摧毀整張卡片
 - 🗺️ **TradingView 熱力圖市場清單**：依官方 widget data source 補齊北美、南美、歐洲、中東非洲、亞洲與太平洋等市場，包含台灣全市場與台灣 50
 - 📜 **對話歷史紀錄與抽屜面板** (新功能)：點擊導覽列「📜 歷史紀錄」滑出左側面板，依今天、昨天、過去7天、更早以前清晰分組，支援標題搜尋、修改與單筆刪除
@@ -60,9 +60,9 @@
 - 🤖 **AI 投資分析** (新功能)：整合 AI Hedge Fund API，提供傳奇投資大師（巴菲特、葛拉漢、乾克曼等）的專業投資建議
 - 📐 **原生量化分析** (新功能)：提供 DCF/CAPM/WACC、同業倍數與 5×5 敏感度矩陣的合理價模型；缺少 beta 或負 EBITDA 時會使用可標示的產業預設並降級至 EV/Sales。
 - 🚀 **SEPA 趨勢策略** (新功能)：檢查 Minervini 八項 Trend Template、Stage 1–4、VCP 收縮型態、5% 買入區、停損與風險式部位大小。
-- 🧾 **財報前瞻** (新功能)：顯示公開 earnings 日期、EPS/營收共識區間、分析師目標價與最近四季 beat/miss surprise。
+- 🧾 **財報前瞻** (新功能)：顯示公開 earnings 日期、EPS/營收共識區金、分析師目標價與最近四季 beat/miss surprise。
 - 🧮 **衍生品與微結構** (新功能)：支援 Black-Scholes 多腿選擇權互動曲線、ETF NAV 溢折價/GEX 欄位，以及 Amihud、float turnover 與平方根市場衝擊估算。
-- ⚡ **Clef-Flash System One 高速決策推論引擎** (新功能)：引進 Cloudflare Clef-Flash ~190ms 結構化決策推論 API，涵蓋 (1) 語意工具意圖分流閘門、(2) DeepEar 因果傳導鏈情緒打分、(3) 13 位大師共識量化與多空衝突警報、(4) 2MD 搜尋關聯度核驗與最優證據置頂，具備三層端點容錯、Singleflight 去重與 30 秒熔斷保護。
+- ⚡ **Clef-Flash System One 高速決策推論引擎** (新功能)：引進 Cloudflare Clef-Flash ~190ms 結構化決策推論 API，涵蓋 (1) 語意工具意圖分流閘門、(2) DeepEar 因果傳導鏈情緒打分、(3) 16 位大師共識量化與多空衝突警報、(4) 2MD 搜尋關聯度核驗與最優證據置頂，具備三層端點容錯、Singleflight 去重與 30 秒熔斷保護。
 
 ### 全球證券清冊更新與快取規則
 
@@ -146,7 +146,7 @@ StockBot 內建 15 套機構級原生 React 金融視覺化卡片，所有卡片
 | **12** | **🏷️ ETF 淨值溢折價監控卡**<br>`<EtfPremiumCard />`                 | `analyzeEtfPremium`         | 即時監控 ETF 市價與基金淨值 (NAV) 之溢價 (Premium) / 折價 (Discount) 幅度、Dealer GEX 伽瑪暴露狀態、買賣價差 (Bid-Ask Spread) 與同類 ETF 中位數對照。                                                                                                  | `0050 溢折價查詢`<br>`SPY NAV 淨值與 GEX 狀態`             |
 | **13** | **🌐 2MD 即時連網研調來源卡**<br>`<WebSearchResults />`             | `searchFinancialWeb`        | 由 2MD 全網情報大腦並發檢索最新重大快訊、供應鏈上下游、法說會動態與總經環境，以摺疊清單呈現可信來源標題、網址與內文摘要。                                                                                                                              | `SpaceX 最新上市估值與新聞`<br>`全球人形機器人供應鏈`      |
 | **14** | **📑 AnyDoc 財報文件解析卡**<br>`<FinancialReportCard />`           | `readFinancialReport`       | 支援線上財報網址或本機上傳之 PDF、Excel、Word、PPT 文件（最大 25MB）。秒級萃取三大報表、管理層指引與風險因子，支援一鍵複製與全文展開。                                                                                                                 | `閱讀這份台積電法說會簡報`<br>`分析上傳的財報 PDF`         |
-| **15** | **🏛️ 傳奇大師多維度研調卡**<br>`<StockAnalysis />`                  | `analyzeStockWithAI`        | 整合 AI Hedge Fund API，由 13 位傳奇投資大師（巴菲特、葛拉漢、蒙格、木頭姐等）分為 3 批次漸進式研調，呈現各分析師多空訊號、圓桌委員會辯論對話過程與投資委員會綜合決策判讀。                                                                            | `台積電值得買嗎？`<br>`13位大師分析 NVDA`                  |
+| **15** | **🏛️ 傳奇大師多維度研調卡**<br>`<StockAnalysis />`                  | `analyzeStockWithAI`        | 整合 AI Hedge Fund API，由 16 位傳奇投資大師與量化模型（巴菲特、葛拉漢、蒙格、木頭姐、JEV等）分為 3 批次漸進式研調，呈現各分析師多空訊號、圓桌委員會辯論對話過程與投資委員會綜合決策判讀。                                                                            | `台積電值得買嗎？`<br>`16位大師分析 NVDA`                  |
 | **16** | **📅 全球重大總經日曆卡**<br>`<EconomicCalendarCard />`             | `showEconomicCalendar`      | 透過 2MD Fast Reader 即時萃取 Investing.com 全球重大財經日曆（非農就業、CPI、PMI、央行決議與倒數時間）、三大期指盤前行情、美債殖利率曲線（10Y/2Y）與大宗商品（原油/黃金），具備 Singleflight 防驚群與 TTL 快取。                                       | `今晚有什麼重大總經數據？`<br>`美股盤前期貨與經濟日曆`     |
 
 ---
@@ -167,7 +167,7 @@ StockBot 內建 15 套機構級原生 React 金融視覺化卡片，所有卡片
 StockBot 支援 **無限階層動態容錯路由 (Multi-Tier Dynamic Failover Router)**，並將模型拆分為兩大職責：
 
 - **`TOOL_MODEL` (工具模型)**：專用於 `streamUI` 的 Function Calling、意圖識別與圖表/分析卡片調用。
-- **`MODEL` (文字模型)**：一般卡片使用短時限 `generateCaption`；即時研究答案與 13 位大師綜合判讀使用獨立、具證據上下文的合成流程。卡片正文完成後另以同一端點產生上下文續問；失敗時只依當輪標的、問題與工具意圖產生本機 fallback，不需要額外金鑰。
+- **`MODEL` (文字模型)**：一般卡片使用短時限 `generateCaption`；即時研究答案與 16 位大師綜合判讀使用獨立、具證據上下文的合成流程。卡片正文完成後另以同一端點產生上下文續問；失敗時只依當輪標的、問題與工具意圖產生本機 fallback，不需要額外金鑰。
 
 ### ⚡ Clef-Flash System One 決策推論架構 (System One Decision Pipeline)
 
@@ -192,7 +192,7 @@ flowchart TD
     subgraph Scenarios ["四大核心落地場景"]
         A["場景 A: 語意工具意圖分流閘門<br/>(choice 16類工具, 置信度門檻 ≥ 0.72)"]
         B["場景 B: DeepEar 因果傳導鏈打分<br/>(score -1~+1 情緒衝擊, 嚴格 Unchanged 觀察態)"]
-        C["場景 C: 13位大師共識量化<br/>(立場多空判讀, 衝突分歧指數 0~100, 尾部黑天鵝預警)"]
+        C["場景 C: 16位大師共識量化<br/>(立場多空判讀, 衝突分歧指數 0~100, 尾部黑天鵝預警)"]
         D["場景 D: 2MD 搜尋關聯核驗與證據置頂<br/>(候選新聞與財務問題強型別關聯比對)"]
     end
 ```

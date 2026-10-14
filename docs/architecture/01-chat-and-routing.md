@@ -25,11 +25,11 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 
 ## 3. ⚡ 3 階段漸進式加載 (3-Batch Progressive Streaming)
 
-在 [`components/tradingview/stock-analysis.tsx`](../../components/tradingview/stock-analysis.tsx) 中將 13 位大師分析拆分為 3 批次非同步發送：
+在 [`components/tradingview/stock-analysis.tsx`](../../components/tradingview/stock-analysis.tsx) 中將 16 位大師與量化模型分析拆分為 3 批次非同步發送：
 
-- **Batch 1 (5位核心大師)**：~18-24 秒回傳，立即渲染首屏卡片。
-- **Batch 2 (3位長耗時/輿論散戶大師)**：~21 秒背景回傳，動態擴展分析卡片。
-- **Batch 3 (5位價值成長大師)**：~26 秒回傳，補齊全維度分析。
+- **Batch 1 (5位核心大師)**：巴菲特、伍德、貝瑞、技術分析、估值分析。~18-24 秒回傳，立即渲染首屏卡片。
+- **Batch 2 (3位長耗時/輿論散戶大師)**：新聞輿論、WSB 散戶、國會交易。~21 秒背景回傳，動態擴展分析卡片。
+- **Batch 3 (8位價值成長拐點大師與 JEV 決策模型)**：蒙格、葛拉漢、林區、艾克曼、基本面分析、費雪、卓肯米勒、JEV決策模型。~26 秒回傳，補齊 16 位全維度分析。
 - 徹底根絕單次請求超時引發的 504 Gateway Timeout。
 
 ---
@@ -53,7 +53,7 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
   - 工具調用均在 `aiState.done` 前保存可序列化的純文字結果；卡片不再嵌套第二層 RSC stream，避免 Vercel `Connection closed.`。
   - `app/(chat)/page.tsx` 與 `app/(chat)/chat/[id]/page.tsx` 必須各自匯出 `maxDuration = 60`；只在 layout 宣告不會套用到 Vercel Server Action。
   - 一般金融卡的即時資料由卡片/API 自行載入；Server Action 內禁止為一般 caption 先用 2MD 預抓同一份資料。一般 Caption 僅允許單一 provider、1.5 秒上限，失敗即使用本機 fallback。
-  - `answerFinancialMetric` 與 2MD 研究屬於使用者要求的主要答案，不是一般 caption；可在 60 秒 Server Action 預算內使用最多兩個 provider、每個 7 秒的證據合成。13 位大師綜合判讀則由 `/api/analysis-summary` 在卡片資料完成後獨立執行。
+  - `answerFinancialMetric` 與 2MD 研究屬於使用者要求的主要答案，不是一般 caption；可在 60 秒 Server Action 預算內使用最多兩個 provider、每個 7 秒的證據合成。16 位大師綜合判讀則由 `/api/analysis-summary` 在卡片資料完成後獨立執行。
   - `streamUI` 每輪僅使用一個工具 provider。禁止將短時限 `AbortSignal` 直接傳入 `streamUI`：AI SDK 的串流可能在函式返回後才拋出 timeout，造成未捕捉的 RSC render exception；執行時間由 page entry 的 `maxDuration = 60` 收斂。
 - **事件驅動架構 (Event-Driven Architecture)**：
   - `stockbot-chat-history-updated`：跨組件同步歷史紀錄更新。

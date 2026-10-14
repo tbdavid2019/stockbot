@@ -24,7 +24,7 @@ const TARGETS_TO_TRY: TargetServer[] = [
   { host: AI_HEDGE_FUND_FALLBACK_HOST, port: AI_HEDGE_FUND_FALLBACK_PORT }
 ].filter(t => Boolean(t.host))
 
-// 預設核心分析師團隊 (涵蓋全部 15 位傳奇投資大師與全方位量化分析模型)
+// 預設核心分析師團隊 (涵蓋全部 16 位傳奇投資大師與全方位量化分析模型)
 const DEFAULT_ANALYSTS = [
   'warren_buffett',
   'cathie_wood',
@@ -83,7 +83,7 @@ function requestHedgeFundApi(
       timeout: timeoutMs
     }
 
-    const req = http.request(options, (res) => {
+    const req = client.request(options, (res) => {
       let data = ''
       res.setEncoding('utf8')
       res.on('data', (chunk) => {

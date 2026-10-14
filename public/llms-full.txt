@@ -11,7 +11,7 @@
 6. Black-Scholes Multi-Leg Options Simulator
 7. Market Microstructure & Square-Root Impact Engine
 8. ETF NAV Divergence & Dealer GEX Engine
-9. 13 Masters Hedge Fund Simulation (3-Batch Progressive Loading)
+9. 16 Masters & Quantitative Models Hedge Fund Simulation (3-Batch Progressive Loading)
 10. DeepEar Causal Transmission Chains & AlphaEar Invalidation Triggers
 11. Multi-Factor Regime Asset Allocation (voidful/us_fddk)
 12. 2MD AnyDoc Financial Report Engine
@@ -145,26 +145,29 @@ $$\text{Impact (bps)} = Y \times \sigma_{\text{daily}} \times \sqrt{\frac{Q}{V_{
 ---
 
 <a id="stock-analysis"></a>
-## 9. 13 Masters Hedge Fund Simulation (3-Batch Progressive Loading)
+## 9. 16 Masters & Quantitative Models Hedge Fund Simulation (3-Batch Progressive Loading)
 
-### Batch 1: Core Value & Growth Titans (Fast Response: 18-24s)
+### Batch 1: Core Value, Growth & Quant Analysts (Fast Response: 18-24s)
 - **Warren Buffett**: Economic moat, owner earnings, ROE $> 15\%$, rational management.
-- **Ben Graham**: Net-Net value, margin of safety, liquidation value, P/E $< 15$.
-- **Charlie Munger**: Quality businesses, competitive advantage, mental models.
 - **Cathie Wood**: Disruptive innovation, exponential TAM growth, 5-year multi-bagger potential.
 - **Michael Burry**: Hidden balance sheet liabilities, overvaluation risks, macro imbalances.
+- **Technical Analyst**: Support/resistance, moving averages, RSI/MACD divergence, Bollinger Bands.
+- **Valuation Analyst**: Multi-scenario DCF and relative multiple bounds (P/E, EV/EBITDA).
 
-### Batch 2: Sentiment, Technical & Momentum (Background: ~21s)
-- **Technical Analyst**: Support/resistance, moving averages, RSI/MACD divergence.
-- **Sentiment Analyst**: Social sentiment, option put/call skew, insider activity.
+### Batch 2: Sentiment, Retail Momentum & Policy Tracking (Background: ~21s)
+- **Sentiment Analyst**: Social sentiment, 2md global news scoring, SEC Form 4 insider activity.
+- **WallStreetBets (WSB)**: Retail momentum, short squeeze dynamics, meme sentiment.
 - **Nancy Pelosi Tracker**: Congressional disclosures, policy tailwinds, regulatory catalysts.
 
-### Batch 3: Valuation, Quality & Growth Specialists (Background: ~26s)
+### Batch 3: Value Titans, Growth Specialists, Inflection & Decision Models (Background: ~26s)
+- **Charlie Munger**: Quality businesses, competitive advantage, mental models.
+- **Ben Graham**: Net-Net value, margin of safety, liquidation value, P/E $< 15$.
 - **Peter Lynch**: PEG ratio $< 1.0$, earnings story, categorized business types.
-- **Phil Fisher**: 15 scuttlebutt points, R&D efficiency, superior sales organization.
 - **Bill Ackman**: High-quality cash-flow generative franchises, activist catalysts.
 - **Fundamentals Analyst**: Balance sheet forensics, Dupont analysis, cash conversion cycle.
-- **Valuation Analyst**: Multi-scenario DCF and relative multiple bounds.
+- **Phil Fisher**: 15 scuttlebutt points, R&D efficiency, superior sales organization.
+- **Stanley Druckenmiller**: Macro rate-of-change, positive second derivative inflections, asymmetric risk/reward.
+- **Jev Decision Model**: Fast structured evaluation, T+1~T+3 directional probability forecasting, PEAD drift.
 
 ---
 
@@ -219,7 +222,7 @@ $$\text{Impact (bps)} = Y \times \sigma_{\text{daily}} \times \sqrt{\frac{Q}{V_{
 | `<OptionsPayoffCard />` | `simulateOptionsPayoff` | Black-Scholes multi-leg option payoff simulator |
 | `<StockLiquidityCard />` | `analyzeStockLiquidity` | Amihud measure, float turnover, & market impact |
 | `<EtfPremiumCard />` | `analyzeEtfPremium` | ETF price vs NAV divergence % & Dealer GEX |
-| `<StockAnalysis />` | `analyzeStockWithAI` | 13 Masters hedge fund progressive research |
+| `<StockAnalysis />` | `analyzeStockWithAI` | 16 Masters hedge fund progressive research |
 | `<TransmissionChainCard />` | `showTransmissionChain` | DeepEar 3-tier causal propagation engine |
 | `<SignalTrackerCard />` | `trackInvestmentSignal` | AlphaEar 4-state hypothesis invalidation tracker |
 | `<MacroFactorRegimeCard />` | `showMacroFactorRegime` | 20-year ETF asset allocation backtest (us_fddk) |
@@ -267,7 +270,7 @@ IBIT ETF 溢折價與淨值 (NAV) 偏離程度
 BITO 現價有溢價嗎？
 TLT ETF NAV premium discount
 0050 ETF 溢折價與套利空間分析
-13 位傳奇投資大師分析 NVDA
+16 位傳奇投資大師分析 NVDA
 台積電 2330 值得買嗎？請大師團隊進行研調
 分析 SpaceX (SPCX) 的傳奇大師多維度投資報告
 巴菲特與女股神如何看待特斯拉 TSLA？

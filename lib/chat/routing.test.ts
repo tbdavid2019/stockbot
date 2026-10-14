@@ -229,3 +229,10 @@ test('Clef System One total failure gracefully falls back to undefined without t
   assert.equal(tool, undefined, 'Must safely return undefined when decision models fail')
 })
 
+test('routes 16 masters and multi-analyst queries to analyzeStockWithAI', () => {
+  assert.equal(inferDeterministicTool('16位大師分析 NVDA', 'NVDA'), 'analyzeStockWithAI')
+  assert.equal(inferDeterministicTool('13位大師分析 TSLA', 'TSLA'), 'analyzeStockWithAI')
+  assert.equal(inferDeterministicTool('請投資大師幫我評估台積電', '2330.TW'), 'analyzeStockWithAI')
+  assert.equal(inferDeterministicTool('is NVDA worth buying?', 'NVDA'), 'analyzeStockWithAI')
+})
+

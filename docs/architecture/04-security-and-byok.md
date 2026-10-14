@@ -6,7 +6,7 @@
   - 使用者自備之 API Key 僅留存於瀏覽器 `localStorage` (`stockbot_user_api_key_config`)。
   - 送出查詢時，前端將 Key 透過參數與 Header 無狀態透傳給 Serverless Function，伺服器記憶體完成單次請求即銷毀，絕不寫入伺服器硬碟、資料庫或日誌。
   - 支援 OpenAI、Groq、Google Gemini、DeepSeek 與自訂 OpenAI-Compatible 端點。
-  - 全鏈路覆蓋：`submitUserMessage`、`generateCaption`、上下文續問與 13 位大師綜合判讀皆優先注入使用者的 BYOK。
+  - 全鏈路覆蓋：`submitUserMessage`、`generateCaption`、上下文續問與 16 位大師綜合判讀皆優先注入使用者的 BYOK。
 - **429 額度耗盡與 401 授權優雅降級**：
   - 當系統免費額度或自備金鑰額度耗盡時，自動渲染原生 `<QuotaExceededCard />`，並提供一鍵開啟自備金鑰設定對話框。
 - **安全金鑰隔離 (`extractByokDecisionKeys`)**：

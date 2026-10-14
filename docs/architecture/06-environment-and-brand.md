@@ -25,8 +25,10 @@
 | **`CLEF_PRIMARY_TIMEOUT_MS`**| Number | `1200` | Clef 主力端點超時預算 (ms) |
 | **`CLEF_FALLBACK_TIMEOUT_MS`**| Number | `2500` | Clef 備援端點超時預算 (ms) |
 | **`TWOMD_PRIMARY_URL`** | URL | `https://2md.aiurl.tw` | 2MD 即時連網搜尋主端點 |
-| **`AI_HEDGE_FUND_HOST`** | Host | `dns.glsoft.ai` | AI Hedge Fund API 主機位置 |
-| **`AI_HEDGE_FUND_PORT`** | Port | `6000` | AI Hedge Fund API 端口 |
+| **`AI_HEDGE_FUND_HOST`** | Host | `hedgeapi.afpicapital.com` | AI Hedge Fund API 主端點位置 (HTTPS/443) |
+| **`AI_HEDGE_FUND_PORT`** | Port | `443` | AI Hedge Fund API 主端點端口 |
+| **`AI_HEDGE_FUND_FALLBACK_HOST`** | Host | `dns.glsoft.ai` | AI Hedge Fund API 備援主機位置 |
+| **`AI_HEDGE_FUND_FALLBACK_PORT`** | Port | `6000` | AI Hedge Fund API 備援端口 |
 
 ---
 

@@ -641,7 +641,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
             )}
             {batchStage === 4 && (
               <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 font-semibold">
-                ✨ 13 位大師全維度分析完畢
+                ✨ 16 位大師全維度分析完畢
               </span>
             )}
           </div>
@@ -665,7 +665,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         </h4>
         {summaryLoading && (
           <p className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">
-            正在交叉比對 13 位大師的共識、分歧與關鍵數字…
+            正在交叉比對 16 位大師的共識、分歧與關鍵數字…
           </p>
         )}
         {summaryError && (

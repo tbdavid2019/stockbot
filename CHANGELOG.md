@@ -4,6 +4,33 @@
 
 ---
 
+## [2026-10-14] - 支援 16 位 AI Hedge Fund 傳奇大師與量化決策模型對齊 (https://hedgeapi.afpicapital.com)
+
+### ✨ 新增與對齊 (Added & Aligned)
+
+- **🏛️ 16 位投資大師與量化決策模型全維度對齊 ([`https://hedgeapi.afpicapital.com/skill.md`](https://hedgeapi.afpicapital.com/skill.md))**：
+  - 完整支援 16 位分析師陣容：巴菲特 (`warren_buffett`)、蒙格 (`charlie_munger`)、葛拉漢 (`ben_graham`)、凱西·伍德 (`cathie_wood`)、比爾·艾克曼 (`bill_ackman`)、國會交易追蹤 (`nancy_pelosi`)、麥可·貝瑞 (`michael_burry`)、彼得·林區 (`peter_lynch`)、菲利普·費雪 (`phil_fisher`)、WSB 散戶動能 (`wsb`)、技術分析師 (`technical_analyst`)、基本面分析師 (`fundamentals_analyst`)、情緒分析師 (`sentiment_analyst`)、估值分析師 (`valuation_analyst`)、史丹利·卓肯米勒 (`stanley_druckenmiller`) 與 JEV 決策模型 (`decision_model`)。
+  - **3 批次漸進式載入優化**：
+    - Batch 1 (5位核心大師/估值/技術)：18~24 秒首屏秒開。
+    - Batch 2 (3位情緒/散戶/國會)：背景並行追加。
+    - Batch 3 (8位價值/成長/拐點/JEV)：背景無縫合併，達成 16 位全維度圓桌決策。
+- **🎯 確定性工具路由升級 ([`lib/chat/routing.ts`](lib/chat/routing.ts))**：
+  - 正則表達式全面升級，支援 `16位大師`、`16 位大師`、`多位大師`、`\d+位大師`，避免弱模型漏接直接調用原生 `<StockAnalysis />`。
+  - 單元測試新增 16 位大師分流測試案例，12/12 項測試全數綠燈通過。
+- **🧠 綜合判讀與 System One 共識量化升級 ([`app/api/analysis-summary/route.ts`](app/api/analysis-summary/route.ts))**：
+  - Clef-Flash System One 提示詞與多空共識模型全面更新為 16 位大師口徑，提供更嚴謹的委員會分歧指數與尾部黑天鵝預警。
+
+### 🐞 修正 (Fixed)
+
+- **🔒 修正 `requestHedgeFundApi` HTTPS 通訊協議錯誤 ([`app/api/stock-analysis/route.ts`](app/api/stock-analysis/route.ts))**：
+  - 原實作中雖然依據埠號與網址判斷出 `isHttps`，但請求呼叫處誤寫為 `http.request`，導致向 `hedgeapi.afpicapital.com:443` 發送明文 HTTP 觸發 `400 Bad Request` 並退回備援節點。
+  - 修正為 `client.request`，正式支援以原生 TLS/HTTPS 高效直連 `https://hedgeapi.afpicapital.com` 主端點。
+- **⚙️ 環境變數與文檔配置同步 ([`.env.example`](.env.example), [`docs/architecture/`](docs/architecture/))**：
+  - 更新預設主機配置為 `AI_HEDGE_FUND_HOST=hedgeapi.afpicapital.com`、`AI_HEDGE_FUND_PORT=443`，備援主機保留 `dns.glsoft.ai:6000`。
+  - 同步更新 `README.md`、`public/llms.txt`、`public/llms-full.txt` 與架構手冊。
+
+---
+
 ## [2026-10-14] - 升級 System One 四階決策容錯鏈 (Clef ➔ Jev ➔ OpenAI Decisions) 與架構文檔模組化瘦身
 
 ### ✨ 新增 (Added)

@@ -1,6 +1,6 @@
 # StockBot 2.0
 
-> StockBot 2.0 is an institutional-grade AI financial terminal and agentic intelligence platform powered by Next.js, Vercel AI SDK Generative UI, TradingView widgets, 2MD financial intelligence, TWSE/TPEX institutional chip data, and quantitative finance engines (DCF, Minervini SEPA, Black-Scholes, Amihud Microstructure, and 13 Legendary Investor models).
+> StockBot 2.0 is an institutional-grade AI financial terminal and agentic intelligence platform powered by Next.js, Vercel AI SDK Generative UI, TradingView widgets, 2MD financial intelligence, TWSE/TPEX institutional chip data, and quantitative finance engines (DCF, Minervini SEPA, Black-Scholes, Amihud Microstructure, and 16 Legendary Investor & Quantitative Decision models).
 
 StockBot 2.0 is optimized for AI agents, LLMs, and quant analysts. It provides deterministic intent routing, zero-hallucination data verification, pure TypeScript quantitative models, and 15 native React financial visualization cards that render directly above text captions. All chat sessions, tool results, and charts persist safely in client-side localStorage without database dependencies.
 
@@ -21,7 +21,7 @@ Key System Directives:
 - [Options Payoff Simulator](https://bot.david888.com/llms-full.txt#options-payoff): Black-Scholes pricing simulator for multi-leg option strategies (Iron Condor, Butterfly, Straddle, Covered Call) with interactive sliders for Spot, Strike, DTE, and IV.
 - [Stock Liquidity & Impact Card](https://bot.david888.com/llms-full.txt#liquidity): Market microstructure diagnostics including Amihud illiquidity measure, annualized float turnover %, square-root market impact curve, and estimated slippage in basis points.
 - [ETF Premium & GEX Card](https://bot.david888.com/llms-full.txt#etf-premium): Real-time ETF price vs NAV divergence (Premium/Discount %), Dealer Gamma Exposure (GEX), and peer median benchmark comparison.
-- [13 Masters Investment Analysis](https://bot.david888.com/llms-full.txt#stock-analysis): Multi-analyst hedge fund committee featuring 13 legendary investor personas (Buffett, Graham, Munger, Wood, Burry, etc.) with 3-batch progressive streaming and round table consensus.
+- [16 Masters Investment Analysis](https://bot.david888.com/llms-full.txt#stock-analysis): Multi-analyst hedge fund committee featuring 16 legendary investor & quantitative decision personas (Buffett, Graham, Munger, Wood, Burry, Lynch, Ackman, Fisher, Pelosi, WSB, Druckenmiller, JEV, etc.) with 3-batch progressive streaming and round table consensus.
 - [Transmission Chain Card](https://bot.david888.com/llms-full.txt#transmission-chain): DeepEar 3-tier causal propagation engine (Tier-1 Macro -> Tier-2 Industry Supply Chain -> Tier-3 Corporate Cash Flow) with impact sentiment and falsification criteria.
 - [Signal Tracker Card](https://bot.david888.com/llms-full.txt#signal-tracker): AlphaEar 4-state investment thesis tracking (Strengthened, Weakened, Falsified, Unchanged) with hard invalidation triggers and position adjustment guidelines.
 - [Macro Factor Regime Card](https://bot.david888.com/llms-full.txt#macro-regime): 20-year multi-factor asset allocation backtest (SPY, QQQ, 80/20 VUG/SHY, 60/40) backed by `voidful/us_fddk` frozen data deducting 10/50 bps slippage.

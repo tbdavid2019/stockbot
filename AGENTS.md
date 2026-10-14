@@ -42,7 +42,7 @@ This document contains non-negotiable operational rules and architectural entryp
 
 | 模組文件 | 涵蓋核心架構與設計規範 |
 | :--- | :--- |
-| **[`01-chat-and-routing.md`](docs/architecture/01-chat-and-routing.md)** | 雙模型分工 (`TOOL_MODEL` vs `MODEL`)、動態容錯路由、13位大師3批次漸進串流、確定性正則路由、LocalStorage持久化、2MD全維度情報與自主續問、去TradingView原生財務卡片。 |
+| **[`01-chat-and-routing.md`](docs/architecture/01-chat-and-routing.md)** | 雙模型分工 (`TOOL_MODEL` vs `MODEL`)、動態容錯路由、16位大師與量化模型3批次漸進串流、確定性正則路由、LocalStorage持久化、2MD全維度情報與自主續問、去TradingView原生財務卡片。 |
 | **[`02-decision-engine.md`](docs/architecture/02-decision-engine.md)** | Clef-Flash System One 決策推論引擎、四大落地場景 (A/B/C/D)、**四階容錯鏈 (Clef ➔ Clef-Q4 ➔ Jev ➔ OpenAI Decisions Adapter)**、全失敗零當機安全降級。 |
 | **[`03-quant-and-market.md`](docs/architecture/03-quant-and-market.md)** | 原生量化金融 (DCF 5x5矩陣, SEPA VCP, Black-Scholes, Amihud)、DeepEar宏觀傳導鏈、AlphaEar信號證偽、tw_stocker歷史庫、三大法人籌碼情報、Investing總經日曆。 |
 | **[`04-security-and-byok.md`](docs/architecture/04-security-and-byok.md)** | BYOK自備金鑰純本機零留存機制、硬核SSRF防護 (`isSafeApiBaseUrl`)、2MD AnyDoc財報解析、法人說明會與美股Earnings Call情報 (`showEarningsCalls`)。 |

@@ -169,7 +169,7 @@ async function evaluateMasterConsensusWithClef(
         questions: {
           consensus_stance: {
             type: 'choice',
-            instructions: '13位大師的整體共識偏向何種立場？',
+            instructions: '16位大師的整體共識偏向何種立場？',
             criteria: {
               strong_bull: '強烈看多，多數大師高信心看漲',
               cautious_bull: '溫和偏多，多數看漲但有基本面或估值提醒',

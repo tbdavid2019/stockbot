@@ -17,7 +17,7 @@ Stockbot 導入「快思考決策模型（System 1 Decision Engine）」，將�
   - 內建 `isPlausibleFinancialQuery`，普通閒聊問候跳過外部請求，節省延遲。
 - **B. DeepEar 傳導鏈與信號證偽打分 ([`lib/deepear.ts`](../../lib/deepear.ts))**：
   - 以 Clef 進行市場衝擊情緒分數評估（-1.0 到 +1.0）與傳導方向評估，客觀輸出 `Strengthened` / `Weakened` / `Falsified` / `Unchanged` 狀態。
-- **C. 13 位大師共識量化與多空衝突警報 ([`app/api/analysis-summary/route.ts`](../../app/api/analysis-summary/route.ts))**：
+- **C. 16 位大師共識量化與多空衝突警報 ([`app/api/analysis-summary/route.ts`](../../app/api/analysis-summary/route.ts))**：
   - 快速評估大師多空立場（`strong_bull` 到 `strong_bear`）、衝突分歧指數（0~100）與尾部黑天鵝風險預警。
 - **D. 2MD 搜尋結果關聯度與防幻覺檢核 ([`lib/research-search.ts`](../../lib/research-search.ts))**：
   - 客觀評估候選新聞文章與目標標的財務問題之具體關聯度，確保最佳數據來源置頂。
