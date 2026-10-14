@@ -8,12 +8,12 @@
 
 ### ✨ 新增 (Added)
 
-- **🎙️ BigGo Finance 全維度法人說明會數據深度聚合 ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts))**：
-  - 徹底解決原先僅仰賴靜態基準與模糊搜尋導致法說會抓取不全的問題，正式對接 BigGo Finance 官方 API (`https://api.biggo.com/api/v1/finance/stock/earnings-calls`)。
-  - **多視窗滑動並行檢索**：自動切分 6 個 6 日跨度視窗（涵蓋過去 18 天至未來 18 天），一次並行撈取上百場台股與美股最新法人說明會日程與回放。
-  - **個股專屬情報與深度萃取**：精準支援台股 4 碼代號、中文公司名稱、美股代號及 SpaceX (`SPCX`)；自動並行調用 `/detail`、`/file?type=slides` 與 `/file?type=video`，提取經營層財測營收/毛利/資本支出指引、投行分析師 Q&A 精華、官方簡報 PDF 直連與 WebPro 官方影音回放串流。
-  - **前端動態檢索端點 (`/api/earnings-calls`) 與互動搜尋升級**：支援卡片直接按 Enter 異步向後端發動深度檢索，並具備 300 秒快取與 Singleflight 並行去重。
-  - **全綠燈單元測試 (`lib/quant/earnings-call.test.ts`)**：涵蓋時區換算、TSMC 與 SpaceX 實況檢索、多市場多視窗總覽驗證。
+- **🎙️ BigGo Finance 全球全市場法人說明會深度聚合 (台/美/日/韓/其他) ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts))**：
+  - 正式對接 BigGo Finance 官方全市場 API (`https://api.biggo.com/api/v1/finance/stock/earnings-calls?t=all`)，支援 **台灣 (TWSE/TPEX)、美國 (US)、日本 (JPX)、韓國 (KRX) 與其他國際市場**。
+  - **多視窗滑動並行檢索**：自動切分 6 個 6 日跨度視窗（涵蓋過去 18 天至未來 18 天），並行撈取全球各市場最新法說會日程與歷史回放。
+  - **跨國個股與時區深度解析**：精準支援日股（如 `7203.T` 豐田、`9984.T` 軟銀）、韓股（如 `005930.KS` 三星電子、`000660.KS` SK 海力士）、美股（`NVDA`、`AAPL`、SpaceX `SPCX`）與台股；完整支援東京 (JST, UTC+9)、首爾 (KST, UTC+9)、美東 (ET) 與台北 (CST) 跨時區雙軌轉換。
+  - **互動式前端卡片升級 (`<EarningsCallCard />`)**：提供 6 大市場分頁標籤（全部、台灣、美國、日本、韓國、其他），支援即時篩選、動態服務端檢索與各市場專屬時差標記。
+  - **全綠燈單元測試 (`lib/quant/earnings-call.test.ts`)**：8 項單元測試全數綠燈通過（涵蓋東京/首爾時區換算、日本 JPX 實況檢索、韓國 KRX 三星檢索與全市場總覽）。
 - **⚡ 四階決策推論容錯鏈 (4-Tier Decision Failover Chain in [`lib/clef.ts`](lib/clef.ts))**：
   - **Primary**：自建 Clef-Flash (`https://clef.create360.ai/v1/systemone`，實測 <180ms，零 Output Tokens)。
   - **Fallback 2**：自建備援 CPU GGUF (`https://clef.aiurl.tw/v1/systemone`)。

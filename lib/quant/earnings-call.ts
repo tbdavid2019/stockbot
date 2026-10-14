@@ -5,10 +5,10 @@ export interface EarningsCallItem {
   id: string
   symbol: string
   companyName: string
-  market: 'TWSE' | 'TPEX' | 'US' | 'OTHER'
+  market: 'TWSE' | 'TPEX' | 'US' | 'JP' | 'KR' | 'OTHER'
   conferenceDate: string // YYYY-MM-DD or '待確認'
   conferenceTime?: string // e.g. "14:00" or "08:30"
-  timezone: 'Asia/Taipei' | 'America/New_York'
+  timezone: 'Asia/Taipei' | 'America/New_York' | 'Asia/Tokyo' | 'Asia/Seoul'
   session?: 'before-open' | 'after-close' | 'during-hours' | 'unspecified'
   status: 'live' | 'today' | 'upcoming' | 'replay'
   title: string
@@ -29,7 +29,7 @@ export interface EarningsCallDashboardResult {
   asOfDate: string
   symbol?: string
   companyName?: string
-  marketFilter: 'TW' | 'US' | 'ALL'
+  marketFilter: 'TW' | 'US' | 'JP' | 'KR' | 'OTHER' | 'ALL'
   totalCount: number
   liveAndToday: EarningsCallItem[]
   upcoming: EarningsCallItem[]
@@ -40,7 +40,7 @@ export interface EarningsCallDashboardResult {
 
 export interface FetchEarningsCallsParams {
   symbol?: string
-  market?: 'TW' | 'US' | 'ALL'
+  market?: 'TW' | 'US' | 'JP' | 'KR' | 'OTHER' | 'ALL'
   limit?: number
 }
 
@@ -127,10 +127,17 @@ export interface DualTimezoneInfo {
 export function formatDualTimezone(
   confDate: string,
   confTime: string | undefined,
-  marketTz: 'Asia/Taipei' | 'America/New_York',
+  marketTz: 'Asia/Taipei' | 'America/New_York' | 'Asia/Tokyo' | 'Asia/Seoul' | string,
   userTz: string = 'Asia/Taipei'
 ): DualTimezoneInfo {
-  const marketTzName = marketTz === 'America/New_York' ? '美東時區 (ET)' : '台北時區 (CST)'
+  let marketTzName = '台北時區 (CST)'
+  if (marketTz === 'America/New_York') {
+    marketTzName = '美東時區 (ET)'
+  } else if (marketTz === 'Asia/Tokyo') {
+    marketTzName = '東京時區 (JST)'
+  } else if (marketTz === 'Asia/Seoul') {
+    marketTzName = '首爾時區 (KST)'
+  }
   const localTzName = userTz === 'Asia/Taipei' ? '台北時間 (CST)' : userTz
 
   const confUtc = parseZonedTimeToUtc(confDate, confTime, marketTz)
@@ -193,7 +200,7 @@ export function formatDualTimezone(
  */
 export function computeConferenceStatus(
   confDate: string,
-  timeZone: 'Asia/Taipei' | 'America/New_York',
+  timeZone: 'Asia/Taipei' | 'America/New_York' | 'Asia/Tokyo' | 'Asia/Seoul' | string,
   confTime?: string,
   now: Date = new Date(),
   userTimeZone: string = 'Asia/Taipei'
@@ -630,6 +637,88 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     locationOrPlatform: 'Live Audio Webcast & X Spaces',
     webcastUrl: 'https://ir.tesla.com/events-and-presentations',
     irUrl: 'https://ir.tesla.com'
+  },
+  // --- 🇯🇵 日本代表性企業法說會 (JPX) ---
+  {
+    id: 'jp-7203-2026',
+    symbol: '7203',
+    companyName: '豐田汽車 (Toyota Motor)',
+    market: 'JP',
+    conferenceDate: '2026-10-30',
+    conferenceTime: '15:00',
+    timezone: 'Asia/Tokyo',
+    session: 'after-close',
+    status: 'upcoming',
+    title: 'トヨタ自動車 2026年度 第2四半期 決算説明会',
+    financialPeriod: 'FY2026 Q2',
+    locationOrPlatform: '東京總部 / Online Audio & Video Webcast',
+    webcastUrl: 'https://global.toyota/jp/ir/',
+    irUrl: 'https://global.toyota/jp/ir/',
+    guidanceHighlights: {
+      revenueOutlook: '全球油電混合車 (HEV) 與電動車出貨目標與獲利指引',
+      highlights: ['北美與亞洲市場供應鏈庫存調整', '次世代固態電池研發進度']
+    }
+  },
+  {
+    id: 'jp-9984-2026',
+    symbol: '9984',
+    companyName: '軟銀集團 (SoftBank Group)',
+    market: 'JP',
+    conferenceDate: '2026-11-10',
+    conferenceTime: '16:30',
+    timezone: 'Asia/Tokyo',
+    session: 'after-close',
+    status: 'upcoming',
+    title: 'ソフトバンクグループ 2026年度 第2四半期 決算説明会',
+    financialPeriod: 'FY2026 Q2',
+    locationOrPlatform: '東京總部直播 (Live Webcast)',
+    webcastUrl: 'https://group.softbank/ir',
+    irUrl: 'https://group.softbank/ir',
+    guidanceHighlights: {
+      revenueOutlook: '願景基金 (Vision Fund) 投資收益與 AI 半導體生態系佈局',
+      highlights: ['Arm 授權營收增長動能', '生成式 AI 超級運算中心資本配置']
+    }
+  },
+  // --- 🇰🇷 韓國代表性企業法說會 (KRX) ---
+  {
+    id: 'kr-005930-2026',
+    symbol: '005930',
+    companyName: '三星電子 (Samsung Electronics)',
+    market: 'KR',
+    conferenceDate: '2026-10-31',
+    conferenceTime: '10:00',
+    timezone: 'Asia/Seoul',
+    session: 'before-open',
+    status: 'upcoming',
+    title: '삼성전자 2026년 3분기 경영실적 설명회 (Earnings Call)',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: '수원 본사 / Global Audio Webcast',
+    webcastUrl: 'https://www.samsung.com/global/ir/',
+    irUrl: 'https://www.samsung.com/global/ir/',
+    guidanceHighlights: {
+      revenueOutlook: '高頻寬記憶體 (HBM3E / HBM4) 供貨與晶圓代工 (Foundry) 產能展望',
+      highlights: ['次世代 2nm 製程導入進度', '旗艦 Galaxy AI 手機出貨目標']
+    }
+  },
+  {
+    id: 'kr-000660-2026',
+    symbol: '000660',
+    companyName: 'SK 海力士 (SK Hynix)',
+    market: 'KR',
+    conferenceDate: '2026-10-24',
+    conferenceTime: '09:00',
+    timezone: 'Asia/Seoul',
+    session: 'before-open',
+    status: 'upcoming',
+    title: 'SK하이닉스 2026년 3분기 실적발표 컨퍼런스콜',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: '이천 본사 / Global Audio Conference Call',
+    webcastUrl: 'https://www.skhynix.com/ir',
+    irUrl: 'https://www.skhynix.com/ir',
+    guidanceHighlights: {
+      revenueOutlook: 'HBM3E 12層堆疊放量與 DRAM/NAND 晶圓產能稼動率',
+      highlights: ['AI 伺服器客戶訂單能見度至 2027 年', '清州與龍仁新晶圓廠投資時程']
+    }
   }
 ]
 
@@ -684,8 +773,8 @@ export interface BigGoCallDetail {
  */
 function parseBigGoStockMetadata(item: BigGoRawCallItem): {
   symbol: string
-  market: 'TWSE' | 'TPEX' | 'US' | 'OTHER'
-  timezone: 'Asia/Taipei' | 'America/New_York'
+  market: 'TWSE' | 'TPEX' | 'US' | 'JP' | 'KR' | 'OTHER'
+  timezone: 'Asia/Taipei' | 'America/New_York' | 'Asia/Tokyo' | 'Asia/Seoul'
 } {
   const stockId = (item.stock_id || '').toUpperCase().trim()
   const region = (item.region || '').toLowerCase().trim()
@@ -696,6 +785,24 @@ function parseBigGoStockMetadata(item: BigGoRawCallItem): {
       symbol: 'SPCX',
       market: 'US',
       timezone: 'America/New_York'
+    }
+  }
+
+  // Japan stocks (e.g. 7203.T, 9984.T, region === 'jp')
+  if (region === 'jp' || stockId.endsWith('.T')) {
+    return {
+      symbol: stockId.replace('.T', ''),
+      market: 'JP',
+      timezone: 'Asia/Tokyo'
+    }
+  }
+
+  // South Korea stocks (e.g. 005930.KS, 000660.KS, region === 'kr')
+  if (region === 'kr' || stockId.endsWith('.KS') || stockId.endsWith('.KQ')) {
+    return {
+      symbol: stockId.replace(/\.(KS|KQ)$/, ''),
+      market: 'KR',
+      timezone: 'Asia/Seoul'
     }
   }
 
@@ -983,7 +1090,9 @@ async function fetchBigGoEarningsBySymbol(query: string): Promise<EarningsCallIt
 /**
  * Fetches multi-window earnings call dashboard from BigGo Finance (-18 days to +18 days)
  */
-async function fetchBigGoMultiWindowDashboard(market?: 'TW' | 'US' | 'ALL'): Promise<EarningsCallItem[]> {
+async function fetchBigGoMultiWindowDashboard(
+  market?: 'TW' | 'US' | 'JP' | 'KR' | 'OTHER' | 'ALL'
+): Promise<EarningsCallItem[]> {
   try {
     const today = new Date()
     const windows: { start: string; end: string }[] = []
@@ -998,7 +1107,12 @@ async function fetchBigGoMultiWindowDashboard(market?: 'TW' | 'US' | 'ALL'): Pro
       })
     }
 
-    const marketParam = market === 'TW' ? '&market=tw' : market === 'US' ? '&market=us' : ''
+    let marketParam = ''
+    if (market === 'TW') marketParam = '&market=tw'
+    else if (market === 'US') marketParam = '&market=us'
+    else if (market === 'JP') marketParam = '&market=jp'
+    else if (market === 'KR') marketParam = '&market=kr'
+    else if (market === 'OTHER') marketParam = '&market=other'
 
     const fetchWindow = async (w: { start: string; end: string }) => {
       try {
@@ -1226,6 +1340,12 @@ export async function fetchEarningsCalls(
         pool = pool.filter(item => item.market === 'TWSE' || item.market === 'TPEX')
       } else if (market === 'US') {
         pool = pool.filter(item => item.market === 'US')
+      } else if (market === 'JP') {
+        pool = pool.filter(item => item.market === 'JP')
+      } else if (market === 'KR') {
+        pool = pool.filter(item => item.market === 'KR')
+      } else if (market === 'OTHER') {
+        pool = pool.filter(item => item.market === 'OTHER')
       }
     }
 

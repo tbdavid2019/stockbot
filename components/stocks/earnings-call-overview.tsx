@@ -93,7 +93,7 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
           <div className="flex flex-wrap items-center gap-2 mb-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-xs font-bold text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300">
               <Radio className="size-3.5" />
-              <span>MOPS · TWSE · TPEX · US Earnings Calls</span>
+              <span>BigGo · 台灣 (TWSE) · 美國 (US) · 日本 (JPX) · 韓國 (KRX)</span>
             </span>
             <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-mono text-muted-foreground border border-border/60">
               {lang === 'zh' ? `基準日：${safeData.asOfDate}` : `As of: ${safeData.asOfDate}`}
@@ -105,8 +105,8 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
           </h1>
           <p className="mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-3xl">
             {lang === 'zh'
-              ? '即時彙整公開資訊觀測站 (MOPS) 重大訊息、台灣證券交易所 (TWSE/TPEX) 官方影音 Webcast、各公司投資人關係 (IR) 簡報與美股重大財報電話會議。支援 2MD AnyDoc 引擎秒級萃取經營層指引 (Guidance) 與資本支出展望。'
-              : 'Live aggregation of MOPS corporate filings, TWSE/TPEX official webcasts, corporate IR decks, and US corporate earnings calls. Powered by 2MD AnyDoc for instant management guidance and CapEx extraction.'}
+              ? '深度聚合 BigGo Finance 全球數據庫、公開資訊觀測站 (MOPS)、證交所 (TWSE/TPEX) 官方影音 Webcast、美股重大財報電話會議、日本 (JPX) 決算說明會與韓國 (KRX) 業績說明會。支援 2MD AnyDoc 引擎秒級萃取經營層指引 (Guidance) 與資本支出展望。'
+              : 'Live aggregation of BigGo Finance global directory, MOPS corporate filings, TWSE/TPEX official webcasts, US corporate earnings calls, Japan (JPX) briefings, and Korea (KRX) conferences. Powered by 2MD AnyDoc for instant management guidance and CapEx extraction.'}
           </p>
 
           {/* Quick Metrics Bar */}

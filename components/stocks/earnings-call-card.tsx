@@ -48,7 +48,9 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const safeData = data || DEFAULT_CARD_DATA
   const { config: userKeyConfig } = useUserApiKey()
-  const [marketFilter, setMarketFilter] = React.useState<'ALL' | 'TW' | 'US'>(safeData.marketFilter || 'ALL')
+  const [marketFilter, setMarketFilter] = React.useState<'ALL' | 'TW' | 'US' | 'JP' | 'KR' | 'OTHER'>(
+    safeData.marketFilter || 'ALL'
+  )
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'live' | 'upcoming' | 'replay'>('all')
   const [timezoneMode, setTimezoneMode] = React.useState<'local' | 'market'>('local')
   const [userTimezone, setUserTimezone] = React.useState<string>('Asia/Taipei')
@@ -127,6 +129,12 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
       items = items.filter(i => i.market === 'TWSE' || i.market === 'TPEX')
     } else if (marketFilter === 'US') {
       items = items.filter(i => i.market === 'US')
+    } else if (marketFilter === 'JP') {
+      items = items.filter(i => i.market === 'JP')
+    } else if (marketFilter === 'KR') {
+      items = items.filter(i => i.market === 'KR')
+    } else if (marketFilter === 'OTHER') {
+      items = items.filter(i => i.market === 'OTHER')
     }
 
     if (statusFilter === 'live') {
@@ -157,6 +165,12 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
       pool = pool.filter(i => i.market === 'TWSE' || i.market === 'TPEX')
     } else if (marketFilter === 'US') {
       pool = pool.filter(i => i.market === 'US')
+    } else if (marketFilter === 'JP') {
+      pool = pool.filter(i => i.market === 'JP')
+    } else if (marketFilter === 'KR') {
+      pool = pool.filter(i => i.market === 'KR')
+    } else if (marketFilter === 'OTHER') {
+      pool = pool.filter(i => i.market === 'OTHER')
     }
     return {
       all: pool.length,
@@ -316,7 +330,7 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
       {/* Filter Tabs & Segment Controls */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         {/* Market Filter */}
-        <div className="inline-flex rounded-xl bg-muted/60 p-1 border border-border/80 text-xs shadow-2xs">
+        <div className="flex flex-wrap items-center rounded-xl bg-muted/60 p-1 border border-border/80 text-xs shadow-2xs gap-1">
           <button
             type="button"
             onClick={() => setMarketFilter('ALL')}
@@ -339,7 +353,7 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
             }`}
           >
             <Building2 className="size-3.5" />
-            <span>{lang === 'zh' ? '台灣市場 (MOPS/TWSE)' : 'Taiwan (TWSE/TPEX)'}</span>
+            <span>{lang === 'zh' ? '台灣 (TWSE)' : 'Taiwan (TWSE)'}</span>
           </button>
           <button
             type="button"
@@ -351,7 +365,43 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
             }`}
           >
             <Landmark className="size-3.5" />
-            <span>{lang === 'zh' ? '美國市場 (Earnings Calls)' : 'US (Earnings Calls)'}</span>
+            <span>{lang === 'zh' ? '美國 (US)' : 'US'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMarketFilter('JP')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+              marketFilter === 'JP'
+                ? 'bg-card shadow-xs text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span className="text-xs">🇯🇵</span>
+            <span>{lang === 'zh' ? '日本 (JPX)' : 'Japan (JPX)'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMarketFilter('KR')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+              marketFilter === 'KR'
+                ? 'bg-card shadow-xs text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <span className="text-xs">🇰🇷</span>
+            <span>{lang === 'zh' ? '韓國 (KRX)' : 'Korea (KRX)'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMarketFilter('OTHER')}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all cursor-pointer ${
+              marketFilter === 'OTHER'
+                ? 'bg-card shadow-xs text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <Compass className="size-3.5" />
+            <span>{lang === 'zh' ? '其他市場' : 'Other Markets'}</span>
           </button>
         </div>
 
@@ -559,9 +609,27 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                               </span>
                             )}
                           </>
+                        ) : item.timezone === 'Asia/Tokyo' ? (
+                          <>
+                            <span className="text-muted-foreground/80">
+                              {lang === 'zh' ? '東京原始：' : 'Market JST: '}
+                            </span>
+                            <span className="font-mono font-medium text-foreground/80">
+                              {dualTz.marketDate} {dualTz.marketTime} JST
+                            </span>
+                          </>
+                        ) : item.timezone === 'Asia/Seoul' ? (
+                          <>
+                            <span className="text-muted-foreground/80">
+                              {lang === 'zh' ? '首爾原始：' : 'Market KST: '}
+                            </span>
+                            <span className="font-mono font-medium text-foreground/80">
+                              {dualTz.marketDate} {dualTz.marketTime} KST
+                            </span>
+                          </>
                         ) : (
                           <span className="text-muted-foreground/80">
-                            {lang === 'zh' ? '台灣市場會議 (無時差)' : 'Taiwan Market (No Time Diff)'}
+                            {lang === 'zh' ? '台北市場會議 (無時差)' : 'Taipei Market (No Time Diff)'}
                           </span>
                         )
                       ) : (
@@ -579,9 +647,18 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                               </span>
                             )}
                           </>
+                        ) : item.timezone === 'Asia/Tokyo' || item.timezone === 'Asia/Seoul' ? (
+                          <>
+                            <span className="text-muted-foreground/80">
+                              {lang === 'zh' ? '換算當地：' : 'Local: '}
+                            </span>
+                            <span className="font-mono font-medium text-foreground/80">
+                              {dualTz.localDate} {dualTz.localTime} ({dualTz.localTzName})
+                            </span>
+                          </>
                         ) : (
                           <span className="text-muted-foreground/80">
-                            {lang === 'zh' ? '台灣市場會議 (無時差)' : 'Taiwan Market (No Time Diff)'}
+                            {lang === 'zh' ? '台北市場會議 (無時差)' : 'Taipei Market (No Time Diff)'}
                           </span>
                         )
                       )}

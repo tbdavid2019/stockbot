@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const symbol = searchParams.get('symbol') || searchParams.get('q') || undefined
     const marketParam = (searchParams.get('market') || 'ALL').toUpperCase()
-    const market = marketParam === 'TW' || marketParam === 'US' ? marketParam : 'ALL'
+    const validMarkets = ['TW', 'US', 'JP', 'KR', 'OTHER', 'ALL'] as const
+    const market = validMarkets.includes(marketParam as any) ? (marketParam as (typeof validMarkets)[number]) : 'ALL'
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '100', 10), 1), 200)
 
     const data = await fetchEarningsCalls({
