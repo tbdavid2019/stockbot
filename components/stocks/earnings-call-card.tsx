@@ -3,6 +3,22 @@
 import * as React from 'react'
 import type { EarningsCallDashboardResult, EarningsCallItem } from '@/lib/quant/earnings-call'
 import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
+import {
+  Search,
+  X,
+  Globe,
+  Building2,
+  Landmark,
+  Radio,
+  Play,
+  Calendar,
+  History,
+  FileText,
+  Download,
+  Sparkles,
+  Compass,
+  ExternalLink
+} from 'lucide-react'
 
 interface DeckAnalysisState {
   loading: boolean
@@ -140,35 +156,36 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
   }
 
   return (
-    <section className="w-full rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
+    <section className="w-full rounded-2xl border border-border/80 bg-card p-5 shadow-xs sm:p-6 text-card-foreground my-3">
       {/* Header */}
-      <header className="mb-5 flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
+      <header className="mb-5 flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-border/60 pb-4">
         <div>
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
-              法人說明會 & Earnings Calls
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
+              <Radio className="size-3" />
+              <span>法人說明會 & Earnings Calls</span>
             </span>
-            <span className="text-xs text-muted-foreground bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full font-mono">
+            <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full font-mono border border-border/60">
               基準日期: {safeData.asOfDate}
             </span>
             {safeData.symbol && (
-              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
                 目標標的: {safeData.symbol}
               </span>
             )}
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 flex items-center gap-2">
+          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
             <span>{safeData.companyName ? `${safeData.companyName} 法說會時程與指引` : '全球法人說明會與業績展望一覽'}</span>
           </h3>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">
             整合公開資訊觀測站 (MOPS)、TWSE/TPEX 官方 Webcast 與美股 Earnings Call，提供法說會日程、影音回放、簡報下載與 2MD AI 指引萃取。
           </p>
         </div>
 
         {/* Source attribution */}
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-2.5 text-xs shrink-0 bg-slate-50/50 dark:bg-zinc-900/50">
+        <div className="rounded-xl border border-border/80 p-2.5 text-xs shrink-0 bg-muted/30">
           <div className="text-muted-foreground font-medium">數據渠道</div>
-          <div className="font-semibold text-slate-700 dark:text-slate-300 mt-0.5">{safeData.source}</div>
+          <div className="font-semibold text-foreground/80 mt-0.5">{safeData.source}</div>
         </div>
       </header>
 
@@ -179,17 +196,17 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           placeholder="搜尋股票代號或公司名稱（例如：2330、台積電、NVDA、廣達、聯發科）..."
-          className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-2.5 pl-10 pr-9 text-xs sm:text-sm text-slate-900 placeholder:text-muted-foreground focus:border-indigo-500 focus:bg-white focus:outline-none dark:border-slate-800 dark:bg-zinc-900/60 dark:text-slate-100 dark:focus:border-indigo-500 transition-colors shadow-2xs"
+          className="w-full rounded-xl border border-border bg-muted/30 px-4 py-2.5 pl-10 pr-9 text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:border-indigo-500 focus:bg-card focus:outline-none transition-colors shadow-2xs"
         />
-        <span className="absolute left-3.5 top-3 text-xs sm:text-sm text-muted-foreground">🔍</span>
+        <Search className="absolute left-3.5 top-3 size-4 text-muted-foreground" />
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery('')}
-            className="absolute right-3.5 top-2.5 rounded-full p-0.5 text-xs text-muted-foreground hover:bg-slate-200 dark:hover:bg-zinc-800 hover:text-foreground"
+            className="absolute right-3.5 top-2.5 rounded-full p-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             title="清除搜尋"
           >
-            ✕
+            <X className="size-3.5" />
           </button>
         )}
       </div>
@@ -197,39 +214,42 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
       {/* Filter Tabs & Segment Controls */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         {/* Market Filter */}
-        <div className="inline-flex rounded-xl bg-slate-100 p-1 dark:bg-zinc-900 border border-slate-200 dark:border-slate-800 text-xs">
+        <div className="inline-flex rounded-xl bg-muted/60 p-1 border border-border/80 text-xs shadow-2xs">
           <button
             type="button"
             onClick={() => setMarketFilter('ALL')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
               marketFilter === 'ALL'
-                ? 'bg-white shadow-sm text-slate-900 dark:bg-zinc-800 dark:text-slate-100 font-semibold'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                ? 'bg-card shadow-xs text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            🌐 全部市場
+            <Globe className="size-3.5" />
+            <span>全部市場</span>
           </button>
           <button
             type="button"
             onClick={() => setMarketFilter('TW')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
               marketFilter === 'TW'
-                ? 'bg-white shadow-sm text-slate-900 dark:bg-zinc-800 dark:text-slate-100 font-semibold'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                ? 'bg-card shadow-xs text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            🇹🇼 台灣市場 (MOPS/TWSE)
+            <Building2 className="size-3.5" />
+            <span>台灣市場 (MOPS/TWSE)</span>
           </button>
           <button
             type="button"
             onClick={() => setMarketFilter('US')}
-            className={`px-3 py-1.5 rounded-lg font-medium transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-all ${
               marketFilter === 'US'
-                ? 'bg-white shadow-sm text-slate-900 dark:bg-zinc-800 dark:text-slate-100 font-semibold'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                ? 'bg-card shadow-xs text-foreground font-bold'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            🇺🇸 美國市場 (Earnings Call)
+            <Landmark className="size-3.5" />
+            <span>美國市場 (Earnings Calls)</span>
           </button>
         </div>
 
@@ -238,10 +258,10 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           <button
             type="button"
             onClick={() => setStatusFilter('all')}
-            className={`px-2.5 py-1 rounded-full border transition-all ${
+            className={`px-3 py-1 rounded-full border transition-all ${
               statusFilter === 'all'
-                ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-semibold'
-                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:bg-indigo-950/60 dark:text-indigo-300 font-bold shadow-2xs'
+                : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
             全部 ({counts.all})
@@ -249,35 +269,38 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           <button
             type="button"
             onClick={() => setStatusFilter('live')}
-            className={`px-2.5 py-1 rounded-full border transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
               statusFilter === 'live'
-                ? 'border-rose-600 bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 font-semibold'
-                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                ? 'border-rose-600 bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 font-bold shadow-2xs'
+                : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
-            🔴 今日/進行中 ({counts.live})
+            <span className="size-1.5 rounded-full bg-rose-500" />
+            <span>今日/進行中 ({counts.live})</span>
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter('upcoming')}
-            className={`px-2.5 py-1 rounded-full border transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
               statusFilter === 'upcoming'
-                ? 'border-sky-600 bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 font-semibold'
-                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                ? 'border-sky-600 bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 font-bold shadow-2xs'
+                : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
-            🔵 即將舉行 ({counts.upcoming})
+            <span className="size-1.5 rounded-full bg-sky-500" />
+            <span>即將舉行 ({counts.upcoming})</span>
           </button>
           <button
             type="button"
             onClick={() => setStatusFilter('replay')}
-            className={`px-2.5 py-1 rounded-full border transition-all ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border transition-all ${
               statusFilter === 'replay'
-                ? 'border-slate-600 bg-slate-100 text-slate-800 dark:bg-zinc-800 dark:text-slate-200 font-semibold'
-                : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-zinc-900'
+                ? 'border-foreground/40 bg-muted text-foreground font-bold shadow-2xs'
+                : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
             }`}
           >
-            ⚪ 歷史回放 ({counts.replay})
+            <span className="size-1.5 rounded-full bg-slate-400" />
+            <span>歷史回放 ({counts.replay})</span>
           </button>
         </div>
       </div>
@@ -298,15 +321,15 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
             return (
               <div
                 key={item.id}
-                className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-zinc-900/40 p-4 transition-all hover:border-slate-300 dark:hover:border-slate-700"
+                className="rounded-xl border border-border/80 bg-muted/20 p-4 transition-all hover:border-foreground/30 shadow-2xs"
               >
                 {/* Top line: Symbol, Company, Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2.5">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-200/80 dark:bg-zinc-800 text-slate-800 dark:text-slate-200">
+                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-muted text-foreground border border-border/60">
                       {item.market}:{item.symbol}
                     </span>
-                    <h4 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    <h4 className="text-base font-bold text-foreground">
                       {item.companyName}
                     </h4>
                     {item.financialPeriod && (
@@ -319,39 +342,45 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                   {/* Status Badge */}
                   <div>
                     {isLive && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800">
-                        <span className="h-2 w-2 rounded-full bg-rose-600 animate-ping" />
-                        🔴 會議進行中 (Live)
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+                        <span className="relative flex size-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                          <span className="relative inline-flex size-2 rounded-full bg-rose-500"></span>
+                        </span>
+                        <span>會議進行中 (Live)</span>
                       </span>
                     )}
                     {isToday && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800">
-                        🟡 今日召開
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+                        <span className="size-2 rounded-full bg-amber-500" />
+                        <span>今日召開</span>
                       </span>
                     )}
                     {isUpcoming && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-300 dark:bg-sky-950/60 dark:text-sky-300 dark:border-sky-800">
-                        🔵 即將舉行
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/30">
+                        <span className="size-2 rounded-full bg-sky-500" />
+                        <span>即將舉行</span>
                       </span>
                     )}
                     {!isLive && !isToday && !isUpcoming && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-slate-400 dark:border-slate-700">
-                        ⚪ 會議已結束 (可查回放)
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border/60">
+                        <span className="size-2 rounded-full bg-slate-400" />
+                        <span>會議已結束 (可查回放)</span>
                       </span>
                     )}
                   </div>
                 </div>
 
                 {/* Title */}
-                <div className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">
+                <div className="text-sm font-semibold text-foreground mb-2">
                   {item.title}
                 </div>
 
                 {/* Info Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-3 bg-white dark:bg-zinc-950/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-muted-foreground mb-3 bg-card p-3 rounded-xl border border-border/80">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-slate-500">開會時間：</span>
-                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                    <span className="font-medium text-foreground/80">開會時間：</span>
+                    <span className="font-mono font-semibold text-foreground">
                       {item.conferenceDate} {item.conferenceTime || ''}
                     </span>
                     <span className="text-xs text-muted-foreground">
@@ -359,32 +388,33 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 truncate">
-                    <span className="font-medium text-slate-500">形式/地點：</span>
-                    <span className="truncate">{item.locationOrPlatform || '線上會議 / Webcast'}</span>
+                    <span className="font-medium text-foreground/80">形式/地點：</span>
+                    <span className="truncate text-foreground/90">{item.locationOrPlatform || '線上會議 / Webcast'}</span>
                   </div>
                 </div>
 
                 {/* Guidance Highlights preview if present */}
                 {item.guidanceHighlights && (
-                  <div className="mb-3 rounded-xl border border-indigo-100 dark:border-indigo-950/50 bg-indigo-50/30 dark:bg-indigo-950/20 p-3.5 text-xs sm:text-sm space-y-2">
-                    <div className="font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1 text-sm">
-                      <span>🧭 官方指引重點摘要</span>
+                  <div className="mb-3 rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-3.5 text-xs sm:text-sm space-y-2">
+                    <div className="font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5 text-sm">
+                      <Compass className="size-4" />
+                      <span>官方指引重點摘要</span>
                     </div>
                     {item.guidanceHighlights.revenueOutlook && (
-                      <div className="text-slate-700 dark:text-slate-300 leading-snug">
-                        <strong className="text-slate-900 dark:text-slate-100">營收展望：</strong>
+                      <div className="text-foreground/90 leading-snug">
+                        <strong className="text-foreground">營收展望：</strong>
                         {item.guidanceHighlights.revenueOutlook}
                       </div>
                     )}
                     {item.guidanceHighlights.marginOutlook && (
-                      <div className="text-slate-700 dark:text-slate-300 leading-snug">
-                        <strong className="text-slate-900 dark:text-slate-100">毛利展望：</strong>
+                      <div className="text-foreground/90 leading-snug">
+                        <strong className="text-foreground">毛利展望：</strong>
                         {item.guidanceHighlights.marginOutlook}
                       </div>
                     )}
                     {item.guidanceHighlights.capexOutlook && (
-                      <div className="text-slate-700 dark:text-slate-300 leading-snug">
-                        <strong className="text-slate-900 dark:text-slate-100">資本支出：</strong>
+                      <div className="text-foreground/90 leading-snug">
+                        <strong className="text-foreground">資本支出：</strong>
                         {item.guidanceHighlights.capexOutlook}
                       </div>
                     )}
@@ -392,30 +422,43 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                 )}
 
                 {/* Action Buttons Row */}
-                <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-800/60">
+                <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60">
                   {item.webcastUrl && (
                     <a
                       href={item.webcastUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors shadow-2xs ${
                         isLive
-                          ? 'bg-rose-600 text-white border-rose-600 hover:bg-rose-700 shadow-2xs animate-pulse'
+                          ? 'bg-rose-600 text-white border-rose-600 hover:bg-rose-700 animate-pulse'
                           : isToday
-                          ? 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 hover:bg-amber-100'
+                          ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/25'
                           : isUpcoming
-                          ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 hover:bg-sky-100'
-                          : 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-slate-300 hover:bg-slate-200'
+                          ? 'bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30 hover:bg-sky-500/25'
+                          : 'bg-card text-foreground border-border hover:bg-muted'
                       }`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
-                      {isLive
-                        ? '🔴 觀看線上直播'
-                        : isToday
-                        ? '🟡 今日會議直播'
-                        : isUpcoming
-                        ? '官方會議直播/議程 ↗'
-                        : '⚪ 歷史影音回放 ↗'}
+                      {isLive ? (
+                        <>
+                          <Radio className="size-3.5" />
+                          <span>觀看線上直播</span>
+                        </>
+                      ) : isToday ? (
+                        <>
+                          <Play className="size-3.5" />
+                          <span>今日會議直播</span>
+                        </>
+                      ) : isUpcoming ? (
+                        <>
+                          <ExternalLink className="size-3.5" />
+                          <span>官方會議直播/議程</span>
+                        </>
+                      ) : (
+                        <>
+                          <History className="size-3.5" />
+                          <span>歷史影音回放</span>
+                        </>
+                      )}
                     </a>
                   )}
 
@@ -425,17 +468,17 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                         href={item.presentationDeckUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-zinc-800 dark:text-slate-200 dark:hover:bg-zinc-700 border border-slate-200 dark:border-slate-700 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-card text-foreground hover:bg-muted border border-border transition-colors shadow-2xs"
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                        下載簡報 (PDF)
+                        <Download className="size-3.5" />
+                        <span>下載簡報 (PDF)</span>
                       </a>
 
                       <button
                         type="button"
                         onClick={() => handleAnalyzeDeck(item)}
                         disabled={analysis?.loading}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-sm transition-all disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 shadow-xs transition-all disabled:opacity-50"
                       >
                         {analysis?.loading ? (
                           <>
@@ -447,15 +490,16 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                           </>
                         ) : (
                           <>
-                            <span>⚡</span>
+                            <Sparkles className="size-3.5" />
                             <span>{analysis?.isOpen ? '收起 AI 指引' : 'AI 深度解析簡報'}</span>
                           </>
                         )}
                       </button>
                     </>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-zinc-900 border border-slate-200/60 dark:border-slate-800/60">
-                      📄 {isUpcoming ? '簡報於法說會當日公布' : '簡報請洽官網 IR 專區'}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-muted-foreground bg-muted/60 border border-border/60">
+                      <FileText className="size-3.5" />
+                      <span>{isUpcoming ? '簡報於法說會當日公布' : '簡報請洽官網 IR 專區'}</span>
                     </span>
                   )}
 

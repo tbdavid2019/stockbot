@@ -176,18 +176,18 @@ export function ApiKeyDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-xl sm:max-w-xl overflow-hidden border border-border/80 bg-background/98 p-0 shadow-2xl backdrop-blur-2xl sm:rounded-2xl">
+      <DialogContent className="max-w-xl sm:max-w-xl overflow-hidden border border-border bg-card text-card-foreground p-0 shadow-2xl sm:rounded-2xl">
         {/* Header 頂部導角裝飾 */}
-        <div className="relative border-b border-border/60 bg-muted/30 px-6 py-5 sm:px-7 sm:py-6">
+        <div className="relative border-b border-border/70 bg-muted/40 px-6 py-5 sm:px-7 sm:py-6">
           <div className="flex items-center gap-3">
             <div className="flex size-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400">
-              <KeyRound className="size-5.5" />
+              <KeyRound className="size-5" />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                 自備金鑰設定 (BYOK)
               </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-foreground/80 mt-1 font-medium">
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
                 自備 API Key 暢享無限制分析 · 伺服器零留存保證
               </DialogDescription>
             </div>
@@ -203,7 +203,7 @@ export function ApiKeyDialog() {
                 <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
                   純本機儲存 · 伺服器絕不留存
                 </div>
-                <p className="text-xs sm:text-[13px] leading-relaxed text-foreground/80">
+                <p className="text-xs sm:text-[13px] leading-relaxed text-muted-foreground">
                   您的金鑰僅儲存於您目前的瀏覽器 LocalStorage。發起分析時僅透過伺服器記憶體無狀態轉發，完成即銷毀，絕不寫入伺服器硬碟或資料庫。
                 </p>
               </div>
@@ -227,8 +227,8 @@ export function ApiKeyDialog() {
                       onClick={() => handleProviderChange(p)}
                       className={`relative flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition-all ${
                         isSelected
-                          ? 'border-orange-500 bg-orange-500/15 font-bold text-orange-600 dark:text-orange-400 shadow-xs ring-1 ring-orange-500/30'
-                          : 'border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 hover:border-orange-400 hover:text-orange-600 shadow-2xs'
+                          ? 'border-orange-500 bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold ring-2 ring-orange-500/30 shadow-xs'
+                          : 'border-border bg-muted/40 text-foreground/80 hover:border-border hover:bg-muted/70 hover:text-foreground shadow-2xs'
                       }`}
                     >
                       <span className="truncate">{preset.name.split(' ')[0]}</span>
@@ -294,7 +294,7 @@ export function ApiKeyDialog() {
                 value={apiKey}
                 onChange={e => handleKeyChange(e.target.value)}
                 placeholder={PROVIDER_PRESETS[provider].placeholder}
-                className="h-11 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 pr-10 font-mono text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="h-11 w-full rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 pr-10 font-mono text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs transition-colors"
               />
               <button
                 type="button"
@@ -326,7 +326,7 @@ export function ApiKeyDialog() {
             </button>
 
             {showAdvanced && (
-              <div className="mt-3 space-y-3.5 rounded-xl border border-border/60 bg-muted/20 p-4">
+              <div className="mt-3 space-y-3.5 rounded-xl border border-border/80 bg-muted/30 p-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-semibold text-foreground">API Base URL</label>
                   <input
@@ -334,7 +334,7 @@ export function ApiKeyDialog() {
                     value={baseURL}
                     onChange={e => setBaseURL(e.target.value)}
                     placeholder="https://api.openai.com/v1"
-                    className="h-10 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -344,7 +344,7 @@ export function ApiKeyDialog() {
                     value={model}
                     onChange={e => setModel(e.target.value)}
                     placeholder={PROVIDER_PRESETS[provider].defaultModel}
-                    className="h-10 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                    className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
                   />
                   <p className="text-xs text-muted-foreground leading-normal">
                     若為自訂端點（如 OpenRouter / Ollama），請確保模型名稱支援 Function Calling。
@@ -376,7 +376,7 @@ export function ApiKeyDialog() {
         </div>
 
         {/* 底部按鈕區 */}
-        <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-6 py-4 sm:px-7">
+        <div className="flex items-center justify-between border-t border-border/70 bg-muted/30 px-6 py-4 sm:px-7">
           <div>
             {hasCustomKey && (
               <button
@@ -396,7 +396,7 @@ export function ApiKeyDialog() {
               type="button"
               disabled={isTesting || !apiKey.trim()}
               onClick={handleTestConnection}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 shadow-2xs"
             >
               {isTesting ? (
                 <>

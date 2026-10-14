@@ -12,6 +12,7 @@ import { UserMessage } from './stocks/message'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
 import { type MarketQuote } from '@/components/tradingview/market-quotes'
+import { Radio, Calendar, Activity, Sparkles, RotateCw, ArrowRight } from 'lucide-react'
 
 export interface ChatPanelProps {
   id?: string
@@ -30,61 +31,61 @@ interface ExampleMessage {
 }
 
 const promptLabelsZh = [
-  '🎙️ 近期台股/美股法人說明會與簡報',
-  '📅 今晚重大總經與即時日曆',
-  '🌐 盤前美股期指與跨資產風向',
-  '⚡ 非農就業與央行政策時程',
-  '💡 今天想先看哪個市場？',
-  '📈 挑一張卡，直接問！',
-  '🔥 盤前先掃一輪？',
-  '🧭 從行情到財報，隨手挑一題',
-  '⚡ 今日市場靈感，換你出題'
+  '近期台股/美股法人說明會與簡報',
+  '今晚重大總經與即時日曆',
+  '盤前美股期指與跨資產風向',
+  '非農就業與央行政策時程',
+  '今天想先看哪個市場？',
+  '挑一張卡，直接問！',
+  '盤前先掃一輪？',
+  '從行情到財報，隨手挑一題',
+  '今日市場靈感，換你出題'
 ]
 
 const promptLabelsEn = [
-  '🎙️ Corporate Earnings Calls & Webcasts',
-  '📅 Global Economic Calendar Tonight',
-  '🌐 US Pre-Market Futures & Macro Radar',
-  '⚡ NFP & Central Bank Decisions',
-  '💡 What should we check first?',
-  '📈 Pick a card and ask away!',
-  '🔥 Ready for a market scan?',
-  '🧭 From price action to financials',
-  '⚡ Market inspiration for today'
+  'Corporate Earnings Calls & Webcasts',
+  'Global Economic Calendar Tonight',
+  'US Pre-Market Futures & Macro Radar',
+  'NFP & Central Bank Decisions',
+  'What should we check first?',
+  'Pick a card and ask away!',
+  'Ready for a market scan?',
+  'From price action to financials',
+  'Market inspiration for today'
 ]
 
 const promptModesZh = [
-  '🎙️ 法說日程',
-  '📅 總經日曆',
-  '🌐 盤前風向',
-  '🎲 隨機靈感',
-  '📊 市場雷達',
-  '🧭 深度拆解',
-  '⚡ 快問快答'
+  '法說日程',
+  '總經日曆',
+  '盤前風向',
+  '隨機靈感',
+  '市場雷達',
+  '深度拆解',
+  '快問快答'
 ]
 const promptModesEn = [
-  '🎙️ Earnings Calls',
-  '📅 Macro Calendar',
-  '🌐 Pre-market Scan',
-  '🎲 Random picks',
-  '📊 Market radar',
-  '🧭 Deep dive',
-  '⚡ Quick scan'
+  'Earnings Calls',
+  'Macro Calendar',
+  'Pre-market Scan',
+  'Random picks',
+  'Market radar',
+  'Deep dive',
+  'Quick scan'
 ]
 
 const DEFAULT_FEATURED_ZH: ExampleMessage[] = [
   {
-    heading: '🎙️ 近期台股/美股法人說明會 (Earnings Calls)',
+    heading: '近期台股/美股法人說明會 (Earnings Calls)',
     subheading: '即時掌握台積電、聯發科、輝達法說日程、影音直播與簡報下載',
     message: '近期台股與美股有哪些法人說明會？'
   },
   {
-    heading: '📅 今晚有什麼重大總經數據？',
+    heading: '今晚有什麼重大總經數據？',
     subheading: '即時掌握非農 (NFP)、CPI、PMI、零售銷售與央行決議時程',
     message: '今晚有什麼重大總經數據？'
   },
   {
-    heading: '🌐 美股盤前期貨與經濟日曆',
+    heading: '美股盤前期貨與經濟日曆',
     subheading: '美股三大期指盤前行情、恐慌指數 VIX 與跨資產風向',
     message: '美股盤前期貨與經濟日曆'
   }
@@ -92,17 +93,17 @@ const DEFAULT_FEATURED_ZH: ExampleMessage[] = [
 
 const DEFAULT_FEATURED_EN: ExampleMessage[] = [
   {
-    heading: '🎙️ Corporate Earnings Calls & Webcasts',
+    heading: 'Corporate Earnings Calls & Webcasts',
     subheading: 'Live earnings conference calendar, guidance highlights & slide deck downloads',
     message: 'Show me upcoming corporate earnings calls and investor conferences'
   },
   {
-    heading: '📅 Key Economic Events Tonight',
+    heading: 'Key Economic Events Tonight',
     subheading: 'Live global economic calendar, CPI, NFP & central bank policy',
     message: 'What are the key global economic events and data releases tonight?'
   },
   {
-    heading: '🌐 US Pre-Market Futures & Macro Calendar',
+    heading: 'US Pre-Market Futures & Macro Calendar',
     subheading: 'Live S&P, Nasdaq futures and Risk-On / Risk-Off sentiment',
     message: 'Show me US pre-market futures and economic calendar'
   }
@@ -408,19 +409,19 @@ export function ChatPanel({
               <div className="flex items-center gap-2">
                 <a
                   href="/earnings-call"
-                  className="hidden sm:inline-flex items-center gap-1 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-full border border-indigo-500/20 bg-indigo-500/10 px-2.5 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors shadow-2xs"
                 >
-                  <span>🎙️</span>
+                  <Radio className="size-3" />
                   <span>法說會總覽</span>
-                  <span>➔</span>
+                  <ArrowRight className="size-3" />
                 </a>
                 <button
                   type="button"
-                  className="shrink-0 inline-flex items-center gap-1 rounded-full border border-border/80 bg-background px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted hover:text-foreground transition-colors"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-background px-2.5 py-1 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted hover:text-foreground transition-colors"
                   onClick={handleShuffle}
                   aria-label={lang === 'zh' ? '換一批提示' : 'Show new prompts'}
                 >
-                  <span>↻</span>
+                  <RotateCw className="size-3 text-muted-foreground" />
                   <span>{lang === 'zh' ? '換一批' : 'Shuffle'}</span>
                 </button>
               </div>
@@ -461,16 +462,19 @@ export function ChatPanel({
                     >
                       <div className="flex items-center gap-2 mb-1">
                         {isEarningsCall ? (
-                          <span className="shrink-0 inline-flex items-center rounded-md bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                            🎙️ 法說
+                          <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                            <Radio className="size-3" />
+                            <span>法說</span>
                           </span>
                         ) : isMacro ? (
-                          <span className="shrink-0 inline-flex items-center rounded-md bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-500/20">
-                            ⚡ 總經
+                          <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                            <Activity className="size-3" />
+                            <span>總經</span>
                           </span>
                         ) : (
-                          <span className="shrink-0 inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground border border-border/60">
-                            💡 研調
+                          <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground border border-border/60">
+                            <Sparkles className="size-3 text-amber-500" />
+                            <span>研調</span>
                           </span>
                         )}
                         <h4 className="text-sm sm:text-base font-semibold text-foreground group-hover:text-primary transition-colors truncate">

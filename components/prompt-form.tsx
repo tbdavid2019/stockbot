@@ -9,6 +9,7 @@ import { UserMessage } from './stocks/message'
 import { type AI } from '@/lib/chat/actions'
 import { Button } from '@/components/ui/button'
 import { IconArrowDown, IconPlus, IconClose } from '@/components/ui/icons'
+import { Paperclip, FileText } from 'lucide-react'
 import {
   Tooltip,
   TooltipContent,
@@ -184,11 +185,11 @@ export function PromptForm({
         }}
       />
 
-      <div className="flex flex-col rounded-2xl border border-slate-200/90 bg-background p-2 sm:p-2.5 shadow-sm transition-all focus-within:border-slate-400 focus-within:ring-1 focus-within:ring-slate-300 dark:border-slate-800 dark:bg-zinc-950 dark:focus-within:border-slate-700">
+      <div className="flex flex-col rounded-2xl border border-border bg-card p-2 sm:p-2.5 shadow-xs transition-all focus-within:border-orange-500/50 focus-within:ring-1 focus-within:ring-orange-500/20">
         {/* Attached Document Preview Chip */}
         {attachedDoc && (
           <div className="mb-2 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1 text-xs text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">
-            <span className="text-sm">📄</span>
+            <FileText className="size-3.5 text-indigo-600 dark:text-indigo-400" />
             <span className="font-semibold truncate max-w-[220px] sm:max-w-xs">
               {attachedDoc.filename}
             </span>
@@ -218,7 +219,7 @@ export function PromptForm({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="size-8 rounded-full bg-background p-0 border-slate-200 dark:border-slate-800 hover:bg-muted"
+                  className="size-8 rounded-full bg-card p-0 border border-border hover:bg-muted text-foreground"
                   onClick={() => {
                     window.dispatchEvent(new CustomEvent(CHAT_NEW_EVENT))
                     window.location.href = '/'
@@ -241,25 +242,13 @@ export function PromptForm({
                   variant="outline"
                   size="icon"
                   disabled={isUploading}
-                  className="size-8 rounded-full bg-background p-0 hover:text-indigo-600 hover:border-indigo-300 dark:border-slate-800 dark:hover:border-indigo-700"
+                  className="size-8 rounded-full bg-card p-0 border border-border hover:text-indigo-600 hover:border-indigo-300 dark:hover:border-indigo-700 text-foreground"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {isUploading ? (
                     <div className="size-3.5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
                   ) : (
-                    <svg
-                      className="size-4 text-slate-700 dark:text-slate-200"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                      />
-                    </svg>
+                    <Paperclip className="size-4" />
                   )}
                   <span className="sr-only">
                     {lang === 'en'

@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { buttonVariants } from '@/components/ui/button'
-import { IconSeparator, IconPlus } from '@/components/ui/icons'
+import { IconSeparator } from '@/components/ui/icons'
 import { cn } from '@/lib/utils'
 import { ChatHistorySheet } from '@/components/chat-history-sheet'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -10,6 +10,7 @@ import { CHAT_NEW_EVENT } from '@/lib/chat-history'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import { ApiKeyDialog } from '@/components/api-key-dialog'
 import { useRouter } from 'next/navigation'
+import { TrendingUp, Plus, Radio, Maximize2, Minimize2 } from 'lucide-react'
 
 export function Header() {
   const router = useRouter()
@@ -27,17 +28,19 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex h-12 min-w-0 items-center justify-between gap-2 border-b bg-gradient-to-b from-background/10 via-background/50 to-background/80 px-3 backdrop-blur-xl sm:h-14 sm:px-5">
+      <header className="sticky top-0 z-50 flex h-12 min-w-0 items-center justify-between gap-2 border-b border-border/80 bg-background/85 px-3 backdrop-blur-xl sm:h-14 sm:px-5">
         <div className="flex min-w-0 items-center space-x-1.5 font-semibold sm:space-x-2">
           {/* Logo */}
           <a
             href="/"
             onClick={handleNewChat}
-            className="flex items-center gap-1.5 text-sm font-bold text-slate-900 transition-opacity hover:opacity-80 dark:text-slate-100 sm:text-base"
+            className="flex items-center gap-2 text-sm font-bold text-foreground transition-opacity hover:opacity-85 sm:text-base"
           >
-            <span className="text-lg sm:text-xl">📈</span>
-            <span className="hidden sm:inline">888 StockBot</span>
-            <span className="sm:hidden">888</span>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 border border-orange-500/20 shadow-2xs">
+              <TrendingUp className="size-4" />
+            </div>
+            <span className="hidden sm:inline tracking-tight font-extrabold">888 StockBot</span>
+            <span className="sm:hidden tracking-tight font-extrabold">888</span>
           </a>
 
           <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
@@ -46,15 +49,11 @@ export function Header() {
           <button
             type="button"
             onClick={handleNewChat}
-            className={cn(
-              buttonVariants({ variant: 'ghost' }),
-              'flex items-center gap-1 text-sm font-semibold'
-            )}
-            style={{ borderRadius: 6, color: '#F55036', padding: '4px 8px' }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/30 bg-orange-500/10 px-2.5 py-1 text-xs sm:text-sm font-semibold text-orange-600 hover:bg-orange-500/20 dark:text-orange-400 transition-colors shadow-2xs"
           >
-            <IconPlus className="size-3.5" />
-            <span className="hidden sm:inline">Start New Chat</span>
-            <span className="sm:hidden">New</span>
+            <Plus className="size-3.5" />
+            <span className="hidden sm:inline">新對話</span>
+            <span className="sm:hidden">新</span>
           </button>
 
           <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />
@@ -70,7 +69,7 @@ export function Header() {
             className="flex items-center gap-1.5 rounded-lg border border-indigo-200/90 bg-indigo-50/80 px-2 sm:px-2.5 py-1 text-xs sm:text-sm font-semibold text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/80 transition-all shadow-2xs"
             title="法人說明會總覽 (Earnings Calls) · MOPS / TWSE / 美股即時日程與簡報"
           >
-            <span className="text-sm">🎙️</span>
+            <Radio className="size-3.5 text-indigo-600 dark:text-indigo-400" />
             <span className="hidden sm:inline font-semibold">法說會總覽</span>
             <span className="sm:hidden font-semibold">法說會</span>
             <span className="hidden md:inline-flex items-center rounded bg-indigo-200/70 px-1 py-0.5 text-xs font-mono text-indigo-900 dark:bg-indigo-900/70 dark:text-indigo-200 font-bold">
@@ -80,7 +79,7 @@ export function Header() {
         </div>
 
         <div className="flex min-w-0 shrink items-center gap-1.5 text-sm sm:gap-2">
-          <div className="hidden text-sm leading-snug text-orange-600 sm:block">
+          <div className="hidden text-sm leading-snug text-orange-600 sm:block font-medium">
             {lang === 'en'
               ? 'For reference only · Investment advice: '
               : '本服務僅供參考；投資建議請至 '}
@@ -93,7 +92,7 @@ export function Header() {
               oli-™股靈精怪 Stock
             </a>
           </div>
-          <div className="max-w-[180px] truncate text-xs leading-tight text-orange-600 sm:hidden">
+          <div className="max-w-[180px] truncate text-xs leading-tight text-orange-600 sm:hidden font-medium">
             {lang === 'en'
               ? 'Reference only · Advice: '
               : '僅供參考；建議：'}
@@ -107,12 +106,12 @@ export function Header() {
             </a>
           </div>
 
-          <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-xs shadow-sm">
+          <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-xs shadow-2xs">
             <button
               type="button"
               className={`rounded px-1.5 py-1 font-medium transition-all sm:px-2 ${
                 lang === 'zh'
-                  ? 'bg-background font-semibold text-foreground shadow-sm'
+                  ? 'bg-background font-semibold text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => setLang('zh')}
@@ -124,7 +123,7 @@ export function Header() {
               type="button"
               className={`rounded px-1.5 py-1 font-medium transition-all sm:px-2 ${
                 lang === 'en'
-                  ? 'bg-background font-semibold text-foreground shadow-sm'
+                  ? 'bg-background font-semibold text-foreground shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
               onClick={() => setLang('en')}
@@ -135,7 +134,7 @@ export function Header() {
           </div>
           <button
             type="button"
-            className="flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2"
+            className="flex h-7 shrink-0 items-center gap-1.5 rounded-md border border-border/80 bg-background px-2 text-xs sm:text-sm font-medium text-foreground transition-colors hover:bg-muted shadow-2xs"
             aria-pressed={layoutMode === 'wide'}
             title={layoutMode === 'wide' ? '切換窄版' : '切換寬版'}
             onClick={() => {
@@ -144,7 +143,11 @@ export function Header() {
               window.dispatchEvent(new Event('stockbot-layout-change'))
             }}
           >
-            <span aria-hidden="true">↔</span>
+            {layoutMode === 'wide' ? (
+              <Minimize2 className="size-3.5 text-muted-foreground" />
+            ) : (
+              <Maximize2 className="size-3.5 text-muted-foreground" />
+            )}
             <span className="hidden sm:inline">
               {layoutMode === 'wide' ? '窄版' : '寬版'}
             </span>

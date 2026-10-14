@@ -30,7 +30,8 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    /* Pantone Light: Cloud Dancer & Warm Paper Precision */
+    --background: 210 20% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -39,56 +40,57 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 222 47% 11%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 24 95% 48%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 214 32% 94%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 214 32% 95%;
+    --muted-foreground: 215 25% 40%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 24 95% 96%;
+    --accent-foreground: 24 95% 36%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 24 95% 48%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222 47% 7%;
+    /* Pantone Dark: Deep Midnight Obsidian & Warm Amber Terminal */
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
     --card: 222 47% 10%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222 47% 10%;
+    --popover: 222 47% 12%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 24 95% 53%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
+    --secondary: 217 33% 15%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 217 33% 15%;
+    --muted-foreground: 215 20% 68%;
 
-    --accent: 217 33% 17%;
+    --accent: 217 33% 18%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 22%;
-    --input: 217 33% 22%;
-    --ring: 217 91% 60%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 24 95% 53%;
   }
 }
 
@@ -98,5 +100,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  ::selection {
+    background-color: hsl(24 95% 50% / 0.25);
+    color: inherit;
   }
 }

@@ -9,6 +9,8 @@ import { UserMessage } from './stocks/message'
 import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
 import Link from 'next/link'
 
+import { TrendingUp, Radio, Calendar, BarChart3, ArrowRight, MessageSquare } from 'lucide-react'
+
 export function EmptyScreen({ wide = false }: { wide?: boolean }) {
   const [lang] = useLocalStorage<'zh' | 'en'>('stockbot_lang', 'zh')
   const { submitUserMessage } = useActions()
@@ -39,8 +41,8 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
       {/* Editorial Header - Pure and unnested, eliminating patchwork and card-in-card clutter */}
       <div className="mb-6 space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/60 px-3 py-0.5 text-xs font-semibold text-foreground">
-            <span>📈</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/60 px-3 py-1 text-xs font-semibold text-foreground">
+            <TrendingUp className="size-3.5 text-orange-600 dark:text-orange-400" />
             <span>888 StockBot · AI 智慧投資情報</span>
           </span>
           <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -63,18 +65,20 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
       {/* Primary Feature Bar - High visibility for 法說會總覽 and quick actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {/* Feature 1: 法說會總覽 */}
-        <div className="flex flex-col justify-between rounded-xl border border-border/90 bg-card p-4 shadow-2xs hover:border-border transition-all">
+        <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-4 shadow-2xs hover:border-foreground/30 hover:shadow-sm transition-all">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-1">
-              <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-1.5">
-                <span>🎙️</span>
+              <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  <Radio className="size-4" />
+                </span>
                 <span>{lang === 'zh' ? '法人說明會總覽' : 'Earnings Calls'}</span>
               </span>
               <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
                 MOPS
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1">
               {lang === 'zh'
                 ? '台美股法說會日程、官方影音直播、簡報 PDF 下載與 2MD AI 秒級指引萃取。'
                 : 'Corporate earnings call dates, live webcasts, PDF decks & AI guidance extraction.'}
@@ -87,7 +91,7 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
               className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-xs hover:opacity-90 transition-opacity"
             >
               <span>{lang === 'zh' ? '開啟法說會總覽頁' : 'Open Earnings Dashboard'}</span>
-              <span>➔</span>
+              <ArrowRight className="size-3.5" />
             </Link>
             <button
               type="button"
@@ -98,26 +102,29 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
                     : 'Show me upcoming corporate earnings calls and investor conferences'
                 )
               }
-              className="text-left text-xs font-medium text-muted-foreground hover:text-foreground hover:underline truncate"
+              className="inline-flex items-center gap-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground hover:underline truncate"
             >
-              💬 {lang === 'zh' ? '在對話中列出近期法說會' : 'List recent calls in chat'}
+              <MessageSquare className="size-3 shrink-0" />
+              <span className="truncate">{lang === 'zh' ? '在對話中列出近期法說會' : 'List recent calls in chat'}</span>
             </button>
           </div>
         </div>
 
         {/* Feature 2: 全球重大總經日曆 */}
-        <div className="flex flex-col justify-between rounded-xl border border-border/90 bg-card p-4 shadow-2xs hover:border-border transition-all">
+        <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-4 shadow-2xs hover:border-foreground/30 hover:shadow-sm transition-all">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-1">
-              <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-1.5">
-                <span>📅</span>
+              <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                  <Calendar className="size-4" />
+                </span>
                 <span>{lang === 'zh' ? '全球重大總經日曆' : 'Macro Calendar'}</span>
               </span>
               <span className="rounded bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-500/20">
                 Investing
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1">
               {lang === 'zh'
                 ? '即時追蹤美股盤前期指、恐慌指數 VIX、非農 NFP、CPI 與各國央行利率決策。'
                 : 'Live US pre-market futures, VIX index, NFP, CPI & central bank interest decisions.'}
@@ -137,7 +144,7 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
               className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
             >
               <span>{lang === 'zh' ? '查詢今晚總經數據' : "Check Tonight's Events"}</span>
-              <span>➔</span>
+              <ArrowRight className="size-3.5" />
             </button>
             <button
               type="button"
@@ -148,26 +155,29 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
                     : 'Show me US pre-market futures and economic calendar'
                 )
               }
-              className="text-left text-xs font-medium text-muted-foreground hover:text-foreground hover:underline truncate"
+              className="inline-flex items-center gap-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground hover:underline truncate"
             >
-              💬 {lang === 'zh' ? '美股盤前期指與風向' : 'US pre-market futures'}
+              <MessageSquare className="size-3 shrink-0" />
+              <span className="truncate">{lang === 'zh' ? '美股盤前期指與風向' : 'US pre-market futures'}</span>
             </button>
           </div>
         </div>
 
         {/* Feature 3: 原生財報與大師分析 */}
-        <div className="flex flex-col justify-between rounded-xl border border-border/90 bg-card p-4 shadow-2xs hover:border-border transition-all">
+        <div className="flex flex-col justify-between rounded-xl border border-border/80 bg-card p-4 shadow-2xs hover:border-foreground/30 hover:shadow-sm transition-all">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-1">
-              <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-1.5">
-                <span>📊</span>
+              <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <BarChart3 className="size-4" />
+                </span>
                 <span>{lang === 'zh' ? '原生財報與大師觀點' : 'Financials & Masters'}</span>
               </span>
               <span className="rounded bg-amber-500/10 px-2 py-0.5 text-xs font-semibold text-amber-600 dark:text-amber-400 border border-amber-500/20">
                 2MD AI
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed mt-1">
               {lang === 'zh'
                 ? '查詢台美股營收、毛利、本益比與估值，或點擊下方 📎 附件上傳任意財報 PDF 秒級剖析。'
                 : 'Yahoo Fundamentals, balance sheets, DCF valuation and multi-analyst consensus.'}
@@ -187,7 +197,7 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
               className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-background px-3 py-1.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors"
             >
               <span>{lang === 'zh' ? '台積電最新財務數據' : 'TSMC Financials'}</span>
-              <span>➔</span>
+              <ArrowRight className="size-3.5" />
             </button>
             <button
               type="button"
@@ -198,9 +208,10 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
                     : 'Give me a multi-analyst investment view of ticker AAPL (Apple)'
                 )
               }
-              className="text-left text-xs font-medium text-muted-foreground hover:text-foreground hover:underline truncate"
+              className="inline-flex items-center gap-1 text-left text-xs font-medium text-muted-foreground hover:text-foreground hover:underline truncate"
             >
-              💬 {lang === 'zh' ? 'Apple 13 位大師圓桌評價' : 'Apple multi-analyst evaluation'}
+              <MessageSquare className="size-3 shrink-0" />
+              <span className="truncate">{lang === 'zh' ? 'Apple 13 位大師圓桌評價' : 'Apple multi-analyst evaluation'}</span>
             </button>
           </div>
         </div>
