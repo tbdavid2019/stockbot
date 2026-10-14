@@ -8,6 +8,12 @@
 
 ### ✨ 新增 (Added)
 
+- **🎙️ BigGo Finance 全維度法人說明會數據深度聚合 ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts))**：
+  - 徹底解決原先僅仰賴靜態基準與模糊搜尋導致法說會抓取不全的問題，正式對接 BigGo Finance 官方 API (`https://api.biggo.com/api/v1/finance/stock/earnings-calls`)。
+  - **多視窗滑動並行檢索**：自動切分 6 個 6 日跨度視窗（涵蓋過去 18 天至未來 18 天），一次並行撈取上百場台股與美股最新法人說明會日程與回放。
+  - **個股專屬情報與深度萃取**：精準支援台股 4 碼代號、中文公司名稱、美股代號及 SpaceX (`SPCX`)；自動並行調用 `/detail`、`/file?type=slides` 與 `/file?type=video`，提取經營層財測營收/毛利/資本支出指引、投行分析師 Q&A 精華、官方簡報 PDF 直連與 WebPro 官方影音回放串流。
+  - **前端動態檢索端點 (`/api/earnings-calls`) 與互動搜尋升級**：支援卡片直接按 Enter 異步向後端發動深度檢索，並具備 300 秒快取與 Singleflight 並行去重。
+  - **全綠燈單元測試 (`lib/quant/earnings-call.test.ts`)**：涵蓋時區換算、TSMC 與 SpaceX 實況檢索、多市場多視窗總覽驗證。
 - **⚡ 四階決策推論容錯鏈 (4-Tier Decision Failover Chain in [`lib/clef.ts`](lib/clef.ts))**：
   - **Primary**：自建 Clef-Flash (`https://clef.create360.ai/v1/systemone`，實測 <180ms，零 Output Tokens)。
   - **Fallback 2**：自建備援 CPU GGUF (`https://clef.aiurl.tw/v1/systemone`)。
