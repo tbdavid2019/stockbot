@@ -319,7 +319,6 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     title: '鴻海科技集團 2026 年第三季法人說明會',
     financialPeriod: '2026 Q3',
     locationOrPlatform: '實體與線上同步 (台北市內湖區 / Webcast)',
-    webcastUrl: 'https://www.honhai.com/zh-tw/investor-relations/investor-conferences',
     irUrl: 'https://www.honhai.com/zh-tw/investor-relations',
     guidanceHighlights: {
       revenueOutlook: '第四季營收指引待法說會管理層正式宣布',
@@ -351,6 +350,26 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     }
   },
   {
+    id: 'tw-1203-2026q3',
+    symbol: '1203',
+    companyName: '味王 (Ve Wong)',
+    market: 'TWSE',
+    conferenceDate: '2026-10-14',
+    conferenceTime: '14:30',
+    timezone: 'Asia/Taipei',
+    session: 'during-hours',
+    status: 'today',
+    title: '味王 2026 年第三季法人說明會',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: '臺灣證券交易所 1 樓資訊展示中心 / WebPro 影音傳播網',
+    webcastUrl: 'https://webpro.twse.com.tw/WebPortal/schedule',
+    irUrl: 'https://www.vewong.com',
+    guidanceHighlights: {
+      revenueOutlook: '說明公司概況、營運現況與調味品/食品內外銷展望',
+      highlights: ['海外東南亞事業拓展與台灣食品製造產能展望']
+    }
+  },
+  {
     id: 'tw-3711-2026q3',
     symbol: '3711',
     companyName: '日月光投控 (ASE Holdings)',
@@ -363,24 +382,22 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     title: '日月光投資控股 2026 年第三季線上法人說明會',
     financialPeriod: '2026 Q3',
     locationOrPlatform: '全球線上直播 (Webcast)',
-    webcastUrl: 'https://www.aseglobal.com/zh-tw/investor-relations/financial-information/quarterly-results',
-    irUrl: 'https://www.aseglobal.com/zh-tw/investor-relations'
+    irUrl: 'https://www.aseglobal.com'
   },
   {
     id: 'tw-3035-2026q3',
     symbol: '3035',
     companyName: '智原 (Faraday)',
     market: 'TWSE',
-    conferenceDate: '2026-10-14',
+    conferenceDate: '2026-10-27',
     conferenceTime: '14:00',
     timezone: 'Asia/Taipei',
     session: 'during-hours',
-    status: 'today',
+    status: 'upcoming',
     title: '智原科技 2026 年第三季線上法人說明會',
     financialPeriod: '2026 Q3',
-    locationOrPlatform: '全球線上直播 (Webcast)',
-    webcastUrl: 'https://www.faraday-tech.com/zh-TW/investor-relations/investor-conference',
-    irUrl: 'https://www.faraday-tech.com/zh-TW/investor-relations',
+    locationOrPlatform: '全球線上直播 (Webcast · 詳洽官網公告)',
+    irUrl: 'https://www.faraday-tech.com/tw/content/IR/InvestorConference',
     guidanceHighlights: {
       revenueOutlook: '先進製程與客製化 ASIC 委託設計 (NRE) 成長動能指引公布',
       highlights: [
@@ -390,11 +407,30 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     }
   },
   {
+    id: 'tw-2303-2026q3',
+    symbol: '2303',
+    companyName: '聯電 (UMC)',
+    market: 'TWSE',
+    conferenceDate: '2026-10-28',
+    conferenceTime: '17:00',
+    timezone: 'Asia/Taipei',
+    session: 'after-close',
+    status: 'upcoming',
+    title: '聯華電子 2026 年第三季線上法人說明會',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: '線上電話會議 (Global Audio Webcast)',
+    irUrl: 'https://www.umc.com/zh-TW/investors',
+    guidanceHighlights: {
+      revenueOutlook: '成熟製程產能利用率與晶圓代工報價指引',
+      highlights: ['特殊製程 22/28nm 需求與新加坡新廠產能擴充時程']
+    }
+  },
+  {
     id: 'tw-3008-2026q3',
     symbol: '3008',
     companyName: '大立光 (Largan)',
     market: 'TWSE',
-    conferenceDate: '2026-10-11',
+    conferenceDate: '2026-10-08',
     conferenceTime: '14:30',
     timezone: 'Asia/Taipei',
     session: 'during-hours',
@@ -402,7 +438,6 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     title: '大立光電 2026 年第三季線上法人說明會 (歷史回放)',
     financialPeriod: '2026 Q3',
     locationOrPlatform: '線上會議 (Audio Webcast)',
-    webcastUrl: 'https://www.largan.com.tw/html/investor/earnings.asp',
     irUrl: 'https://www.largan.com.tw',
     guidanceHighlights: {
       revenueOutlook: '第四季旗艦手機潛望鏡頭拉貨動能評述',
@@ -653,7 +688,6 @@ async function searchLiveEarningsAnnouncements(query: string): Promise<EarningsC
         timezone,
         status,
         title: res.title,
-        webcastUrl: res.url,
         irUrl: res.url
       })
     }
@@ -738,7 +772,7 @@ export async function fetchEarningsCalls(
     const result: EarningsCallDashboardResult = {
       asOfDate,
       symbol: cleanSym || undefined,
-      companyName: pool[0]?.companyName,
+      companyName: cleanSym ? pool[0]?.companyName : undefined,
       marketFilter: market,
       totalCount: all.length,
       liveAndToday,
