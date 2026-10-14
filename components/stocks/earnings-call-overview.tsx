@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import type { EarningsCallDashboardResult } from '@/lib/quant/earnings-call'
+import { computeConferenceStatus } from '@/lib/quant/earnings-call'
 import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
 import Link from 'next/link'
 import { ArrowLeft, Radio, Calendar, History } from 'lucide-react'
@@ -19,10 +20,49 @@ const DEFAULT_DASHBOARD: EarningsCallDashboardResult = {
 
 export function EarningsCallOverview({ initialData }: { initialData?: EarningsCallDashboardResult }) {
   const safeData: EarningsCallDashboardResult = initialData || DEFAULT_DASHBOARD
-  const totalCount = safeData.totalCount || safeData.all?.length || 0
-  const liveCount = safeData.liveAndToday?.length || 0
-  const upcomingCount = safeData.upcoming?.length || 0
-  const replayCount = safeData.replays?.length || 0
+
+  const [userTimezone, setUserTimezone] = React.useState<string>('Asia/Taipei')
+  const [nowTime, setNowTime] = React.useState<number>(Date.now())
+
+  React.useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (tz) setUserTimezone(tz)
+    } catch {
+      // fallback
+    }
+
+    const timer = setInterval(() => {
+      setNowTime(Date.now())
+    }, 30_000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const { totalCount, liveCount, upcomingCount, replayCount } = React.useMemo(() => {
+    const pool = safeData.all || []
+    const nowDate = new Date(nowTime)
+    let live = 0
+    let upcoming = 0
+    let replay = 0
+    for (const item of pool) {
+      const st = computeConferenceStatus(
+        item.conferenceDate,
+        item.timezone,
+        item.conferenceTime,
+        nowDate,
+        userTimezone
+      )
+      if (st === 'live' || st === 'today') live++
+      else if (st === 'upcoming') upcoming++
+      else if (st === 'replay') replay++
+    }
+    return {
+      totalCount: pool.length,
+      liveCount: live,
+      upcomingCount: upcoming,
+      replayCount: replay
+    }
+  }, [safeData.all, nowTime, userTimezone])
 
   return (
     <div className="min-h-screen bg-muted/30 pb-20 pt-4 sm:pt-6">

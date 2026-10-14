@@ -19,6 +19,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: [
+          '"Zen Kaku Gothic New"',
           'var(--font-geist-sans)',
           'PingFang TC',
           'Noto Sans TC',
@@ -29,7 +30,7 @@ module.exports = {
           'sans-serif'
         ],
         mono: [
-          'JetBrains Mono',
+          '"JetBrains Mono"',
           'Maple Mono',
           'var(--font-geist-mono)',
           'monospace'

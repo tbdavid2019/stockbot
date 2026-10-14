@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import type { EarningsCallDashboardResult, EarningsCallItem } from '@/lib/quant/earnings-call'
+import { computeConferenceStatus, formatDualTimezone } from '@/lib/quant/earnings-call'
 import { useUserApiKey } from '@/lib/hooks/use-user-api-key'
 import {
   Search,
@@ -19,7 +20,8 @@ import {
   Compass,
   ExternalLink,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  Clock
 } from 'lucide-react'
 
 interface DeckAnalysisState {
@@ -45,12 +47,45 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
   const { config: userKeyConfig } = useUserApiKey()
   const [marketFilter, setMarketFilter] = React.useState<'ALL' | 'TW' | 'US'>(safeData.marketFilter || 'ALL')
   const [statusFilter, setStatusFilter] = React.useState<'all' | 'live' | 'upcoming' | 'replay'>('all')
+  const [timezoneMode, setTimezoneMode] = React.useState<'local' | 'market'>('local')
+  const [userTimezone, setUserTimezone] = React.useState<string>('Asia/Taipei')
+  const [nowTime, setNowTime] = React.useState<number>(Date.now())
   const [searchQuery, setSearchQuery] = React.useState('')
   const [analyses, setAnalyses] = React.useState<Record<string, DeckAnalysisState>>({})
 
+  // Detect user local timezone and run dynamic 30-second live status clock
+  React.useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      if (tz) setUserTimezone(tz)
+    } catch {
+      // fallback
+    }
+
+    const timer = setInterval(() => {
+      setNowTime(Date.now())
+    }, 30_000)
+    return () => clearInterval(timer)
+  }, [])
+
+  // Dynamically compute liveStatus for all items relative to exact clock and user timezone
+  const itemsWithLiveStatus = React.useMemo(() => {
+    const nowDate = new Date(nowTime)
+    return (safeData.all || []).map(item => ({
+      ...item,
+      liveStatus: computeConferenceStatus(
+        item.conferenceDate,
+        item.timezone,
+        item.conferenceTime,
+        nowDate,
+        userTimezone
+      )
+    }))
+  }, [safeData.all, nowTime, userTimezone])
+
   // Filter items dynamically
   const filteredItems = React.useMemo(() => {
-    let items = safeData.all || []
+    let items = itemsWithLiveStatus
 
     if (marketFilter === 'TW') {
       items = items.filter(i => i.market === 'TWSE' || i.market === 'TPEX')
@@ -59,11 +94,11 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
     }
 
     if (statusFilter === 'live') {
-      items = items.filter(i => i.status === 'live' || i.status === 'today')
+      items = items.filter(i => i.liveStatus === 'live' || i.liveStatus === 'today')
     } else if (statusFilter === 'upcoming') {
-      items = items.filter(i => i.status === 'upcoming')
+      items = items.filter(i => i.liveStatus === 'upcoming')
     } else if (statusFilter === 'replay') {
-      items = items.filter(i => i.status === 'replay')
+      items = items.filter(i => i.liveStatus === 'replay')
     }
 
     if (searchQuery.trim()) {
@@ -77,11 +112,11 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
     }
 
     return items
-  }, [safeData.all, marketFilter, statusFilter, searchQuery])
+  }, [itemsWithLiveStatus, marketFilter, statusFilter, searchQuery])
 
   // Count badges
   const counts = React.useMemo(() => {
-    let pool = safeData.all || []
+    let pool = itemsWithLiveStatus
     if (marketFilter === 'TW') {
       pool = pool.filter(i => i.market === 'TWSE' || i.market === 'TPEX')
     } else if (marketFilter === 'US') {
@@ -89,11 +124,11 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
     }
     return {
       all: pool.length,
-      live: pool.filter(i => i.status === 'live' || i.status === 'today').length,
-      upcoming: pool.filter(i => i.status === 'upcoming').length,
-      replay: pool.filter(i => i.status === 'replay').length
+      live: pool.filter(i => i.liveStatus === 'live' || i.liveStatus === 'today').length,
+      upcoming: pool.filter(i => i.liveStatus === 'upcoming').length,
+      replay: pool.filter(i => i.liveStatus === 'replay').length
     }
-  }, [safeData.all, marketFilter])
+  }, [itemsWithLiveStatus, marketFilter])
 
   // Trigger one-click AI presentation analysis
   const handleAnalyzeDeck = async (item: EarningsCallItem) => {
@@ -255,6 +290,36 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
           </button>
         </div>
 
+        {/* Timezone Mode Selector */}
+        <div className="inline-flex items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border/80 text-xs shadow-2xs">
+          <Clock className="size-3.5 text-muted-foreground ml-1.5 shrink-0" />
+          <span className="text-muted-foreground mr-1 hidden sm:inline">時區顯示：</span>
+          <button
+            type="button"
+            onClick={() => setTimezoneMode('local')}
+            className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              timezoneMode === 'local'
+                ? 'bg-card shadow-xs text-foreground font-bold border border-border/80'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            title={`以您的所在地時區 (${userTimezone}) 顯示`}
+          >
+            <span>當地時間 ({userTimezone === 'Asia/Taipei' ? '台北 UTC+8' : userTimezone})</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setTimezoneMode('market')}
+            className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+              timezoneMode === 'market'
+                ? 'bg-card shadow-xs text-foreground font-bold border border-border/80'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            title="以美東時區 (ET) 或台北時區 (CST) 原始開會時間顯示"
+          >
+            <span>市場原始 (美東/台北)</span>
+          </button>
+        </div>
+
         {/* Status Filter Pills */}
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
           <button
@@ -316,9 +381,10 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
         <div className="space-y-4">
           {filteredItems.map(item => {
             const analysis = analyses[item.id]
-            const isLive = item.status === 'live'
-            const isToday = item.status === 'today'
-            const isUpcoming = item.status === 'upcoming'
+            const isLive = item.liveStatus === 'live'
+            const isToday = item.liveStatus === 'today'
+            const isUpcoming = item.liveStatus === 'upcoming'
+            const dualTz = formatDualTimezone(item.conferenceDate, item.conferenceTime, item.timezone, userTimezone)
 
             return (
               <div
@@ -378,19 +444,57 @@ export function EarningsCallCard({ data }: { data?: EarningsCallDashboardResult 
                   {item.title}
                 </div>
 
-                {/* Info Grid */}
+                {/* Info Grid with Dual Timezone Support */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-muted-foreground mb-3 bg-card p-3 rounded-xl border border-border/80">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-medium text-foreground/80">開會時間：</span>
-                    <span className="font-mono font-semibold text-foreground">
-                      {item.conferenceDate} {item.conferenceTime || ''}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      ({item.timezone === 'Asia/Taipei' ? '台北時區' : '美東時區'})
-                    </span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-medium text-foreground/80 shrink-0">開會時間：</span>
+                      <span className="font-mono font-bold text-foreground text-sm">
+                        {timezoneMode === 'local'
+                          ? `${dualTz.localDate} ${dualTz.localTime}`
+                          : `${item.conferenceDate} ${item.conferenceTime || ''}`}
+                      </span>
+                      <span className="text-xs px-2 py-0.5 rounded-md font-medium bg-muted border border-border/60 text-foreground/80 font-mono">
+                        {timezoneMode === 'local' ? dualTz.localTzName : dualTz.marketTzName}
+                      </span>
+                    </div>
+
+                    {/* Secondary time comparison subtext */}
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                      {timezoneMode === 'local' ? (
+                        item.timezone === 'America/New_York' ? (
+                          <>
+                            <span className="text-muted-foreground/80">美東原始：</span>
+                            <span className="font-mono font-medium text-foreground/80">{dualTz.marketDate} {dualTz.marketTime} ET</span>
+                            {dualTz.isCrossDay && (
+                              <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold border border-amber-500/30">
+                                跨日{dualTz.dayDiffLabel}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground/80">台灣市場會議 (無時差)</span>
+                        )
+                      ) : (
+                        item.timezone === 'America/New_York' ? (
+                          <>
+                            <span className="text-muted-foreground/80">換算當地：</span>
+                            <span className="font-mono font-medium text-foreground/80">{dualTz.localDate} {dualTz.localTime} ({dualTz.localTzName})</span>
+                            {dualTz.isCrossDay && (
+                              <span className="px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold border border-amber-500/30">
+                                跨日{dualTz.dayDiffLabel}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground/80">台灣市場會議 (無時差)</span>
+                        )
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="font-medium text-foreground/80">形式/地點：</span>
+
+                  <div className="flex items-center gap-1.5 truncate sm:self-center">
+                    <span className="font-medium text-foreground/80 shrink-0">形式/地點：</span>
                     <span className="truncate text-foreground/90">{item.locationOrPlatform || '線上會議 / Webcast'}</span>
                   </div>
                 </div>

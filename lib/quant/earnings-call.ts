@@ -58,7 +58,7 @@ const CACHE_TTL_MS = 600_000 // 10 minutes
 /**
  * Returns current date string formatted in target timezone
  */
-export function getNowDateString(timeZone: 'Asia/Taipei' | 'America/New_York'): string {
+export function getNowDateString(timeZone: 'Asia/Taipei' | 'America/New_York' | string = 'Asia/Taipei'): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
@@ -68,47 +68,181 @@ export function getNowDateString(timeZone: 'Asia/Taipei' | 'America/New_York'): 
 }
 
 /**
- * Determines conference status relative to market timezone and today's date
+ * Parses date and time in a specific timezone into a true UTC Date object
+ */
+export function parseZonedTimeToUtc(
+  dateStr: string,
+  timeStr: string | undefined,
+  timeZone: string
+): Date | null {
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const [hour, minute] = (timeStr && /^\d{1,2}:\d{2}$/.test(timeStr))
+    ? timeStr.split(':').map(Number)
+    : [9, 0] // default 09:00 if not specified
+
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute))
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: false
+  })
+  const parts = formatter.formatToParts(utcGuess)
+  const partMap: Record<string, number> = {}
+  for (const p of parts) {
+    if (p.type !== 'literal') partMap[p.type] = Number(p.value)
+  }
+  const asLocal = Date.UTC(
+    partMap.year,
+    partMap.month - 1,
+    partMap.day,
+    partMap.hour === 24 ? 0 : partMap.hour,
+    partMap.minute,
+    partMap.second || 0
+  )
+  const offset = asLocal - utcGuess.getTime()
+  return new Date(utcGuess.getTime() - offset)
+}
+
+export interface DualTimezoneInfo {
+  localDate: string
+  localTime: string
+  localTzName: string
+  localOffsetStr: string
+  marketDate: string
+  marketTime: string
+  marketTzName: string
+  isCrossDay: boolean
+  dayDiffLabel: string
+}
+
+/**
+ * Converts conference time to user local timezone and provides dual-timezone display info
+ */
+export function formatDualTimezone(
+  confDate: string,
+  confTime: string | undefined,
+  marketTz: 'Asia/Taipei' | 'America/New_York',
+  userTz: string = 'Asia/Taipei'
+): DualTimezoneInfo {
+  const marketTzName = marketTz === 'America/New_York' ? '美東時區 (ET)' : '台北時區 (CST)'
+  const localTzName = userTz === 'Asia/Taipei' ? '台北時間 (CST)' : userTz
+
+  const confUtc = parseZonedTimeToUtc(confDate, confTime, marketTz)
+  if (!confUtc) {
+    return {
+      localDate: confDate,
+      localTime: confTime || '',
+      localTzName,
+      localOffsetStr: 'UTC+8',
+      marketDate: confDate,
+      marketTime: confTime || '',
+      marketTzName,
+      isCrossDay: false,
+      dayDiffLabel: '同日'
+    }
+  }
+
+  // Format in user local timezone
+  const userFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: userTz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+  const userParts = userFormatter.formatToParts(confUtc)
+  const uMap: Record<string, string> = {}
+  for (const p of userParts) if (p.type !== 'literal') uMap[p.type] = p.value
+  const localDate = `${uMap.year}-${uMap.month}-${uMap.day}`
+  const localTime = `${uMap.hour}:${uMap.minute}`
+
+  // Calculate user timezone offset
+  const offsetMinutes = -new Date().getTimezoneOffset()
+  const sign = offsetMinutes >= 0 ? '+' : '-'
+  const absM = Math.abs(offsetMinutes)
+  const offsetHours = Math.floor(absM / 60)
+  const offsetRemM = absM % 60
+  const localOffsetStr = `UTC${sign}${offsetHours}${offsetRemM > 0 ? `:${offsetRemM.toString().padStart(2, '0')}` : ''}`
+
+  const isCrossDay = localDate !== confDate
+  const dayDiffLabel = isCrossDay ? (localDate > confDate ? '+1天 (次日)' : '-1天 (前一日)') : '同日'
+
+  return {
+    localDate,
+    localTime,
+    localTzName,
+    localOffsetStr,
+    marketDate: confDate,
+    marketTime: confTime || '',
+    marketTzName,
+    isCrossDay,
+    dayDiffLabel
+  }
+}
+
+/**
+ * Determines conference status relative to market timezone, user timezone, and exact current UTC time
  */
 export function computeConferenceStatus(
   confDate: string,
   timeZone: 'Asia/Taipei' | 'America/New_York',
-  confTime?: string
+  confTime?: string,
+  now: Date = new Date(),
+  userTimeZone: string = 'Asia/Taipei'
 ): 'live' | 'today' | 'upcoming' | 'replay' {
   if (!confDate || confDate === '待確認' || !/^\d{4}-\d{2}-\d{2}$/.test(confDate)) {
     return 'upcoming'
   }
 
-  const todayStr = getNowDateString(timeZone)
+  const confUtc = parseZonedTimeToUtc(confDate, confTime, timeZone)
+  if (!confUtc) {
+    const todayStr = getNowDateString(timeZone)
+    return confDate >= todayStr ? 'upcoming' : 'replay'
+  }
 
-  if (confDate === todayStr) {
-    if (confTime && /^\d{1,2}:\d{2}$/.test(confTime)) {
-      const now = new Date()
-      const formatter = new Intl.DateTimeFormat('en-US', {
-        timeZone,
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      })
-      const [nowH, nowM] = formatter.format(now).split(':').map(Number)
-      const [h, m] = confTime.split(':').map(Number)
-      const diffMinutes = (nowH * 60 + nowM) - (h * 60 + m)
+  const diffMs = now.getTime() - confUtc.getTime()
+  const diffMinutes = Math.floor(diffMs / 60000)
 
-      // Within 2 hours of start time: live conference
-      if (diffMinutes >= 0 && diffMinutes <= 120) {
-        return 'live'
-      }
-      if (diffMinutes < 0) {
-        return 'today'
-      }
-      return 'replay'
-    }
+  // Within 120 minutes of start time: live conference (🔴 進行中)
+  if (diffMinutes >= 0 && diffMinutes <= 120) {
+    return 'live'
+  }
+  // Conference ended more than 120 minutes ago: replay (⚪ 歷史回放)
+  if (diffMinutes > 120) {
+    return 'replay'
+  }
+
+  // Not started yet: check if it falls on today in either market timezone or user local timezone
+  const confTodayStr = getNowDateString(timeZone)
+  const userTodayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: userTimeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(now)
+
+  const confDateInUserTz = new Intl.DateTimeFormat('en-CA', {
+    timeZone: userTimeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(confUtc)
+
+  if (confDate === confTodayStr || confDateInUserTz === userTodayStr) {
     return 'today'
   }
 
   // Anchor to 23:59:59.999 for robust midnight boundary comparison
   const confEndOfDay = getEndOfDay(confDate).getTime()
-  const todayEndOfDay = getEndOfDay(todayStr).getTime()
+  const todayEndOfDay = getEndOfDay(confTodayStr).getTime()
 
   if (confEndOfDay > todayEndOfDay) {
     return 'upcoming'
@@ -232,7 +366,133 @@ const VERIFIED_CORPORATE_EARNINGS: EarningsCallItem[] = [
     webcastUrl: 'https://www.aseglobal.com/zh-tw/investor-relations/financial-information/quarterly-results',
     irUrl: 'https://www.aseglobal.com/zh-tw/investor-relations'
   },
+  {
+    id: 'tw-3035-2026q3',
+    symbol: '3035',
+    companyName: '智原 (Faraday)',
+    market: 'TWSE',
+    conferenceDate: '2026-10-14',
+    conferenceTime: '14:00',
+    timezone: 'Asia/Taipei',
+    session: 'during-hours',
+    status: 'today',
+    title: '智原科技 2026 年第三季線上法人說明會',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: '全球線上直播 (Webcast)',
+    webcastUrl: 'https://www.faraday-tech.com/zh-TW/investor-relations/investor-conference',
+    irUrl: 'https://www.faraday-tech.com/zh-TW/investor-relations',
+    guidanceHighlights: {
+      revenueOutlook: '先進製程與客製化 ASIC 委託設計 (NRE) 成長動能指引公布',
+      highlights: [
+        'FinFET 先進製程與 3D 封裝 IP 授權展望',
+        '邊緣端 AI 與車載晶片專案量產進度'
+      ]
+    }
+  },
+  {
+    id: 'tw-3008-2026q3',
+    symbol: '3008',
+    companyName: '大立光 (Largan)',
+    market: 'TWSE',
+    conferenceDate: '2026-10-11',
+    conferenceTime: '14:30',
+    timezone: 'Asia/Taipei',
+    session: 'during-hours',
+    status: 'replay',
+    title: '大立光電 2026 年第三季線上法人說明會 (歷史回放)',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: '線上會議 (Audio Webcast)',
+    webcastUrl: 'https://www.largan.com.tw/html/investor/earnings.asp',
+    irUrl: 'https://www.largan.com.tw',
+    guidanceHighlights: {
+      revenueOutlook: '第四季旗艦手機潛望鏡頭拉貨動能評述',
+      highlights: ['高階鏡頭規格升級與產能稼動率展望']
+    }
+  },
   // --- 🇺🇸 美國重要科技股與指數成分股 Earnings Call ---
+  {
+    id: 'us-bac-2026q3',
+    symbol: 'BAC',
+    companyName: '美國銀行 (Bank of America)',
+    market: 'US',
+    conferenceDate: '2026-10-14',
+    conferenceTime: '08:30',
+    timezone: 'America/New_York',
+    session: 'before-open',
+    status: 'today',
+    title: 'Bank of America Q3 2026 Financial Results Conference Call',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: 'Live Webcast & Conference Call',
+    webcastUrl: 'https://investor.bankofamerica.com/events-and-presentations',
+    irUrl: 'https://investor.bankofamerica.com',
+    guidanceHighlights: {
+      revenueOutlook: '淨利息收入 (NII) 與投資銀行承銷手續費營收指引',
+      highlights: [
+        '聯準會降息循環下之存放款利差與資產品質展望',
+        '財富管理與機構交易業務淨流入成長'
+      ]
+    }
+  },
+  {
+    id: 'us-jnj-2026q3',
+    symbol: 'JNJ',
+    companyName: '嬌生 (Johnson & Johnson)',
+    market: 'US',
+    conferenceDate: '2026-10-14',
+    conferenceTime: '08:30',
+    timezone: 'America/New_York',
+    session: 'before-open',
+    status: 'today',
+    title: 'Johnson & Johnson Q3 2026 Results Conference Call & Webcast',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: 'Live Audio Webcast',
+    webcastUrl: 'https://www.investor.jnj.com/events-and-presentations',
+    irUrl: 'https://www.investor.jnj.com',
+    guidanceHighlights: {
+      revenueOutlook: '創新生理藥物與醫療科技 (MedTech) 全年營收指引更新',
+      highlights: ['腫瘤學管線藥物商業化與全球市場滲透率']
+    }
+  },
+  {
+    id: 'us-unh-2026q3',
+    symbol: 'UNH',
+    companyName: '聯合健康 (UnitedHealth Group)',
+    market: 'US',
+    conferenceDate: '2026-10-14',
+    conferenceTime: '08:45',
+    timezone: 'America/New_York',
+    session: 'before-open',
+    status: 'today',
+    title: 'UnitedHealth Group 2026 Q3 Earnings Conference Call',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: 'Live Audio Webcast',
+    webcastUrl: 'https://www.unitedhealthgroup.com/investors.html',
+    irUrl: 'https://www.unitedhealthgroup.com/investors.html',
+    guidanceHighlights: {
+      revenueOutlook: '醫療照護比率 (MLR) 預期區間與 Optum 業務成長展望',
+      highlights: ['Medicare Advantage 會員數增長與價值導向醫療支出管控']
+    }
+  },
+  {
+    id: 'us-ms-2026q3',
+    symbol: 'MS',
+    companyName: '摩根士丹利 (Morgan Stanley)',
+    market: 'US',
+    conferenceDate: '2026-10-14',
+    conferenceTime: '09:30',
+    timezone: 'America/New_York',
+    session: 'before-open',
+    status: 'today',
+    title: 'Morgan Stanley Third Quarter 2026 Earnings Conference Call',
+    financialPeriod: '2026 Q3',
+    locationOrPlatform: 'Live Webcast',
+    webcastUrl: 'https://www.morganstanley.com/about-us-ir',
+    irUrl: 'https://www.morganstanley.com/about-us-ir',
+    guidanceHighlights: {
+      revenueOutlook: 'IPO 資本市場復甦與併購諮詢 (M&A) 手續費指引',
+      highlights: ['財富管理客戶資產管理規模 (AUM) 與新資金淨流入速度']
+    }
+  },
   {
     id: 'us-nvda-2026q3',
     symbol: 'NVDA',
