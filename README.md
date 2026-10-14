@@ -266,3 +266,7 @@ StockBot 2.0 原生支援由 Jeremy Howard 發起之 [llmstxt.org](https://llmst
 This app was originally developed by [Benjamin Klieger](https://x.com/benjaminklieger) at [Groq](https://groq.com) and uses the AI Chatbot template created by Vercel: [Github Repository](https://github.com/vercel/ai-chatbot). Taiwan stock market support was added by [tbdavid2019](https://github.com/tbdavid2019).
 
 技術提供：[david888.com](https://david888.com)
+
+### 品牌 Logo
+
+目前採用純橘色底、白色「888／Stock Bot」的 `public/stockbot-logo-v3.png`；網站使用 256px 的 `public/stockbot-logo.png`。頁首、聊天頭像、favicon 與 PWA 圖示統一使用此版本，圖示 URL 帶 `v=3` 更新快取。

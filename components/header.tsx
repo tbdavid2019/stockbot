@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { StockbotLogo } from '@/components/stockbot-logo'
 import { buttonVariants } from '@/components/ui/button'
 import { IconSeparator } from '@/components/ui/icons'
 import { cn } from '@/lib/utils'
@@ -10,7 +11,7 @@ import { CHAT_NEW_EVENT } from '@/lib/chat-history'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
 import { ApiKeyDialog } from '@/components/api-key-dialog'
 import { useRouter } from 'next/navigation'
-import { TrendingUp, Plus, Radio, Maximize2, Minimize2 } from 'lucide-react'
+import { Plus, Radio, Maximize2, Minimize2 } from 'lucide-react'
 
 export function Header() {
   const router = useRouter()
@@ -36,9 +37,7 @@ export function Header() {
             onClick={handleNewChat}
             className="flex items-center gap-2 text-sm font-bold text-foreground transition-opacity hover:opacity-85 sm:text-base"
           >
-            <div className="flex size-7 items-center justify-center rounded-lg bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400 border border-orange-500/20 shadow-2xs">
-              <TrendingUp className="size-4" />
-            </div>
+            <StockbotLogo className="size-9 shrink-0 rounded-md sm:size-10" />
             <span className="hidden sm:inline tracking-tight font-extrabold">888 StockBot</span>
             <span className="sm:hidden tracking-tight font-extrabold">888</span>
           </a>

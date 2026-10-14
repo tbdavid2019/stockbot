@@ -63,15 +63,14 @@ export const metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon.ico' },
-      { url: '/favicon.svg', type: 'image/svg+xml' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' }
+      { url: '/favicon.ico?v=3' },
+      { url: '/favicon-32x32.png?v=3', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=3', sizes: '16x16', type: 'image/png' }
     ],
-    shortcut: '/favicon.ico',
-    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }]
+    shortcut: '/favicon.ico?v=3',
+    apple: [{ url: '/apple-touch-icon.png?v=3', sizes: '180x180' }]
   },
-  manifest: '/site.webmanifest',
+  manifest: '/site.webmanifest?v=3',
   robots: {
     index: true,
     follow: true,

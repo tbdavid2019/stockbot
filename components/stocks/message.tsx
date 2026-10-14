@@ -1,7 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import { IconGroq, IconUser } from '@/components/ui/icons'
+import { StockbotLogo } from '@/components/stockbot-logo'
+import { IconUser } from '@/components/ui/icons'
 import { cn } from '@/lib/utils'
 import { spinner } from './spinner'
 import { CodeBlock } from '../ui/codeblock'
@@ -54,8 +55,8 @@ export function BotMessage({
 
   return (
     <div className={cn('group relative flex items-start md:-ml-12', className)}>
-      <div className="flex size-[25px] shrink-0 select-none items-center justify-center rounded-md bg-gradient-to-br from-rose-600 to-red-600 text-white shadow-sm font-black text-xs ring-1 ring-white/20 tracking-tighter">
-        8
+      <div className="flex size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md">
+        <StockbotLogo className="size-[25px]" />
       </div>
       <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
         <div className="relative group/botmsg">
@@ -131,11 +132,11 @@ export function BotCard({
     <div className="group relative flex items-start md:-ml-12">
       <div
         className={cn(
-          'flex size-[25px] shrink-0 select-none items-center justify-center rounded-md bg-gradient-to-br from-rose-600 to-red-600 text-white shadow-sm font-black text-xs ring-1 ring-white/20 tracking-tighter',
+          'flex size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md',
           !showAvatar && 'invisible'
         )}
       >
-        8
+        <StockbotLogo className="size-[25px]" />
       </div>
       <div className="ml-4 flex-1 pl-2">{children}</div>
     </div>
@@ -157,8 +158,8 @@ export function SystemMessage({ children }: { children: React.ReactNode }) {
 export function SpinnerMessage() {
   return (
     <div className="group relative flex items-start md:-ml-12">
-      <div className="flex size-[25px] shrink-0 select-none items-center justify-center rounded-md bg-gradient-to-br from-rose-600 to-red-600 text-white shadow-sm font-black text-xs ring-1 ring-white/20 tracking-tighter">
-        8
+      <div className="flex size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md">
+        <StockbotLogo className="size-[25px]" />
       </div>
       <div className="ml-4 h-[24px] flex flex-row items-center flex-1 space-y-2 overflow-hidden px-1">
         {spinner}

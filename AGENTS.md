@@ -242,3 +242,7 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 | **`TWOMD_PRIMARY_URL`**      | URL    | `https://2md.aiurl.tw`                                     | 2MD 即時連網搜尋主端點                             |
 | **`AI_HEDGE_FUND_HOST`**     | Host   | `dns.glsoft.ai`                                            | AI Hedge Fund API 主機位置                         |
 | **`AI_HEDGE_FUND_PORT`**     | Port   | `6000`                                                     | AI Hedge Fund API 端口                             |
+
+### 品牌 Logo
+
+目前採用純橘色底、白色「888／Stock Bot」的 `public/stockbot-logo-v3.png`；網站使用 256px 的 `public/stockbot-logo.png`。頁首、聊天頭像、favicon 與 PWA 圖示統一使用此版本，圖示 URL 帶 `v=3` 更新快取。
