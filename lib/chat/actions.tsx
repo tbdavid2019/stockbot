@@ -147,6 +147,56 @@ interface ProviderCandidate {
   toolModel: string // 工具調用與意圖分流模型 (Function Calling / Tool Model)
 }
 
+function extractByokDecisionKeys(userKeyOrConfig?: string | any): {
+  openAiApiKey?: string
+  typesafeApiKey?: string
+} {
+  if (!userKeyOrConfig) return {}
+
+  let parsed: any = null
+  if (typeof userKeyOrConfig === 'string') {
+    const trimmed = userKeyOrConfig.trim()
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+      try {
+        parsed = JSON.parse(trimmed)
+      } catch {}
+    } else if (
+      trimmed.startsWith('sk-') &&
+      !trimmed.startsWith('sk-ant-') &&
+      !trimmed.startsWith('gsk_')
+    ) {
+      return { openAiApiKey: trimmed }
+    }
+  } else if (typeof userKeyOrConfig === 'object') {
+    parsed = userKeyOrConfig
+  }
+
+  if (parsed) {
+    const apiKey = typeof parsed.apiKey === 'string' ? parsed.apiKey.trim() : undefined
+    const provider = parsed.provider ? String(parsed.provider).toLowerCase() : undefined
+
+    let openAiApiKey: string | undefined
+    let typesafeApiKey: string | undefined
+
+    if (provider === 'openai' || (!provider && apiKey?.startsWith('sk-') && !apiKey.startsWith('gsk_'))) {
+      openAiApiKey = apiKey
+    }
+    if (provider === 'typesafe' || provider === 'jev') {
+      typesafeApiKey = apiKey
+    }
+    if (parsed.typesafeApiKey && typeof parsed.typesafeApiKey === 'string') {
+      typesafeApiKey = parsed.typesafeApiKey.trim()
+    }
+    if (parsed.openAiApiKey && typeof parsed.openAiApiKey === 'string') {
+      openAiApiKey = parsed.openAiApiKey.trim()
+    }
+
+    return { openAiApiKey, typesafeApiKey }
+  }
+
+  return {}
+}
+
 function getProviderCandidates(userKeyOrConfig?: string | any): ProviderCandidate[] {
   const candidates: ProviderCandidate[] = []
 
@@ -993,7 +1043,11 @@ async function submitUserMessage(content: string, userApiKey?: string) {
 
   if (shouldEvaluateSemanticTool) {
     try {
-      const semanticTool = await inferSemanticToolWithClef(content, resolvedTicker)
+      const decisionKeys = extractByokDecisionKeys(userApiKey)
+      const semanticTool = await inferSemanticToolWithClef(content, resolvedTicker, {
+        openAiApiKey: decisionKeys.openAiApiKey,
+        typesafeApiKey: decisionKeys.typesafeApiKey
+      })
       if (semanticTool) {
         deterministicTool = semanticTool
       }

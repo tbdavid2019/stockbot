@@ -171,6 +171,168 @@ test('Clef System One fails over to secondary endpoint when primary fails', asyn
   assert.ok(calledUrls[1].includes('aiurl.tw'))
 })
 
+test('Clef System One fails over through 4-tier chain to OpenAI Decisions', async (t) => {
+  _resetClefStateForTests()
+  t.after(restoreFetch)
+
+  const calledUrls: string[] = []
+  globalThis.fetch = (async (url: string | URL, init: any) => {
+    const urlStr = String(url)
+    calledUrls.push(urlStr)
+    if (urlStr.includes('create360') || urlStr.includes('aiurl.tw') || urlStr.includes('typesafe')) {
+      throw new Error('Endpoint outage: ' + urlStr)
+    }
+
+    if (urlStr.includes('openai.com')) {
+      assert.equal(init?.headers?.Authorization, 'Bearer test-openai-key')
+      return {
+        ok: true,
+        json: async () => ({
+          model: 'gpt-6-luna',
+          answers: [
+            {
+              name: 'sentiment',
+              type: 'choice',
+              choice: 'bullish',
+              confidence: 0.95,
+              probabilities: { bullish: 0.95, bearish: 0.05 }
+            }
+          ],
+          usage: { input_tokens: 88, output_tokens: 0 }
+        })
+      } as any
+    }
+
+    throw new Error('Unknown url: ' + urlStr)
+  }) as any
+
+  const res = await evaluateSystemOne(
+    {
+      state: { ticker: '2330', query: '看多還是看空？' },
+      questions: {
+        sentiment: {
+          type: 'choice',
+          instructions: '判斷看多或看空',
+          criteria: { bullish: '看多', bearish: '看空' }
+        }
+      }
+    },
+    {
+      typesafeApiKey: 'test-typesafe-key',
+      openAiApiKey: 'test-openai-key'
+    }
+  )
+
+  assert.ok(res, 'Response should succeed via Fallback 4 (OpenAI Decisions)')
+  assert.equal(res?.model, 'gpt-6-luna')
+  assert.equal(res?.answers?.sentiment?.type, 'choice')
+  if (res?.answers?.sentiment?.type === 'choice') {
+    assert.equal(res.answers.sentiment.choice, 'bullish')
+    assert.equal(res.answers.sentiment.confidence, 0.95)
+  }
+  assert.equal(calledUrls.length, 4, 'Should have tried primary, fallback2, jev, and openai')
+})
+
+test('OpenAI Decisions Adapter correctly transforms questions, input, and responses', async () => {
+  const { formatOpenAiInput, mapSystemOneQuestionsToOpenAi, parseOpenAiDecisionsResponse } = await import('./clef.ts')
+
+  // 1. Input formatting
+  assert.equal(formatOpenAiInput('plain text'), 'plain text')
+  assert.equal(formatOpenAiInput({ foo: 'bar' }), '{"foo":"bar"}')
+  assert.equal(formatOpenAiInput(null), '')
+
+  // 2. Question mapping
+  const mapped = mapSystemOneQuestionsToOpenAi({
+    intent: {
+      type: 'choice',
+      instructions: 'Choose tool',
+      criteria: { chart: 'K線圖', news: '新聞' }
+    },
+    is_urgent: {
+      type: 'noul',
+      instructions: 'Urgent check'
+    },
+    risk_level: {
+      type: 'score',
+      instructions: 'Rate risk',
+      criteria: ['低', '中', '高']
+    }
+  })
+
+  assert.equal(mapped.length, 3)
+  assert.deepEqual(mapped[0], {
+    name: 'intent',
+    type: 'choice',
+    instructions: 'Choose tool',
+    choices: [
+      { value: 'chart', description: 'K線圖' },
+      { value: 'news', description: '新聞' }
+    ]
+  })
+  assert.deepEqual(mapped[1], {
+    name: 'is_urgent',
+    type: 'predicate',
+    instructions: 'Urgent check'
+  })
+  assert.deepEqual(mapped[2], {
+    name: 'risk_level',
+    type: 'score',
+    instructions: 'Rate risk',
+    levels: ['低', '中', '高']
+  })
+
+  // 3. Response parsing
+  const parsed = parseOpenAiDecisionsResponse(
+    {
+      model: 'gpt-6-luna',
+      answers: [
+        {
+          name: 'intent',
+          type: 'choice',
+          choice: 'chart',
+          confidence: 0.92,
+          probabilities: { chart: 0.92, news: 0.08 }
+        },
+        {
+          name: 'is_urgent',
+          type: 'predicate',
+          probability: 0.85
+        },
+        {
+          name: 'risk_level',
+          type: 'score',
+          score: 2.1,
+          confidence: 0.88,
+          probabilities: { '1': 0.1, '2': 0.8, '3': 0.1 }
+        }
+      ],
+      usage: { input_tokens: 150, output_tokens: 0 }
+    },
+    {
+      intent: { type: 'choice', criteria: { chart: 'K線圖', news: '新聞' } },
+      is_urgent: { type: 'noul' },
+      risk_level: { type: 'score', criteria: ['低', '中', '高'] }
+    }
+  )
+
+  assert.ok(parsed)
+  assert.equal(parsed?.answers?.intent?.type, 'choice')
+  if (parsed?.answers?.intent?.type === 'choice') {
+    assert.equal(parsed.answers.intent.choice, 'chart')
+    assert.equal(parsed.answers.intent.confidence, 0.92)
+  }
+
+  assert.equal(parsed?.answers?.is_urgent?.type, 'noul')
+  if (parsed?.answers?.is_urgent?.type === 'noul') {
+    assert.equal(parsed.answers.is_urgent.noul, 0.85)
+  }
+
+  assert.equal(parsed?.answers?.risk_level?.type, 'score')
+  if (parsed?.answers?.risk_level?.type === 'score') {
+    assert.equal(parsed.answers.risk_level.score, 2.1)
+  }
+})
+
 test('Clef System One circuit breaker opens after consecutive failures', async (t) => {
   _resetClefStateForTests()
   t.after(restoreFetch)
@@ -181,18 +343,41 @@ test('Clef System One circuit breaker opens after consecutive failures', async (
     throw new Error('Continuous outage')
   }) as any
 
-  // Call 1: fails on all 3 endpoints (3 calls)
+  // Call 1: fails on active endpoints (2 calls by default without keys)
   const r1 = await evaluateSystemOne({ state: 'q1', questions: { t: { type: 'noul' } } })
   assert.equal(r1, null)
-  assert.equal(totalCalls, 3)
+  assert.equal(totalCalls, 2)
 
-  // Call 2: fails on all 3 endpoints (3 calls, reaches threshold 2)
+  // Call 2: fails on active endpoints (2 calls, reaches threshold 2)
   const r2 = await evaluateSystemOne({ state: 'q2', questions: { t: { type: 'noul' } } })
   assert.equal(r2, null)
-  assert.equal(totalCalls, 6)
+  assert.equal(totalCalls, 4)
 
   // Call 3: circuits are open! Should immediately return null without calling fetch
   const r3 = await evaluateSystemOne({ state: 'q3', questions: { t: { type: 'noul' } } })
   assert.equal(r3, null)
-  assert.equal(totalCalls, 6, 'Should not have made calls when circuit is open')
+  assert.equal(totalCalls, 4, 'Should not have made calls when circuit is open')
+})
+
+test('Clef System One total failure guarantees safe null fallback without throwing', async (t) => {
+  _resetClefStateForTests()
+  t.after(restoreFetch)
+
+  globalThis.fetch = (async () => {
+    throw new TypeError('Failed to fetch (DNS / Network down)')
+  }) as any
+
+  // Must not throw exception
+  const result = await evaluateSystemOne(
+    {
+      state: 'all-failed',
+      questions: { q: { type: 'noul' } }
+    },
+    {
+      typesafeApiKey: 'key1',
+      openAiApiKey: 'key2'
+    }
+  )
+
+  assert.equal(result, null, 'Must safely return null when all decision models fail')
 })

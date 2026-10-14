@@ -4,6 +4,47 @@
 
 ---
 
+## [2026-10-14] - 升級 System One 四階決策容錯鏈 (Clef ➔ Jev ➔ OpenAI Decisions) 與架構文檔模組化瘦身
+
+### ✨ 新增 (Added)
+
+- **⚡ 四階決策推論容錯鏈 (4-Tier Decision Failover Chain in [`lib/clef.ts`](lib/clef.ts))**：
+  - **Primary**：自建 Clef-Flash (`https://clef.create360.ai/v1/systemone`，實測 <180ms，零 Output Tokens)。
+  - **Fallback 2**：自建備援 CPU GGUF (`https://clef.aiurl.tw/v1/systemone`)。
+  - **Fallback 3 (TypeSafe Jev)**：修正並正式串接 TypeSafe 官方端點 `https://api.typesafe.ai/v1/systemone`，支援 `TYPESAFE_API_KEY`，預設模型 `jev-latest`，並維持 `skipIfNoAuth` 避免無金鑰無謂延遲。
+  - **Fallback 4 (OpenAI Decisions API)**：串接 `https://api.openai.com/v1/decisions` (`gpt-6-luna`) 作為終極兜底，支援 `OPENAI_API_KEY` 與使用者 BYOK 金鑰。
+- **🔌 OpenAI Decisions 協定轉接器 (Protocol Adapter)**：
+  - 實作 `formatOpenAiInput`、`mapSystemOneQuestionsToOpenAi` 與 `parseOpenAiDecisionsResponse`，使 System One（`choice`, `noul`, `score`）與 OpenAI Decisions（`choice`, `predicate`, `score`）無縫互轉。
+- **🛡️ 全層失敗零當機安全降級 (Zero-Breakage Graceful Fallback)**：
+  - 若四階決策模型皆斷線或逾時，`evaluateSystemOne` 靜默返回 `null`，`inferSemanticToolWithClef` 返回 `undefined`。
+  - 主流程 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 自動將 `streamUI` 之 `toolChoice` 退回 `'auto'`，由主力生成式 LLM 自然接管判斷與工具調用，系統 100% 保持穩定運作。
+- **🧪 完整單元測試覆蓋**：
+  - 新增/擴展 7 項 Clef 測試（4-tier failover、OpenAI Adapter 轉換、熔斷器、全失敗安全退回）與 11 項路由測試，全數綠燈通過。
+
+### 🛡️ 安全加固與審查修復 (Security Hardening via Codex & OpenCode)
+
+- **BYOK 決策金鑰精確分離 (`extractByokDecisionKeys`)**：
+  - 嚴格解析使用者自備金鑰，僅將正統 OpenAI 金鑰（`sk-...` 且非 `gsk_`）與 TypeSafe 金鑰注入決策推論，徹底防止 Groq 或 Gemini 憑證洩漏至 OpenAI Decisions。
+- **快取憑證指紋隔離 (`authFingerprint`)**：
+  - 決策快取鍵納入金鑰特徵指紋，杜絕多租戶 / 不同 BYOK 使用者之間的決策快取污染。
+- **向後相容與熔斷修復**：
+  - 保留舊版 `JEV_SYSTEMONE_URL` 環境變數相容鏈；在略過無金鑰端點時主動清理過期熔斷紀錄。
+
+### 📚 架構文檔模組化瘦身 (Modular Architecture Refactoring)
+
+- **解決 AGENTS.md 過長導致 Context 浪費問題**：
+  - 將原本 260 行（~29KB）的 `AGENTS.md` 大幅瘦身為不到 70 行的高信噪比指引，保留關鍵鐵律（Zero-Excuse, Zero-Hallucination, SpaceX NASDAQ:SPCX, Card Positioning Policy）。
+  - 將詳細架構規格依職責拆分至獨立文件庫 [`docs/architecture/`](docs/architecture/)：
+    - `01-chat-and-routing.md`（對話串流與工具路由）
+    - `02-decision-engine.md`（Clef / Jev / Decisions 決策推論引擎）
+    - `03-quant-and-market.md`（原生量化金融與市場籌碼總經）
+    - `04-security-and-byok.md`（BYOK 安全、SSRF 防護與文件解析）
+    - `05-timezone-and-boundaries.md`（午夜邊界與時區規範）
+    - `06-environment-and-brand.md`（環境變數規格與品牌資產）
+  - 大幅降低 AI Agent 每次載入時的 Token 消耗，顯著提升推論速度與反應精準度。
+
+---
+
 ## [2026-10-13] - 全球法人說明會與美股 Earnings Call 全維度情報 (Corporate Earnings Calls & 2MD Deck Analysis)
 
 ### ✨ 新增 (Added)

@@ -1,4 +1,4 @@
-import { evaluateSystemOne } from '../clef.ts'
+import { evaluateSystemOne, type SystemOneOptions } from '../clef.ts'
 
 export type DeterministicToolName =
   | 'showStockChart'
@@ -419,7 +419,8 @@ export function isPlausibleFinancialQuery(
  */
 export async function inferSemanticToolWithClef(
   content: string,
-  resolvedTicker?: string
+  resolvedTicker?: string,
+  options?: SystemOneOptions
 ): Promise<DeterministicToolName | undefined> {
   const trimmed = content.trim()
   if (!trimmed || trimmed.length < 2) return undefined
@@ -462,7 +463,12 @@ export async function inferSemanticToolWithClef(
           }
         }
       },
-      { timeoutMs: 450, totalTimeoutMs: 800 }
+      {
+        timeoutMs: options?.timeoutMs || 450,
+        totalTimeoutMs: options?.totalTimeoutMs || 800,
+        openAiApiKey: options?.openAiApiKey,
+        typesafeApiKey: options?.typesafeApiKey
+      }
     )
 
     const answer = res?.answers?.intent

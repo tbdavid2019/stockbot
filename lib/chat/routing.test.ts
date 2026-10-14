@@ -216,3 +216,16 @@ test('routes Taiwan and general market overview queries to showMarketOverview', 
   assert.equal(inferDeterministicTool('Taiwan market overview'), 'showMarketOverview')
   assert.equal(inferDeterministicTool('TAIEX market overview'), 'showMarketOverview')
 })
+
+test('Clef System One total failure gracefully falls back to undefined without throwing', async (t) => {
+  _resetClefStateForTests()
+  t.after(restoreFetch)
+
+  globalThis.fetch = (async () => {
+    throw new Error('All decision models down')
+  }) as any
+
+  const tool = await inferSemanticToolWithClef('外資最近在倒貨嗎？', '2330')
+  assert.equal(tool, undefined, 'Must safely return undefined when decision models fail')
+})
+

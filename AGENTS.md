@@ -1,6 +1,6 @@
-# AGENTS.md - Repository Guidelines & Architecture for Stockbot
+# AGENTS.md - Repository Guidelines for Stockbot
 
-This document contains rules, architectural guidelines, environment variable specifications, and operational constraints for AI coding agents and developers working within the `stockbot` repository.
+This document contains non-negotiable operational rules and architectural entrypoints for AI coding agents in `stockbot`. Detailed architectural specifications have been modularized under [`docs/architecture/`](docs/architecture/) to keep agent context lean.
 
 ---
 
@@ -13,20 +13,18 @@ This document contains rules, architectural guidelines, environment variable spe
   1. Immediately use live search tools (`searchFinancialWeb` / 2MD API) to find real facts.
   2. Answer based on verified live search results.
   3. Keep responses objective, grounded, and concise.
-  4. Always maintain and update project documentation (`AGENTS.md`, `README.md`, `.env.example`).
+  4. Always maintain and update project documentation (`AGENTS.md`, `CHANGELOG.md`, `README.md`, `.env.example`).
   5. **Never hardcode private endpoints or sensitive credentials into repository files.**
 
 ### 2. 🌐 Zero-Hallucination & Live Web Verification (零幻覺與即時檢索鐵律)
 
 - Internal static training memory is stale. Never rely on internal weights to guess:
-  - Corporate IPO / listing status (e.g. Stripe, new market entrants).
-  - Live stock prices, cryptocurrency quotes, or market indices.
-  - Recent corporate actions, earnings reports, or breaking news.
+  - Corporate IPO / listing status, live stock quotes, crypto, corporate actions, or earnings reports.
 - **SpaceX 上市事實鐵律 (SpaceX NASDAQ:SPCX)**：
   - **SpaceX (Space Exploration Technologies Corp.) 已於 2026 年 6 月 12 日在美國那斯達克掛牌上市，股票代號為 `SPCX` (`NASDAQ:SPCX`)**（IPO 掛牌價每股 $135 美元，初始估值約 1.77 兆美元）。
   - **嚴禁**與使用者爭辯「SpaceX 是未上市私營公司」或「SPCX 只是 SPAC ETF」！
   - 在 [`lib/utils.ts`](lib/utils.ts) 與 [`lib/chat/routing.ts`](lib/chat/routing.ts) 中，已將 `SpaceX`、`SPACEX`、`SPCX`、`太空探索` 強制映射為 **`NASDAQ:SPCX`**。
-  - 當使用者詢問 SpaceX 股價、走勢圖、DCF 估值或大師分析時，直接以 `NASDAQ:SPCX` 調用對應原生金融卡片，絕不准以「未上市」為由拒絕計算或回退到模糊搜尋！
+  - 當使用者詢問 SpaceX 股價、走勢圖、DCF 估值或大師分析時，直接以 `NASDAQ:SPCX` 調用原生金融卡片，絕不准以「未上市」為由拒絕計算或回退到模糊搜尋！
 - Always use `searchFinancialWeb` (2MD Live Search) or TradingView components.
 
 ### 3. 📐 UI 卡片與文字相對位置鐵律 (Card Positioning Policy)
@@ -38,220 +36,24 @@ This document contains rules, architectural guidelines, environment variable spe
 
 ---
 
-## 🏗️ 系統核心架構說明 (System Architecture)
+## 🗺️ 模組化架構文件索引 (Modular Architecture Index)
 
-### 1. 🧠 雙模型分工機制 (Dual-Model Separation)
+詳細的系統實作規格請查閱 [`docs/architecture/`](docs/architecture/)：
 
-Stockbot 將對話流拆解為兩個獨立職責的模型：
-
-- **`TOOL_MODEL` (工具調用與意圖分流模型)**：
-  - 運行於 `streamUI`。
-  - 專門負責理解使用者意圖並執行 Function Calling（例如判斷何時調用 `analyzeStockWithAI`, `showStockChart`, `searchFinancialWeb` 等）。
-- **`MODEL` (伴隨文字與自然語言生成模型)**：
-  - 運行於 `generateCaption`。
-  - 專門在卡片渲染完成後，依據檢索數據與使用者語言偏好生成流暢的總結與說明文字。
-
-### 2. 🛡️ 無限階層動態容錯路由 (Multi-Tier Dynamic Failover Router)
-
-在 [`lib/chat/actions.tsx`](lib/chat/actions.tsx) 中實作了全自動故障轉移機制：
-
-- 支援任意公有雲（OpenAI、Azure OpenAI、Google Gemini、Groq、DeepSeek 等）。
-- 依序嘗試：**Primary ➡️ Fallback #1 ➡️ Fallback #2 ➡️ ... ➡️ Fallback #N**。
-- 每一層皆擁有獨立的 `BASE_URL`、`API_KEY`、`TOOL_MODEL`、`MODEL`，徹底隔離不同 Provider 之間的模型名稱衝突。
-
-### 3. ⚡ 3 階段漸進式加載 (3-Batch Progressive Streaming)
-
-在 [`components/tradingview/stock-analysis.tsx`](components/tradingview/stock-analysis.tsx) 中將 13 位大師分析拆分為 3 批次非同步發送：
-
-- **Batch 1 (5位核心大師)**：~18-24 秒回傳，立即渲染首屏卡片。
-- **Batch 2 (3位長耗時/輿論散戶大師)**：~21 秒背景回傳，動態擴展分析卡片。
-- **Batch 3 (5位價值成長大師)**：~26 秒回傳，補齊全維度分析。
-- 徹底根絕單次請求超時引發的 504 Gateway Timeout。
-
-### 4. 🔄 確定性工具路由與多輪上下文 (Deterministic Tool Routing)
-
-- 明確包含 ticker 的股價、圖表、財務、新聞與大師分析請求，由 [`lib/chat/routing.ts`](lib/chat/routing.ts) 強制選擇對應工具，避免弱模型誤選 2MD 搜尋。
-- 明確 ticker 搭配任何財報科目、會計用語、比率、成長比較或估值倍數時，優先使用 `answerFinancialMetric`；確定性路由辨識通用語義形狀，未涵蓋的新術語仍由 `TOOL_MODEL` 判斷，不維護無限增長的硬編碼指標清單。
-- 未包含 ticker 的未知公司名稱才交由 `searchFinancialWeb` 查證；後續追問會從 AI State 的最近工具參數繼承標的。
-- 目前使用的 AI SDK `streamUI` 每次 Server Action 執行一個主要工具；跨工具研究流程透過多輪對話與續問按鈕銜接，不宣稱不存在的單次 15-step 執行。
-- **`publishToDavid888Wiki`**：串接 `https://wiki.david888.com/api`，產出 Markdown 深度報告並自動回傳 `shareUrl`、`/present` 簡報與 `/book` 電子書。
-- **`readWebPage`**：透過 2MD Web Reader 萃取線上新聞/網址全文。
-
-### 5. 📜 對話歷史紀錄與 LocalStorage 持久化架構 (Chat History & LocalStorage Persistence)
-
-- **零後端純本機存儲**：透過 [`lib/chat-history.tsx`](lib/chat-history.tsx) 將所有對話（包含文字、TradingView 走勢圖、即時報價、大師 AI 分析、2MD 搜尋、Wiki 發布結果）持久化於瀏覽器 `localStorage` (`stockbot_chat_sessions_v1`)。
-- **全組件 UI State 還原機制 (`createUIStateFromStoredMessages`)**：
-  - 將序列化對話與工具呼叫結果還原為原生 React Financial Cards，並保留 AI 對話上下文。
-  - 工具調用均在 `aiState.done` 前保存可序列化的純文字結果；卡片不再嵌套第二層 RSC stream，避免 Vercel `Connection closed.`。
-  - `app/(chat)/page.tsx` 與 `app/(chat)/chat/[id]/page.tsx` 必須各自匯出 `maxDuration = 60`；只在 layout 宣告不會套用到 Vercel Server Action。
-  - 一般金融卡的即時資料由卡片/API 自行載入；Server Action 內禁止為一般 caption 先用 2MD 預抓同一份資料。一般 Caption 僅允許單一 provider、1.5 秒上限，失敗即使用本機 fallback。
-  - `answerFinancialMetric` 與 2MD 研究屬於使用者要求的主要答案，不是一般 caption；可在 60 秒 Server Action 預算內使用最多兩個 provider、每個 7 秒的證據合成。13 位大師綜合判讀則由 `/api/analysis-summary` 在卡片資料完成後獨立執行。
-  - `streamUI` 每輪僅使用一個工具 provider。禁止將短時限 `AbortSignal` 直接傳入 `streamUI`：AI SDK 的串流可能在函式返回後才拋出 timeout，造成未捕捉的 RSC render exception；執行時間由 page entry 的 `maxDuration = 60` 收斂。
-- **事件驅動架構 (Event-Driven Architecture)**：
-  - `stockbot-chat-history-updated`：跨組件同步歷史紀錄更新。
-  - `stockbot-select-chat`：即時切換指定歷史對話。
-  - `stockbot-new-chat`：一鍵重置至全新空白對話。
-
-### 6. 📑 2MD AnyDoc 財報/年報解析與多模態文件架構 (Financial Report & Document Parsing)
-
-- **多端點 AnyDoc 容錯解析**：於 [`lib/2md.ts`](lib/2md.ts) 實作 `parseDocument2MD` 與 `readUrl2MD`，支援 PDF、Word (.docx)、Excel (.xlsx/.csv)、PPT、TXT。
-- **自主財報工具 (`readFinancialReport`)**：當使用者提供線上財報/年報/SEC 10-K/10-Q 網址時，AI 自主抓取並結構化剖析三大財務報表（損益表、資產負債表、現金流量表）、計算毛利率/ROE/ROIC/自由現金流 (FCF)、評估管理層指引與風險因子。
-- **本機文件上傳管道 (`/api/parse-document`)**：
-  - 前端 [`components/prompt-form.tsx`](components/prompt-form.tsx) 提供 📎 檔案上傳按鈕，支援最大 25MB 文件秒級解析。
-  - 解析後自動注入上下文並提供視覺化卡片 [`FinancialReportCard`](components/stocks/financial-report-card.tsx)。
-
-### 7. 💡 2MD 全維度金融情報大腦與互動式自主續問架構 (Universal Financial Intelligence & Suggested Follow-ups)
-
-- **2MD 全維度情報多路並發檢索 (`fetchLiveFinancialIntelligence`)**：
-  - 各金融工具與走勢圖調用時，自動並發檢索：(1) 即時成交價與估值指標、(2) 相關概念股與供應鏈上下游、(3) 美債 10 年殖利率/降息循環/總經環境、(4) 最新突發新聞與三大法人買賣超籌碼。
-  - 徹底解決單一標的資訊受限或過往空泛回覆，提供機構級全維度研調視野。
-- **自主續問提示組件 (`FollowupPrompts` & `BotCaption`)**：
-  - 回答正文與續問生成必須解耦。正文完成後，由 [`lib/chat/followup-context.ts`](lib/chat/followup-context.ts) 讀取最近使用者問題、純文字回答、工具呼叫參數、工具結果與保存的 caption，再生成 2 ~ 4 個承接當前標的與資料缺口的續問。
-  - `answerFinancialMetric` 的結構化 direct answer、研究工具、一般金融卡與不呼叫工具的純文字回答都必須保留續問；不得依輪數停用，也不得只處理前兩輪。
-  - `---SUGGESTIONS---` 僅作為歷史紀錄與 UI 的序列化邊界。解析、清理、去重與邀請句過濾集中於 [`lib/followup-suggestions.ts`](lib/followup-suggestions.ts)，禁止在多個 React 組件各自複製 parser。
-  - 禁止在 prompt 或 fallback 寫死台積電、統一、Apple 等公司範例。Provider 失敗時，只能使用本輪實際 symbol/company、問題、工具意圖與已取得資料衍生續問；上下文不足時寧可少而準。
-  - 前端組件 [`components/stocks/followup-prompts.tsx`](components/stocks/followup-prompts.tsx) 使用低干擾文字連結呈現；點擊後仍走正常 `submitUserMessage`，支援連續多輪追問。
-
-### 8. 🛡️ 去 TradingView 依賴與原生財務/新聞卡片架構 (Native Financials & Resilient Cards)
-
-- 鑑於 TradingView 免費 Widget 對非美股（如台股 2330/1216、港股 1810/700 等）支援有限，常發生「不支援此標的」或空白問題。
-- 系統已全面升級為原生 React 金融情報卡片：
-  - **`showStockFinancials` ➔ `<NativeFinancialsCard />`**：串接量化分析 API 的結構化指標（P/E, P/B, P/S, ROE, 淨利率, 營業利益率, 流動比, 負債比, 營收年增率, DCF 內在價值）；實際可用欄位依上游市場與標的覆蓋為準。
-  - **`answerFinancialMetric` ➔ `<FinancialMetricCard />` + `<BotCaption />`**：即時搜尋僅作為後端證據；上方卡片呈現來源，下方文字直接回答指標、財報期間、幣別與 reported/adjusted/estimate 口徑；不能核實時明確拒絕猜值。
-  - `answerFinancialMetric` 優先透過 [`lib/financial-fundamentals.ts`](lib/financial-fundamentals.ts) 讀取 Yahoo Finance Fundamentals 的年度、季度與 TTM 結構化序列。精準科目直接計算最新季度、同比、TTM、完整年度與 CAGR；結構化來源無資料時才退回 2MD 證據搜尋與 LLM 合成。
-  - `answerFinancialMetric` 同時處理「最新財務數據與估值」等多指標摘要。台股代號先由 AnswerBook Market Data 解析公司名，再以公司名、純代號與財務意圖執行多查詢 2MD 搜尋；禁止直接把 `TWSE:` 前綴、emoji 或整句 UI 樣板當成唯一 query。
-  - 續問建議只能是可直接執行的研究問題；禁止輸出「有興趣嗎」、「想深入了解嗎」或 `Would you like...` 等把決策丟回使用者的邀請式句子。
-  - **禁止假財務預設值**：上游未提供的指標一律顯示 `—` 或「待確認」，不得用展示用數字或固定判斷取代真實資料。
-  - **`showStockNews` ➔ `<NativeStockNewsCard />`**：由 2MD 全網情報大腦即時檢索最新重大快訊、法說會動態與新聞外鏈，無任何交易所限制。
-  - **全局錯誤邊界 (`SafeCardErrorBoundary`)**：所有訊息與卡片均包裹安全邊界，單一異常絕不拖垮整場對話。
-
-### 9. 📐 原生量化金融分析 (Native Quantitative Finance)
-
-- `lib/quant/valuation.ts` 提供 5 年 FCFF DCF、CAPM/WACC、同業 P/E、EV/EBITDA、EV/Sales 與 WACC × 終值成長率 5×5 敏感度矩陣；缺少 beta 時使用明確標示的產業預設，負 EBITDA 時不使用無效 EV/EBITDA。
-- `lib/quant/sepa.ts` 提供 Minervini 八項 Trend Template、Stage 1–4、VCP 型態與風險式部位大小；`lib/quant/black-scholes.ts` 提供多腿策略、Greeks 與到期/理論損益曲線。
-- `lib/quant/microstructure.ts` 提供 Amihud、年化 float turnover、平方根市場衝擊與 ETF NAV divergence。上游缺少資料時卡片顯示 `—` 或「待確認」，禁止使用展示用財務數字。
-- 新工具透過 `lib/chat/routing.ts` 確定性路由至 `lib/chat/actions.tsx`，並由 `lib/chat-history.tsx` 以純 JSON 結果還原；所有量化卡片必須渲染在伴隨 caption 上方。
-
-### 10. ⛓️ DeepEar 宏觀邏輯傳導鏈與 AlphaEar 訊號證偽機制 (Transmission Chains & Signal Tracking)
-
-- **`showTransmissionChain` ➔ `<TransmissionChainCard />`**：串接 `https://deepear.vercel.app/latest.json` 與因果傳導引擎，分析「一階總經/事件觸發 ➔ 二階產業鏈傳導 ➔ 三階企業獲利兌現」多層級連鎖反應，包含利好/利空/中性衝擊標籤與情緒/信心度打分。
-- **`trackInvestmentSignal` ➔ `<SignalTrackerCard />`**：實作 4 態投資假說演化（🟢 **Strengthened** / 🟡 **Weakened** / 🔴 **Falsified** / ⚪ **Unchanged**），並嚴格列出 **核心論點證偽判定點 (Falsification Triggers)**，提供動態部位調整指引。
-- 支援透過 `lib/chat/routing.ts` 確定性路由與對話上下文標的繼承，並以純 JSON 持久化至瀏覽器 `localStorage`。
-
-### 11. 📦 voidful/tw_stocker 台股歷史庫與 voidful/us_fddk 20年資產配置 (Factor Baselines & TW Historical Data)
-
-- **`voidful/tw_stocker` ([`lib/quant/tw-stocker.ts`](lib/quant/tw-stocker.ts))**：提供全市場台股與 ETF 歷史 OHLCV 靜態數據庫備援，當 Yahoo Finance 無法取得或缺漏時，自動自 `raw.githubusercontent.com/voidful/tw_stocker` 聚合還原日 K 線與均線計算。
-- **`showMacroFactorRegime` ➔ `<MacroFactorRegimeCard />` ([`lib/quant/us-fddk.ts`](lib/quant/us-fddk.ts))**：串接 `voidful/us_fddk` 20 年可稽核歷史凍結數據與 Fama-French 多因子模型，提供包含扣除 10/50 bps 滑價成本之跨資產 ETF（SPY, QQQ, 80/20 VUG/SHY, 60/40）策略回測對照與 LIVE Paper 實績。
-
-### 12. 🏛️ 台灣證交所/櫃買三大法人籌碼情報 (Three Major Institutional Investors)
-
-- **`showInstitutionalFlow` ➔ `<InstitutionalFlowCard />` ([`lib/quant/institutional.ts`](lib/quant/institutional.ts))**：
-  - 直接串接 **台灣證券交易所（TWSE T86 / MI_QFIIS）** 與 **證券櫃檯買賣中心（TPEX 3insti）** 官方開放數據。
-  - 精確解析：外資及陸資、投信、自營商（自行買賣與避險部位）今日買賣超**張數**、5 日累計買賣超、外資持股佔比 %、連買/連賣天數。
-  - 自動判讀籌碼訊號標籤：🟢 **土洋同買**、⚔️ **土洋對作**、🚀 **投信連買認養**、🔴 **三大法人同步賣超**。
-### 13. 📅 Investing.com 全球總經日曆與 2MD 防驚群 (Economic Calendar & Singleflight Resilience)
-
-- **`showEconomicCalendar` ➔ `<EconomicCalendarCard />` ([`lib/quant/investing-macro.ts`](lib/quant/investing-macro.ts))**：
-  - 透過 2MD Fast Reader 即時抓取 `www.investing.com/`，萃取包含倒數時間、國家、事件等級、預期值 (Cons.)、前值 (Prev.)、實際值 (Act.) 之重大經濟日曆。
-  - 同時統整美股三大期指盤前走勢、VIX 恐慌指數、10Y/2Y 美債殖利率曲線、黃金/原油期貨與美元指數 (DXY)，支援即時 Risk-On / Risk-Off 風向評估。
-- **2MD 引擎防驚群（Thundering Herd）與熔斷降級防護 ([`lib/2md.ts`](lib/2md.ts))**：
-  - **Singleflight 請求合併**：以 `inFlightSearch` 與 `inFlightRead` 合併並發重複請求，避免多請求同時觸發外部爬蟲。
-  - **記憶體 TTL 快取**：搜尋 60 秒、網頁解析 180 秒快取，大幅減輕後端負載。
-  - **端點熔斷機制 (Circuit Breaker)**：連續 2 次失敗自動進入 30 秒冷卻期，配合隨機 Micro-jitter，徹底防止逾時雪崩湧入最後一個 Fallback。
-  - **合理逾時配置**：Primary 搜尋 3.5 秒、網頁解析 7.5 秒，避免過度激進的 abort 誤殺造成級聯容錯。
-
-### 14. ⏱️ 午夜邊界防護與時區鐵律 (Midnight Boundary & Timezone Resilience)
-
-- **閉區間當日終點 (End of Day: 23:59:59.999) 鐵律**：
-  - 當查詢日期範圍（如 9/1 ~ 9/9）時，結束時間必須透過 [`lib/utils.ts`](lib/utils.ts) 的 `getEndOfDay` 錨定在 **`23:59:59.999`**，嚴禁以 `new Date('YYYY-MM-DD')`（預設 00:00:00）作結尾，否則 9/9 整天日間交易將全被過濾吃掉。
-- **市場時區嚴格隔離**：
-  - 台股三大法人籌碼 ([`lib/quant/institutional.ts`](lib/quant/institutional.ts)) 與總經日曆 ([`lib/quant/investing-macro.ts`](lib/quant/investing-macro.ts)) 一律強制指定 **`Asia/Taipei`**，美股因子基準 ([`lib/quant/us-fddk.ts`](lib/quant/us-fddk.ts)) 一律指定 **`America/New_York`**，徹底杜絕伺服器 UTC 清晨時段產生的 8 小時換日倒退。
-- **TPEX 櫃買資料真偽日核實與快取 TTL**：
-  - 櫃買三大法人資料必須以 `parseTpexDate` 解析 API 原生民國年日期，嚴禁在盤後資料公布前硬套今日日期。
-  - 所有盤中/盤後快取必須設置適當 TTL（如 10 分鐘），防止跨午夜毒化快取 (Cache Poisoning)。
-- **日曆日跨日與日期溢出防護**：
-  - 對話時間以自然日曆日計算（`startOfToday` vs `startOfTarget` 兩者午夜零點差），嚴禁使用已流逝 24 小時除法。
-  - 財報季報日加算嚴格限制於當月最大天數（clamped day），防止 `setMonth` 月底溢出至次月。
-
-### 15. ⚡ Clef-Flash System One 決策推論引擎 (Typed Fast-Thinking Decision Engine)
-
-- **三層漸進式決策架構 (Tiered Decision Pipeline)**：
-  - **Tier 0（0ms）**：本地正規表達式與字典映射（明確 Ticker、SpaceX 鐵律、顯著意圖關鍵字）。
-  - **Tier 1.5（~190ms）**：[`lib/clef.ts`](lib/clef.ts) 調用 **Cloudflare Clef-Flash System One** 決策推論 API，專精 typed choice（多選意圖分類）、noul（布林真假機率）、score（有序量化評分）。
-  - **Tier 2（1.5s ~ 5s）**：大型生成式 LLM（GPT-4o-mini / Gemini-2.5-Flash / DeepSeek）專注於深度文字合成與伴隨解說。
-- **四大核心落地場景 (A/B/C/D)**：
-  - **A. 語意意圖分流閘門 (`inferSemanticToolWithClef`)**：當 Regex 未命中時，以 190ms 評估 16 種金融工具意圖，置信度高直接鎖定 `deterministicTool`，杜絕弱模型誤調 2MD 搜尋。
-  - **B. DeepEar 傳導鏈與信號證偽打分 (`lib/deepear.ts`)**：以 Clef 取代死板正則與寫死分數，客觀輸出 `Strengthened` / `Weakened` / `Falsified` / `Unchanged` 狀態與 5 階情緒分數。
-  - **C. 13 位大師共識量化與多空衝突警報 (`app/api/analysis-summary/route.ts`)**：快速評估大師多空立場（`strong_bull` 到 `strong_bear`）、衝突分歧指數（0~100）與尾部黑天鵝風險預警。
-  - **D. 2MD 搜尋結果關聯度與防幻覺檢核 (`lib/research-search.ts`)**：以 Clef 評估候選新聞文章與目標標的之具體財務關聯度，確保最佳數據來源置頂。
-- **三層高可用備援與防雪崩機制**：
-  - **Primary**：`https://clef.create360.ai/v1/systemone`（~190ms）
-  - **Fallback 2**：`https://clef.aiurl.tw/v1/systemone`（CPU GGUF 備援）
-  - **Fallback 3**：`https://jev.create360.ai/v1/systemone`（Jev Compatible 備援）
-  - 內建 Singleflight 請求合併、60 秒記憶體快取、連續 2 次失敗進入 30 秒熔斷冷卻期，失敗時全自動降級，絕不阻斷主流程。
-
-### 16. 🔑 BYOK 自備金鑰與硬核 SSRF 防護架構 (Bring Your Own Key & SSRF Defense)
-
-- **純本機儲存與伺服器零留存保證 (Server-Zero Retention Guarantee)**：
-  - 使用者自備之 API Key 僅留存於瀏覽器 `localStorage` (`stockbot_user_api_key_config`)。
-  - 送出查詢時，前端將 Key 透過參數與 Header 無狀態透傳給 Serverless Function，伺服器記憶體完成單次請求即銷毀，絕不寫入伺服器硬碟、資料庫或日誌。
-  - 支援 OpenAI、Groq、Google Gemini、DeepSeek 與自訂 OpenAI-Compatible 端點。
-  - 全鏈路覆蓋：`submitUserMessage`、`generateCaption`、上下文續問與 13 位大師綜合判讀皆優先注入使用者的 BYOK。
-- **429 額度耗盡與 401 授權優雅降級**：
-  - 當系統免費額度或自備金鑰額度耗盡時，自動渲染原生 `<QuotaExceededCard />`，並提供一鍵開啟自備金鑰設定對話框。
-- **🛡️ 硬核 SSRF (Server-Side Request Forgery) 防護 ([`lib/security-url.ts`](lib/security-url.ts))**：
-  - 凡使用者自訂之 `baseURL`，後端強制執行 `isSafeApiBaseUrl` 校驗。
-  - 強制限定 `https://` 協定，全面封鎖所有私有 IPv4/IPv6、雲端中繼 Metadata (`169.254.169.254`)、IPv6-mapped IPv4 與 Wildcard DNS 隧道服務（`nip.io`, `sslip.io` 等），杜絕任何內網探測攻擊。
-
-### 17. 🎙️ 法人說明會與美股 Earnings Call 全維度情報 (Corporate Earnings Calls & 2MD Deck Analysis)
-
-- **`showEarningsCalls` ➔ `<EarningsCallCard />` ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts))**：
-  - 整合 **台灣公開資訊觀測站 (MOPS)**、**台灣證券交易所 (TWSE)**、**櫃買中心 (TPEX)** 與 **美股 Yahoo Finance / 企業 IR** 官方即時數據。
-  - 支援全市場日曆概覽與個股精準查詢，即時計算會議狀態（🔴 **進行中 (Live Webcast)**、🟡 **今日召開**、🔵 **即將舉行**、⚪ **歷史回放**）。
-  - 提供官方影音直播/錄音 Webcast 外鏈與法說會簡報 (PDF) 下載。
-- **⚡ 2MD AnyDoc 簡報一鍵 AI 深度解析 ([`app/api/parse-earnings-deck/route.ts`](app/api/parse-earnings-deck/route.ts))**：
-  - 串接 2MD 秒級 PDF 解析引擎與 LLM 萃取管道，點擊卡片「AI 深度解析簡報」即可在對話流內直接展開結構化經營層指引（Guidance）、資本支出（CapEx）與產能擴充展望。
-  - 嚴格落實 SSRF 防護與 BYOK 自備金鑰透傳。
-- **確定性路由與鐵律遵守**：
-  - 透過 [`lib/chat/routing.ts`](lib/chat/routing.ts) 確定性匹配「法說會」、「法人說明會」、「earnings call」、「法說簡報」、「業績說明會」等關鍵字。
-  - 遵守 **卡片一律渲染於文字訊息上方 (Card Positioning Policy)**，伴隨文字一律以「以上是...」總結，並由 [`lib/chat-history.tsx`](lib/chat-history.tsx) 以純 JSON 持久化至瀏覽器 `localStorage`。
+| 模組文件 | 涵蓋核心架構與設計規範 |
+| :--- | :--- |
+| **[`01-chat-and-routing.md`](docs/architecture/01-chat-and-routing.md)** | 雙模型分工 (`TOOL_MODEL` vs `MODEL`)、動態容錯路由、13位大師3批次漸進串流、確定性正則路由、LocalStorage持久化、2MD全維度情報與自主續問、去TradingView原生財務卡片。 |
+| **[`02-decision-engine.md`](docs/architecture/02-decision-engine.md)** | Clef-Flash System One 決策推論引擎、四大落地場景 (A/B/C/D)、**四階容錯鏈 (Clef ➔ Clef-Q4 ➔ Jev ➔ OpenAI Decisions Adapter)**、全失敗零當機安全降級。 |
+| **[`03-quant-and-market.md`](docs/architecture/03-quant-and-market.md)** | 原生量化金融 (DCF 5x5矩陣, SEPA VCP, Black-Scholes, Amihud)、DeepEar宏觀傳導鏈、AlphaEar信號證偽、tw_stocker歷史庫、三大法人籌碼情報、Investing總經日曆。 |
+| **[`04-security-and-byok.md`](docs/architecture/04-security-and-byok.md)** | BYOK自備金鑰純本機零留存機制、硬核SSRF防護 (`isSafeApiBaseUrl`)、2MD AnyDoc財報解析、法人說明會與美股Earnings Call情報 (`showEarningsCalls`)。 |
+| **[`05-timezone-and-boundaries.md`](docs/architecture/05-timezone-and-boundaries.md)** | 午夜閉區間 (`23:59:59.999`)、時區嚴格隔離 (`Asia/Taipei` vs `America/New_York`)、TPEX日期核實與防快取毒化。 |
+| **[`06-environment-and-brand.md`](docs/architecture/06-environment-and-brand.md)** | 完整環境變數參考表、品牌Logo與UI規範、BYOK即時模型清單與Gemini Latest。 |
 
 ---
 
+## 🛠️ 開發與驗證指令 (Development & Testing)
 
-## ⚙️ 環境變數設定規範 (Environment Variables Reference)
-
-| 變數名稱                     | 類型   | 範例 / 預設值                                              | 說明                                               |
-| :--------------------------- | :----- | :--------------------------------------------------------- | :------------------------------------------------- |
-| **`PRIMARY_BASE_URL`**       | URL    | `https://api.openai.com/v1`                                | 主要 LLM 端點 Base URL（相容 `OPENAI_BASE_URL`）   |
-| **`PRIMARY_API_KEY`**        | Secret | `sk-proj-...`                                              | 主要 LLM 端點 API Key（相容 `OPENAI_API_KEY`）     |
-| **`PRIMARY_TOOL_MODEL`**     | String | `gpt-4o-mini`                                              | 主要端點工具調用模型（相容 `TOOL_MODEL`）          |
-| **`PRIMARY_MODEL`**          | String | `gpt-4o-mini`                                              | 主要端點文字生成模型（相容 `MODEL`）               |
-| **`FALLBACK_1_BASE_URL`**    | URL    | `https://api.groq.com/openai/v1`                           | 第 1 備用端點 Base URL（相容 `GROQ_BASE_URL`）     |
-| **`FALLBACK_1_API_KEY`**     | Secret | `gsk_...`                                                  | 第 1 備用端點 API Key（相容 `GROQ_API_KEY`）       |
-| **`FALLBACK_1_TOOL_MODEL`**  | String | `openai/gpt-oss-20b`                                       | 第 1 備用端點工具模型（相容 `GROQ_TOOL_MODEL`）    |
-| **`FALLBACK_1_MODEL`**       | String | `openai/gpt-oss-20b`                                       | 第 1 備用端點文字模型（相容 `GROQ_MODEL`）         |
-| **`FALLBACK_2_BASE_URL`**    | URL    | `https://generativelanguage.googleapis.com/v1beta/openai/` | 第 2 備用端點 Base URL（如 Google Gemini / Azure） |
-| **`FALLBACK_2_API_KEY`**     | Secret | `AIza...`                                                  | 第 2 備用端點 API Key（如 `GEMINI_API_KEY`）       |
-| **`FALLBACK_2_TOOL_MODEL`**  | String | `gemini-2.5-flash`                                         | 第 2 備用端點工具模型                              |
-| **`FALLBACK_2_MODEL`**       | String | `gemini-2.5-flash`                                         | 第 2 備用端點文字模型                              |
-| **`CLEF_PRIMARY_URL`**       | URL    | `https://clef.create360.ai/v1/systemone`                   | Clef-Flash System One 主力端點                     |
-| **`CLEF_FALLBACK_2_URL`**    | URL    | `https://clef.aiurl.tw/v1/systemone`                       | Clef-Flash System One 備援端點 2                   |
-| **`CLEF_FALLBACK_3_URL`**    | URL    | `https://jev.create360.ai/v1/systemone`                    | Clef-Flash System One / Jev 備援端點 3             |
-| **`CLEF_PRIMARY_TIMEOUT_MS`**| Number | `1200`                                                     | Clef 主力端點超時預算 (ms)                         |
-| **`TWOMD_PRIMARY_URL`**      | URL    | `https://2md.aiurl.tw`                                     | 2MD 即時連網搜尋主端點                             |
-| **`AI_HEDGE_FUND_HOST`**     | Host   | `dns.glsoft.ai`                                            | AI Hedge Fund API 主機位置                         |
-| **`AI_HEDGE_FUND_PORT`**     | Port   | `6000`                                                     | AI Hedge Fund API 端口                             |
-
-### 品牌 Logo
-
-目前採用純橘色底、白色「888／Stock Bot」的 `public/stockbot-logo-v3.png`；網站使用 256px 的 `public/stockbot-logo.png`。頁首、聊天頭像、favicon 與 PWA 圖示統一使用此版本。favicon metadata 直接指向 `stockbot-logo.png?v=4`，避免瀏覽器持續優先快取舊 `favicon.ico`。
-
-TradingView ticker 的外部 iframe 在載入期間會產生內建線條 skeleton；`components/tradingview/ticker-tape.tsx` 保持容器高度但在 iframe ready 前隱藏內容，避免首次載入閃出黑／灰線條。
-
-### BYOK 即時模型清單與 Gemini Latest
-
-- BYOK 設定在輸入金鑰或變更端點後，透過 `POST /api/byok-models` 即時取得供應商 `/models`；Gemini 使用原生 `v1beta/models`，包含分頁及 `generateContent` 篩選。
-- Gemini 預設 `gemini-flash-latest`，由 Google 自動指向最新 Flash；既有官方端點的 `gemini-2.5-flash` 預設設定於讀取時升級為 latest。其他供應商要求明確選擇或手動輸入模型，沿用已儲存的自訂模型。
-- 模型清單採 no-store、8 秒逾時、SSRF 校驗與禁止重新導向。金鑰只在請求記憶體中轉送，錯誤回覆不包含上游原始訊息；失敗時顯示重試與手動輸入，保留使用者選項。
-- `/models` 的可見性不代表支援工具呼叫；模型選定後仍需測試實際對話能力。
+- **本機啟動**：`pnpm dev`
+- **Clef 決策推論單元測試**：`node --experimental-strip-types lib/clef.test.ts`
+- **金融路由單元測試**：`node --experimental-strip-types lib/chat/routing.test.ts`
+- **TypeScript 型別檢查**：`npx tsc --noEmit`
