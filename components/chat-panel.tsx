@@ -201,16 +201,24 @@ function shufflePrompts(
   previousPrompts: ExampleMessage[] = [],
   featured: ExampleMessage[] = []
 ) {
-  // Select up to 2 distinct featured macro prompts
+  // Always guarantee the Earnings Call card is pinned at slot 0
+  const earningsCallPrompt =
+    featured.find(f => /法說|earnings\s*call/i.test(`${f.heading} ${f.message}`)) ||
+    prompts.find(p => /法說|earnings\s*call/i.test(`${p.heading} ${p.message}`))
+
+  // Select 1 distinct macro prompt (excluding earnings calls)
+  const macroPool = featured.filter(
+    f => !/法說|earnings\s*call/i.test(`${f.heading} ${f.message}`)
+  )
+  const shuffledMacro = [...macroPool].sort(() => 0.5 - Math.random())
+  const macroPrompt = shuffledMacro[0]
+
   const featuredBatch: ExampleMessage[] = []
-  if (featured.length > 0) {
-    const shuffledFeatured = [...featured].sort(() => 0.5 - Math.random())
-    for (const item of shuffledFeatured) {
-      if (!featuredBatch.some(f => f.message === item.message)) {
-        featuredBatch.push(item)
-      }
-      if (featuredBatch.length >= 2) break
-    }
+  if (earningsCallPrompt) {
+    featuredBatch.push(earningsCallPrompt)
+  }
+  if (macroPrompt && !featuredBatch.some(f => f.message === macroPrompt.message)) {
+    featuredBatch.push(macroPrompt)
   }
 
   const pool = prompts.filter(

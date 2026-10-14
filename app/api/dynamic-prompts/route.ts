@@ -297,6 +297,11 @@ function buildMacroPrompts(macroData: GlobalMacroDashboardResult | null): {
 
   const macroPromptsZh: ExamplePrompt[] = [
     {
+      heading: '🎙️ 近期台股/美股法人說明會 (Earnings Calls)',
+      subheading: '即時掌握台積電、聯發科、輝達法說日程、影音直播與簡報下載',
+      message: '近期台股與美股有哪些法人說明會？'
+    },
+    {
       heading: upcomingEvent
         ? `📅 今晚總經焦點：${upcomingEvent.event}`
         : '📅 今晚有什麼重大總經數據？',
@@ -325,6 +330,11 @@ function buildMacroPrompts(macroData: GlobalMacroDashboardResult | null): {
   ]
 
   const macroPromptsEn: ExamplePrompt[] = [
+    {
+      heading: '🎙️ Corporate Earnings Calls & Webcasts',
+      subheading: 'Live earnings conference calendar, guidance highlights & slide deck downloads',
+      message: 'Show me upcoming corporate earnings calls and investor conferences'
+    },
     {
       heading: upcomingEvent
         ? `📅 Tonight's Macro Focus: ${upcomingEvent.event}`
@@ -398,6 +408,11 @@ function buildPrompts(
           heading: `${label} 供應鏈地圖`,
           subheading: '找出上下游與同產業連動標的',
           message: `請整理${label}的供應鏈與相關概念股`
+        },
+        {
+          heading: `${label} 法人說明會日程`,
+          subheading: '查看法說會日程、官方簡報與影音回放',
+          message: `請查詢${label}最近的法人說明會與簡報`
         }
       ]
       return templates[index % templates.length]
@@ -425,6 +440,11 @@ function buildPrompts(
           heading: `${label} 強弱如何？`,
           subheading: '趨勢、成交量與支撐壓力一次看',
           message: `請分析${label}目前的趨勢、量價與支撐壓力`
+        },
+        {
+          heading: `${label} Earnings Call`,
+          subheading: '查看財報電話會議、Webcast 與 Guidance',
+          message: `請查詢${label}最近的法人說明會與財報電話會議`
         }
       ]
       return templates[index % templates.length]

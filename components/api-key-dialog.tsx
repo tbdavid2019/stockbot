@@ -187,7 +187,7 @@ export function ApiKeyDialog() {
               <DialogTitle className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                 自備金鑰設定 (BYOK)
               </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1">
+              <DialogDescription className="text-xs sm:text-sm text-foreground/80 mt-1 font-medium">
                 自備 API Key 暢享無限制分析 · 伺服器零留存保證
               </DialogDescription>
             </div>
@@ -196,14 +196,14 @@ export function ApiKeyDialog() {
 
         <div className="max-h-[75vh] overflow-y-auto px-6 py-5 sm:px-7 sm:py-6 space-y-5">
           {/* 安全保證卡片 */}
-          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 p-4">
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
             <div className="flex items-start gap-3">
               <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                <div className="text-sm font-bold text-emerald-700 dark:text-emerald-300">
                   純本機儲存 · 伺服器絕不留存
                 </div>
-                <p className="text-xs sm:text-[13px] leading-relaxed text-muted-foreground">
+                <p className="text-xs sm:text-[13px] leading-relaxed text-foreground/80">
                   您的金鑰僅儲存於您目前的瀏覽器 LocalStorage。發起分析時僅透過伺服器記憶體無狀態轉發，完成即銷毀，絕不寫入伺服器硬碟或資料庫。
                 </p>
               </div>
@@ -225,10 +225,10 @@ export function ApiKeyDialog() {
                       key={p}
                       type="button"
                       onClick={() => handleProviderChange(p)}
-                      className={`relative flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm font-medium transition-all ${
+                      className={`relative flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition-all ${
                         isSelected
-                          ? 'border-orange-500/60 bg-orange-500/10 font-bold text-orange-600 dark:text-orange-400 shadow-sm'
-                          : 'border-border/60 bg-muted/30 text-muted-foreground hover:bg-muted hover:text-foreground'
+                          ? 'border-orange-500 bg-orange-500/15 font-bold text-orange-600 dark:text-orange-400 shadow-xs ring-1 ring-orange-500/30'
+                          : 'border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-100 hover:border-orange-400 hover:text-orange-600 shadow-2xs'
                       }`}
                     >
                       <span className="truncate">{preset.name.split(' ')[0]}</span>

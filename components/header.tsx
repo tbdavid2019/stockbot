@@ -8,9 +8,7 @@ import { ChatHistorySheet } from '@/components/chat-history-sheet'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { CHAT_NEW_EVENT } from '@/lib/chat-history'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
-import { useUserApiKey, openApiKeyDialog } from '@/lib/hooks/use-user-api-key'
 import { ApiKeyDialog } from '@/components/api-key-dialog'
-import { KeyRound } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export function Header() {
@@ -20,12 +18,11 @@ export function Header() {
     'stockbot_layout_mode',
     'wide'
   )
-  const { config, hasCustomKey } = useUserApiKey()
 
   const handleNewChat = (e: React.MouseEvent) => {
     e.preventDefault()
     window.dispatchEvent(new CustomEvent(CHAT_NEW_EVENT))
-    router.push('/')
+    window.location.href = '/'
   }
 
   return (
@@ -93,37 +90,6 @@ export function Header() {
               oli-™股靈精怪
             </a>
           </div>
-
-          {/* BYOK 自備金鑰按鈕 */}
-          <button
-            type="button"
-            onClick={() => openApiKeyDialog()}
-            title={
-              hasCustomKey
-                ? `已啟用自備金鑰 (${config?.provider?.toUpperCase()})`
-                : '設定自備 API 金鑰 (BYOK，伺服器不儲存)'
-            }
-            className={cn(
-              'flex h-7 shrink-0 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition-all',
-              hasCustomKey
-                ? 'border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
-                : 'border border-border/80 bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <KeyRound className="size-3.5" />
-            {hasCustomKey ? (
-              <span className="flex items-center gap-1 font-semibold">
-                <span className="relative flex size-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex size-1.5 rounded-full bg-emerald-500"></span>
-                </span>
-                <span className="hidden md:inline uppercase">{config?.provider}</span>
-                <span className="md:hidden">Key</span>
-              </span>
-            ) : (
-              <span className="hidden sm:inline">自備金鑰</span>
-            )}
-          </button>
 
           <div className="inline-flex shrink-0 rounded-md border bg-muted/60 p-0.5 text-xs shadow-sm">
             <button

@@ -197,7 +197,7 @@ export function PromptForm({
                 className="size-8 rounded-full bg-background p-0"
                 onClick={() => {
                   window.dispatchEvent(new CustomEvent(CHAT_NEW_EVENT))
-                  router.push('/')
+                  window.location.href = '/'
                 }}
               >
                 <IconPlus className="size-4" />

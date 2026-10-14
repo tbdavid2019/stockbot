@@ -87,14 +87,6 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
         updatedAt: Date.now(),
         messages: currentMessages
       })
-
-      // Update URL without full refresh
-      if (
-        typeof window !== 'undefined' &&
-        !window.location.pathname.includes(`/chat/${activeId}`)
-      ) {
-        window.history.replaceState({}, '', `/chat/${activeId}`)
-      }
     }
   }, [aiState?.messages, aiState?.chatId])
 
@@ -126,7 +118,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
       })
       setMessages([])
       if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', `/`)
+        window.location.href = '/'
       }
     }
 
