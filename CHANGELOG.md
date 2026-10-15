@@ -2,6 +2,32 @@
 
 本專案遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/) 格式規範記錄各版本更新與功能演進。
 
+## [2026-10-15] - 全球法人說明會 BigGo Finance 數據抓取引擎全面重構與字體排版合規升級
+
+### 🚀 全球法人說明會 BigGo 爬蟲引擎重構 ([`lib/quant/earnings-call.ts`](lib/quant/earnings-call.ts), [`app/api/earnings-calls/route.ts`](app/api/earnings-calls/route.ts))
+
+- **🚨 解決 10/14 與歷史會議「僅抓出台積電」之核心痛點**：
+  - **根本原因診斷**：
+    1. BigGo Finance 後端 API (`https://api.biggo.com/api/v1/finance/stock/earnings-calls/list`) 嚴格強制要求 `stock_filter=all` 參數，若遺漏會直接回傳 HTTP 400 (`code: 1002, message: Some parameters are invalid`)。
+    2. BigGo 單次區間不得超過 10 天；先前程式碼中存在未傳送 `start_date`/`end_date` 之 `pageTasks` 導致拋錯，引發 try/catch 攔截回退至僅含 22 檔 benchmark 標的之 fallback 清單。
+    3. Fallback 快取時間過長 (10 分鐘)，使得冷啟動失敗後鎖死在僅有台積電與少量靜態標的。
+  - **核心修復與架構升級**：
+    - **6 窗口滾動時間窗 (30 天歷史 + 未來 1 週)**：建立 6 組 6 天區間窗口，全數攜帶 `stock_filter=all`、`Referer`、`Origin` 與完整市場代碼 (`market=tw/us/jp/kr/other`)。
+    - **單一窗口容錯隔離**：個別時間窗請求若遇網路波動獨立 fallback，絕不讓單一請求拖垮整體清單。
+    - **大幅提升抓取數量**：即時抓取量由原本的 22 檔激增至 **400+ 場全球會議**，其中 2026-10-14 完整抓出 **29 場**（包含 1319 東陽、2707 晶華、2340 臺亞、9938 百和、1203 味王、2816 旺旺保、6877 鏵友益、8404 百和興業-KY、2745 五福、8222 寶一、7753 星亞、ASML、BAC、MS、BLK 等全數對齊 BigGo 官方頁面）。
+    - **動態快取與快取穿透 (Bypass Cache)**：當資料筆數 `<= 25`（疑似未抓到 BigGo）時，快取縮短至 5 秒以便迅速重試；新增 `refresh=1` / `nocache` 參數強制穿透伺服器快取。
+    - **API 診斷探針 (`debug=1`)**：提供即時連線診斷端點，可自生產端直接驗證 BigGo API 回傳狀態。
+
+### 🎨 介面排版工藝與字體底線合規 ([`components/stocks/earnings-call-card.tsx`](components/stocks/earnings-call-card.tsx), [`components/stocks/earnings-call-overview.tsx`](components/stocks/earnings-call-overview.tsx))
+
+- **🚨 徹底清除 `text-[10px]`、`text-[11px]` 等微型字體**：
+  - 嚴格落實「中文字不可小於 12pt (16px)」與易讀性規範，將標籤、代號、開會時間、狀態徽章與 AI 摘要全面升級為清晰的 `text-xs` (12px)、`text-sm` (14px) 與 `text-base` (16px)。
+  - 公司中文名稱提升至 `text-sm sm:text-base font-semibold`，股票代號提升至 `font-mono text-sm sm:text-base font-bold`。
+  - 總覽頂部摘要列（今日召開、即將舉行、歷史回放、總追蹤）文字統一提升至 `text-sm font-bold`。
+- **🔄 新增「即時更新 (Refresh)」按鈕與客戶端自動補水 (Hydration)**：
+  - 工具列新增獨立重新整理按鈕，支援帶有旋轉動畫的即時重新檢索。
+  - 客戶端進入頁面時若偵測到 SSR 資料筆數小於等於 25，自動背景觸發 live API 進行二次補水，確保使用者隨時看到完整的數百場會議。
+
 ---
 
 ## [2026-10-15] - 介面字體排版工藝重構（中文字嚴格不小於 12pt）與 AI Hedge Fund API v2.0.0 旗艦對齊

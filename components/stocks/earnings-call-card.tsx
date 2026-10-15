@@ -31,7 +31,8 @@ import {
   Video,
   Mic,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  RefreshCw
 } from 'lucide-react'
 
 interface DeckAnalysisState {
@@ -89,6 +90,30 @@ export function EarningsCallCard({ data, standalone = false }: EarningsCallCardP
   const [expandedIds, setExpandedIds] = React.useState<Set<string>>(new Set())
   const [extraItems, setExtraItems] = React.useState<EarningsCallItem[]>([])
   const [isSearchingServer, setIsSearchingServer] = React.useState(false)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
+
+  // Live Refresh handler
+  const handleRefresh = React.useCallback(async (m: string = marketFilter) => {
+    setIsRefreshing(true)
+    try {
+      const res = await fetch(`/api/earnings-calls?refresh=1&market=${m}&limit=500`)
+      const json = await res.json()
+      if (json?.success && Array.isArray(json?.data?.all) && json.data.all.length > 0) {
+        setExtraItems(json.data.all)
+      }
+    } catch (err) {
+      console.warn('[EarningsCallCard] Refresh error:', err)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [marketFilter])
+
+  // If initial server data is fallback or sparse (<= 25 items), automatically trigger live fetch on mount
+  React.useEffect(() => {
+    if ((safeData.all?.length || 0) <= 25) {
+      handleRefresh('ALL')
+    }
+  }, [safeData.all?.length, handleRefresh])
 
   // Toggle row accordion
   const toggleExpand = (id: string) => {
@@ -632,6 +657,18 @@ export function EarningsCallCard({ data, standalone = false }: EarningsCallCardP
                 <span>{lang === 'zh' ? '市場原始' : 'Market'}</span>
               </button>
             </div>
+
+            {/* Live Refresh Button */}
+            <button
+              type="button"
+              onClick={() => handleRefresh()}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-2.5 py-1.5 text-xs font-semibold text-foreground shadow-2xs hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
+              title={lang === 'zh' ? '即時更新 BigGo 數據' : 'Refresh live data'}
+            >
+              <RefreshCw className={`size-3.5 text-indigo-500 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">{lang === 'zh' ? '即時更新' : 'Refresh'}</span>
+            </button>
           </div>
         </div>
 
@@ -790,7 +827,7 @@ export function EarningsCallCard({ data, standalone = false }: EarningsCallCardP
                               />
                             ) : null}
                             <span
-                              className={`size-full items-center justify-center text-[11px] font-bold font-mono uppercase ${item.logoUrl ? 'hidden' : 'flex'} ${getMarketBadge(item.market)}`}
+                              className={`size-full items-center justify-center text-xs font-bold font-mono uppercase ${item.logoUrl ? 'hidden' : 'flex'} ${getMarketBadge(item.market)}`}
                             >
                               {item.symbol.slice(0, 3)}
                             </span>
@@ -799,20 +836,20 @@ export function EarningsCallCard({ data, standalone = false }: EarningsCallCardP
                           {/* Symbol & Name */}
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-mono text-xs sm:text-sm font-bold text-foreground">
+                              <span className="font-mono text-sm sm:text-base font-bold text-foreground">
                                 {displayTicker}
                               </span>
-                              <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border ${getMarketBadge(item.market)}`}>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${getMarketBadge(item.market)}`}>
                                 {item.market}
                               </span>
                               {isLive && (
-                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.2 rounded border border-rose-500/30">
+                                <span className="inline-flex items-center gap-1 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60 px-2 py-0.5 rounded border border-rose-500/30">
                                   <span className="size-1.5 rounded-full bg-rose-500 animate-ping" />
                                   <span>LIVE</span>
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs sm:text-sm font-medium text-foreground truncate max-w-[180px] sm:max-w-[240px]">
+                            <div className="text-sm sm:text-base font-semibold text-foreground truncate max-w-[200px] sm:max-w-[280px]">
                               {item.companyName}
                             </div>
                           </div>
@@ -855,7 +892,7 @@ export function EarningsCallCard({ data, standalone = false }: EarningsCallCardP
                           {/* 💡 Guidance Badge indicator */}
                           {item.guidanceHighlights && (
                             <span
-                              className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30"
+                              className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/30"
                               title={lang === 'zh' ? '具官方營運指引' : 'Official Guidance Available'}
                             >
                               <TrendingUp className="size-3" />
@@ -873,15 +910,15 @@ export function EarningsCallCard({ data, standalone = false }: EarningsCallCardP
                       {/* Sub-row: Title & Time */}
                       <div
                         onClick={() => toggleExpand(item.id)}
-                        className="mt-1.5 flex items-center justify-between text-xs text-muted-foreground cursor-pointer pl-12"
+                        className="mt-1.5 flex items-center justify-between text-xs sm:text-sm text-muted-foreground cursor-pointer pl-12"
                       >
                         <span className="truncate pr-2 text-foreground/80">
                           {item.title}
                         </span>
-                        <span className="font-mono text-[11px] text-muted-foreground shrink-0">
+                        <span className="font-mono text-xs sm:text-sm text-muted-foreground shrink-0">
                           {timezoneMode === 'local' ? `${dualTz.localTime}` : `${item.conferenceTime || '14:00'}`}
                           {timezoneMode === 'local' && dualTz.isCrossDay && (
-                            <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                            <span className="ml-1 text-xs text-amber-600 dark:text-amber-400 font-semibold">
                               ({dualTz.dayDiffLabel})
                             </span>
                           )}
@@ -1047,7 +1084,7 @@ export function EarningsCallCard({ data, standalone = false }: EarningsCallCardP
                                       <Sparkles className="size-3.5 text-amber-500 shrink-0" />
                                       <span>{lang === 'zh' ? '2MD AI 法說簡報重點萃取' : '2MD AI Guidance Summary'}</span>
                                     </span>
-                                    <span className="text-[11px] text-muted-foreground">
+                                    <span className="text-xs text-muted-foreground font-medium">
                                       {lang === 'zh' ? 'AnyDoc 原生解析' : '2MD AnyDoc'}
                                     </span>
                                   </div>

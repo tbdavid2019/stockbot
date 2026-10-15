@@ -47,6 +47,7 @@ export interface FetchEarningsCallsParams {
   symbol?: string
   market?: 'TW' | 'US' | 'JP' | 'KR' | 'OTHER' | 'ALL'
   limit?: number
+  bypassCache?: boolean
 }
 
 // In-flight Singleflight deduplication map
@@ -720,6 +721,8 @@ const BIGGO_API_BASE = 'https://api.biggo.com/api/v1/finance'
 const BIGGO_HEADERS: Record<string, string> = {
   Accept: 'application/json',
   Site: 'finance.biggo.com.tw',
+  Referer: 'https://finance.biggo.com.tw/earnings-call?t=all',
+  Origin: 'https://finance.biggo.com.tw',
   'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
 }
@@ -1034,11 +1037,11 @@ async function fetchBigGoEarningsBySymbol(query: string): Promise<EarningsCallIt
     const isTw4 = /^\d{4}$/.test(query)
     const tasks: Promise<BigGoRawCallItem[]>[] = []
 
-    // 1. General search query
+    // 1. General search query with stock_filter=all
     tasks.push(
-      fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?q=${encodeURIComponent(query)}&page=1&size=50`, {
+      fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?q=${encodeURIComponent(query)}&page=1&size=50&stock_filter=all`, {
         headers: BIGGO_HEADERS,
-        signal: AbortSignal.timeout(4000)
+        signal: AbortSignal.timeout(6000)
       })
         .then(r => (r.ok ? r.json() : null))
         .then(j => (j?.data?.list || []) as BigGoRawCallItem[])
@@ -1048,9 +1051,9 @@ async function fetchBigGoEarningsBySymbol(query: string): Promise<EarningsCallIt
     // 2. Direct TW stock ID endpoint if 4 digits
     if (isTw4) {
       tasks.push(
-        fetch(`${BIGGO_API_BASE}/stock/${query}.TW/earnings-calls/list?region=tw`, {
+        fetch(`${BIGGO_API_BASE}/stock/${query}.TW/earnings-calls/list?region=tw&stock_filter=all`, {
           headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
+          signal: AbortSignal.timeout(6000)
         })
           .then(r => (r.ok ? r.json() : null))
           .then(j => (j?.data?.list || []) as BigGoRawCallItem[])
@@ -1083,7 +1086,7 @@ async function fetchBigGoEarningsBySymbol(query: string): Promise<EarningsCallIt
 }
 
 /**
- * Fetches multi-window earnings call dashboard from BigGo Finance (-18 days to +18 days)
+ * Fetches multi-window earnings call dashboard from BigGo Finance (-30 days to +6 days)
  */
 async function fetchBigGoMultiWindowDashboard(
   market?: 'TW' | 'US' | 'JP' | 'KR' | 'OTHER' | 'ALL'
@@ -1092,8 +1095,10 @@ async function fetchBigGoMultiWindowDashboard(
     const today = new Date()
     const windows: { start: string; end: string }[] = []
 
-    // 6 windows of 6-day spans: -18 to +18 days
-    for (let i = -3; i < 3; i++) {
+    // BigGo spans cannot exceed 10 days. We query 6 windows of 6 days:
+    // Window -5 to 0: past 30 days (-30d to today)
+    // Window +1: next 6 days (today to +6d)
+    for (let i = -5; i <= 1; i++) {
       const s = new Date(today.getTime() + i * 6 * 86400000)
       const e = new Date(today.getTime() + (i + 1) * 6 * 86400000)
       windows.push({
@@ -1109,84 +1114,30 @@ async function fetchBigGoMultiWindowDashboard(
     else if (market === 'KR') marketParam = '&market=kr'
     else if (market === 'OTHER') marketParam = '&market=other'
 
-    const fetchWindow = async (w: { start: string; end: string }) => {
+    const fetchWindow = async (w: { start: string; end: string }): Promise<BigGoRawCallItem[]> => {
       try {
-        const url = `${BIGGO_API_BASE}/stock/earnings-calls/list?start_date=${w.start}&end_date=${w.end}${marketParam}`
+        const url = `${BIGGO_API_BASE}/stock/earnings-calls/list?start_date=${w.start}&end_date=${w.end}&stock_filter=all${marketParam}`
         const res = await fetch(url, {
           headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
+          signal: AbortSignal.timeout(6000)
         })
-        if (!res.ok) return []
+        if (!res.ok) {
+          console.warn(`[EarningsCall] BigGo window ${w.start}..${w.end} status ${res.status}`)
+          return []
+        }
         const json = await res.json()
-        return (json?.data?.list || []) as BigGoRawCallItem[]
-      } catch {
+        if (!json?.result || !Array.isArray(json?.data?.list)) {
+          return []
+        }
+        return json.data.list as BigGoRawCallItem[]
+      } catch (err: any) {
+        console.warn(`[EarningsCall] BigGo window ${w.start}..${w.end} error:`, err?.message)
         return []
       }
     }
 
-    const pageTasks: Promise<BigGoRawCallItem[]>[] = []
-    if (!market || market === 'ALL') {
-      pageTasks.push(
-        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=100`, {
-          headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
-        })
-          .then(res => (res.ok ? res.json() : null))
-          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
-          .catch(() => []),
-        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=60&market=tw`, {
-          headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
-        })
-          .then(res => (res.ok ? res.json() : null))
-          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
-          .catch(() => []),
-        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=60&market=us`, {
-          headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
-        })
-          .then(res => (res.ok ? res.json() : null))
-          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
-          .catch(() => []),
-        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=60&market=jp`, {
-          headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
-        })
-          .then(res => (res.ok ? res.json() : null))
-          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
-          .catch(() => []),
-        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=40&market=kr`, {
-          headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
-        })
-          .then(res => (res.ok ? res.json() : null))
-          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
-          .catch(() => [])
-      )
-    } else {
-      pageTasks.push(
-        fetch(`${BIGGO_API_BASE}/stock/earnings-calls/list?page=1&size=100${marketParam}`, {
-          headers: BIGGO_HEADERS,
-          signal: AbortSignal.timeout(4000)
-        })
-          .then(res => (res.ok ? res.json() : null))
-          .then(json => (json?.data?.list || []) as BigGoRawCallItem[])
-          .catch(() => [])
-      )
-    }
-
-    const [allPageLists, ...windowLists] = await Promise.all([
-      Promise.all(pageTasks),
-      ...windows.map(fetchWindow)
-    ])
+    const windowLists = await Promise.all(windows.map(fetchWindow))
     const map = new Map<string, BigGoRawCallItem>()
-    for (const list of allPageLists) {
-      for (const item of list) {
-        if (!map.has(item.call_id)) {
-          map.set(item.call_id, item)
-        }
-      }
-    }
     for (const list of windowLists) {
       for (const item of list) {
         if (!map.has(item.call_id)) {
@@ -1196,13 +1147,14 @@ async function fetchBigGoMultiWindowDashboard(
     }
 
     const rawItems = Array.from(map.values())
+    console.log(`[EarningsCall] fetchBigGoMultiWindowDashboard retrieved ${rawItems.length} unique calls from BigGo`)
     if (rawItems.length === 0) return []
 
-    // Sort chronologically to identify upcoming and live calls
+    // Map all raw items
     const mapped = rawItems.map(i => mapBigGoItemToEarningsCall(i))
     const liveOrUpcoming = mapped.filter(i => i.status === 'live' || i.status === 'today' || i.status === 'upcoming')
 
-    // Enrich top 5 most urgent calls with guidance and slide PDFs
+    // Enrich top 5 calls with guidance and slide PDFs if urgent
     const urgentCallIds = new Set(liveOrUpcoming.slice(0, 5).map(i => i.id))
     const enrichedResults = await Promise.all(
       rawItems.map(item => {
@@ -1290,15 +1242,17 @@ async function searchLiveEarningsAnnouncements(query: string): Promise<EarningsC
 export async function fetchEarningsCalls(
   params: FetchEarningsCallsParams = {}
 ): Promise<EarningsCallDashboardResult> {
-  const { symbol, market = 'ALL', limit = 250 } = params
+  const { symbol, market = 'ALL', limit = 500, bypassCache = false } = params
   const cleanSym = symbol ? symbol.trim().toUpperCase().replace(/^(?:TWSE|TPEX|NASDAQ|NYSE|AMEX):/, '') : ''
   const cacheKey = `${cleanSym || 'all'}_${market}_${limit}`
   const now = Date.now()
 
-  // 1. Check in-memory cache
-  const cached = earningsCallCache.get(cacheKey)
-  if (cached && cached.expiresAt > now) {
-    return cached.data
+  // 1. Check in-memory cache (unless explicitly bypassed)
+  if (!bypassCache) {
+    const cached = earningsCallCache.get(cacheKey)
+    if (cached && cached.expiresAt > now) {
+      return cached.data
+    }
   }
 
   // 2. Singleflight request deduplication
@@ -1436,10 +1390,11 @@ export async function fetchEarningsCalls(
       source: 'BigGo Finance / MOPS / TWSE / TPEX / Yahoo Finance / Corporate IR'
     }
 
-    // Save to cache
+    // Save to cache: full dataset for 10m, sparse fallback for only 5s
+    const ttl = pool.length > 25 ? CACHE_TTL_MS : 5_000
     earningsCallCache.set(cacheKey, {
       data: result,
-      expiresAt: Date.now() + CACHE_TTL_MS
+      expiresAt: Date.now() + ttl
     })
 
     return result

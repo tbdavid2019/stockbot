@@ -105,7 +105,7 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
                 {lang === 'zh' ? '全球法人說明會與業績展望總覽' : 'Global Corporate Earnings Calls & Outlook'}
               </h1>
-              <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-3xl">
+              <p className="mt-1 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-3xl">
                 {lang === 'zh'
                   ? '一站式聚合 BigGo Finance 全球數據、公開資訊觀測站 (MOPS)、證交所 (TWSE/TPEX) 官方影音、美股財報電話會議、日本 (JPX) 決算說明會與韓國 (KRX) 業績說明會。支援 2MD AnyDoc 引擎秒級萃取經營層指引與資本支出展望。'
                   : 'Live aggregation of BigGo Finance global directory, MOPS filings, TWSE/TPEX official webcasts, US corporate earnings calls, Japan (JPX), and Korea (KRX). Powered by 2MD AnyDoc for instant management guidance extraction.'}
@@ -114,19 +114,19 @@ export function EarningsCallOverview({ initialData }: { initialData?: EarningsCa
 
             {/* Sleek Integrated Summary Bar */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <div className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+              <div className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-300">
                 <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span>{lang === 'zh' ? `今日召開 ${liveCount} 場` : `Today ${liveCount}`}</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-bold text-sky-700 dark:text-sky-300">
+              <div className="inline-flex items-center gap-1.5 rounded-xl border border-sky-500/30 bg-sky-500/10 px-3.5 py-1.5 text-sm font-bold text-sky-700 dark:text-sky-300">
                 <span className="size-2 rounded-full bg-sky-500" />
                 <span>{lang === 'zh' ? `即將舉行 ${upcomingCount} 場` : `Upcoming ${upcomingCount}`}</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-muted/50 px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+              <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-muted/50 px-3.5 py-1.5 text-sm font-semibold text-muted-foreground">
                 <Calendar className="size-3.5" />
                 <span>{lang === 'zh' ? `歷史回放 ${replayCount} 場` : `Replays ${replayCount}`}</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground">
+              <div className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-1.5 text-sm font-bold text-foreground">
                 <CheckCircle2 className="size-3.5 text-indigo-500" />
                 <span>{lang === 'zh' ? `總追蹤 ${totalCount} 場` : `Total ${totalCount}`}</span>
               </div>
