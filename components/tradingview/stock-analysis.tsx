@@ -351,7 +351,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         tickers: normalizedTicker,
         selectedAnalysts: analysts,
         enableRoundTable,
-        roundTableRounds: 1,
+        roundTableRounds: 2,
         async: false
       })
     })
@@ -445,7 +445,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
           'stanley_druckenmiller',
           'decision_model'
         ]
-        const data3 = await executeBatchRequest(batch3Analysts, false)
+        const data3 = await executeBatchRequest(batch3Analysts, true)
 
         if (data3) {
           setResult(prev => {
@@ -453,6 +453,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
             return {
               ...prev,
               decisions: data3.decisions || prev.decisions,
+              round_table: data3.round_table || prev.round_table,
               analyst_signals: {
                 ...prev.analyst_signals,
                 ...(data3.analyst_signals || {})

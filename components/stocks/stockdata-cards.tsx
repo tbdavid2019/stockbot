@@ -124,11 +124,11 @@ export function CompanyProfileCard({ result, ticker }: { result: StockdataResult
   return <ResultShell title={`${display(data?.name) !== '—' ? display(data?.name) : ticker || '公司'} 公司簡介與即時新聞`} result={result}>
     {hasProfile ? <div className="grid gap-2 sm:grid-cols-2">{['ticker', 'name', 'industry', 'business_summary', 'chairman', 'market_cap', 'established'].map(key => <div key={key} className="rounded-lg bg-slate-50 p-2.5 text-xs dark:bg-zinc-900"><span className="text-muted-foreground">{key}</span><p className="mt-1 font-medium">{display(data?.[key])}</p></div>)}</div> : <GenericRows result={result} fallback="目前沒有可核實的公司資料。" />}
     {hasProfile && (
-      <div className="mt-3 flex items-center justify-between pt-2 border-t text-xs">
-        <span className="text-muted-foreground">需要查看母子公司與轉投資關係？</span>
+      <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t text-base">
+        <span className="text-muted-foreground font-medium">需要查看母子公司與轉投資關係？</span>
         <a
           href={`/?q=${encodeURIComponent(`${display(data?.name) !== '—' ? display(data?.name) : ticker || ''} 關係企業與轉投資圖譜`)}`}
-          className="text-indigo-600 dark:text-indigo-400 hover:underline font-medium inline-flex items-center gap-1 cursor-pointer"
+          className="text-indigo-600 dark:text-indigo-400 hover:underline font-bold inline-flex items-center gap-1.5 cursor-pointer"
         >
           <span>查看台灣公司關係網圖譜</span>
           <span>→</span>

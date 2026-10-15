@@ -216,8 +216,13 @@ export async function POST(request: NextRequest) {
       tickers,
       selectedAnalysts,
       modelName,
+      modelProvider,
       enableRoundTable = true,
-      roundTableRounds = 1,
+      roundTableRounds = 2,
+      pointInTime,
+      portfolio,
+      startDate,
+      endDate,
       async: isAsync = true
     } = body
 
@@ -241,6 +246,26 @@ export async function POST(request: NextRequest) {
       enableRoundTable,
       roundTableRounds,
       async: isAsync
+    }
+
+    if (pointInTime !== undefined) {
+      requestPayload.pointInTime = Boolean(pointInTime)
+    }
+
+    if (portfolio && typeof portfolio === 'object') {
+      requestPayload.portfolio = portfolio
+    }
+
+    if (startDate && typeof startDate === 'string') {
+      requestPayload.startDate = startDate
+    }
+
+    if (endDate && typeof endDate === 'string') {
+      requestPayload.endDate = endDate
+    }
+
+    if (modelProvider && typeof modelProvider === 'string') {
+      requestPayload.modelProvider = modelProvider
     }
 
     const rawCash = body.initialCash ?? body.initial_cash ?? body.capital ?? body.cash

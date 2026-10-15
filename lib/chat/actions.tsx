@@ -633,6 +633,26 @@ function getSmartFallbackCaption(
   question?: string,
   contextData?: string
 ): string {
+  if (toolName === 'showCompanyNetwork' && contextData) {
+    try {
+      const parsed = JSON.parse(contextData)
+      if (parsed.name) {
+        const parts = [
+          `如上方卡片所示，依據經濟部商業司公開登記索引，${parsed.name}（統編：${parsed.id}）實收資本額為 ${parsed.capital}，登記代表人為 ${parsed.representative}。`,
+          parsed.downstreamAffiliatesCount > 0
+            ? `旗下轉投資與子公司群共計 ${parsed.downstreamAffiliatesCount} 家（包含 ${parsed.downstream.map((d: any) => d.stockCode ? `${d.name} [${d.stockCode}]` : d.name).join('、')} 等關聯事業）。`
+            : '',
+          parsed.upstreamAffiliatesCount > 0
+            ? `上層主要法人股東包括 ${parsed.upstream.join('、')}。`
+            : '',
+          `若需深入檢視股權穿透與關聯實體，可點擊上方「開啟互動關係圖譜」查看完整的視覺化圖譜。`
+        ].filter(Boolean)
+        return parts.join('\n\n')
+      }
+    } catch {
+      // Fall through to generic fallback
+    }
+  }
   if (contextData) {
     return `根據上方資料，目前可確認的重點已整理在卡片中；未提供的數值不做推估。`
   }

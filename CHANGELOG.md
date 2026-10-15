@@ -4,6 +4,30 @@
 
 ---
 
+## [2026-10-15] - 介面字體排版工藝重構（中文字嚴格不小於 12pt）與 AI Hedge Fund API v2.0.0 旗艦對齊
+
+### 🎨 介面字體排版工藝重構 (Typography Overhaul via Impeccable)
+
+- **🚨 嚴格落實「中文字不可小於 12pt (16px)」鐵律 ([`components/stocks/company-network-card.tsx`](components/stocks/company-network-card.tsx))**：
+  - **根本問題**：原先元件存在大量 `text-[10px]`、`text-[11px]`、`text-xs` (12px = 9pt) 等極小字，且字體大小落差劇烈（從 24px 標題陡降至 11px 指標標籤，再跳至 18px 數字），造成複雜筆劃的中文字糊成一團且視覺忽大忽小。
+  - **排版重構**：
+    - **全卡片中文字底線**：所有中文字標籤、說明、地址、晶片按鈕與頁腳版權一律提升至 **`text-base` (16px / 12pt)** 以上，徹底告別微縮字。
+    - **階梯式視覺節奏 (Type Hierarchy)**：主標題 (`text-2xl sm:text-3xl`) ➔ 區塊標題 (`text-lg sm:text-xl`) ➔ 指標數值 (`text-xl sm:text-2xl font-mono`) ➔ 標籤與正文 (`text-base` 16px)，層次清晰勻稱。
+    - **關係企業晶片舒適度**：晶片加大內距 (`px-4 py-2.5`)，中文名稱為 `text-base font-semibold`，代號徽章為 `font-mono text-sm font-bold`，大幅提升點擊與閱讀體驗。
+  - **公司簡介卡片同步升級 ([`components/stocks/stockdata-cards.tsx`](components/stocks/stockdata-cards.tsx))**：關係網圖譜導流列全面升級為 `text-base`。
+  - **結構化智慧解說 ([`lib/chat/actions.tsx`](lib/chat/actions.tsx))**：為 `showCompanyNetwork` 提供專屬結構化 fallback 解說，包含統編、實收資本額、代表人、關聯家數，嚴格遵守「如上方卡片所示」之卡片相對位置鐵律。
+
+### 🤖 AI Hedge Fund API v2.0.0 旗艦對齊 ([`https://hedgeapi.afpicapital.com/llms-full.txt`](https://hedgeapi.afpicapital.com/llms-full.txt))
+
+- **🏛️ 圓桌辯論委員會真實啟用 ([`components/tradingview/stock-analysis.tsx`](components/tradingview/stock-analysis.tsx))**：
+  - 在第 3 批（8 位大師完成）中正式啟動 `enableRoundTable: true` 與 `roundTableRounds: 2`，由大師團隊進行 2 輪多維交鋒。
+  - 將後端傳回之 `round_table`（包含核心共識 `consensus_view`、辯論焦點 `discussion_summary`、分歧觀點 `dissenting_opinions` 與大師逐字交鋒過程 `conversation_transcript`）完整合併並渲染於 UI。
+- **⚡ 後端 API 端點全面擴充 ([`app/api/stock-analysis/route.ts`](app/api/stock-analysis/route.ts))**：
+  - 支援 v2.0.0 新參數：`pointInTime`（嚴格歷史截點回測與防未來視角偏差）、`portfolio`（持股與資金結構）、`startDate`/`endDate` 與 `modelProvider`（`TypeSafe`、`Groq`、`Gemini`、`OpenAI`）。
+  - 預設辯論輪數對齊為 2 輪。
+
+---
+
 ## [2026-10-15] - 深度整合 888 台灣公司關係網：經濟部商業司登記、母子公司生態系、轉投資與互動股權圖譜 (https://taiwan-company-network.david888.com)
 
 ### ✨ 新增功能與旗艦整合 (Added & Integrated)
