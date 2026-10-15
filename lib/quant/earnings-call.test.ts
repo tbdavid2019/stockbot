@@ -13,6 +13,14 @@ test('computeConferenceStatus accurately identifies upcoming and replays', () =>
 
   const status2 = computeConferenceStatus('2026-10-01', 'Asia/Taipei', '14:00', new Date('2026-10-14T00:00:00Z'))
   assert.equal(status2, 'replay')
+
+  // On 2026-10-15 08:44 CST: TSMC (2026-10-15) is today, while BAC (2026-10-14) is replay
+  const nowOct15 = new Date('2026-10-15T08:44:00+08:00')
+  const statusTsmc = computeConferenceStatus('2026-10-15', 'Asia/Taipei', '14:00', nowOct15, 'Asia/Taipei')
+  assert.equal(statusTsmc, 'today')
+
+  const statusBac = computeConferenceStatus('2026-10-14', 'America/New_York', '08:30', nowOct15, 'Asia/Taipei')
+  assert.equal(statusBac, 'replay')
 })
 
 test('formatDualTimezone converts US ET conference to Taipei local time', () => {

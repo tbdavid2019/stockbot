@@ -224,38 +224,26 @@ export function computeConferenceStatus(
 
   const confUtc = parseZonedTimeToUtc(confDate, confTime, timeZone)
 
-  const confDateInUserTz = confUtc
-    ? new Intl.DateTimeFormat('en-CA', {
-        timeZone: userTimeZone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).format(confUtc)
-    : confDate
-
-  // Check if conference falls on today in either market timezone or user timezone
-  const isCalendarToday = confDate === confTodayStr || confDate === userTodayStr
-
-  if (isCalendarToday) {
-    if (confUtc) {
-      const diffMs = now.getTime() - confUtc.getTime()
-      const diffMinutes = Math.floor(diffMs / 60000)
-      // Within 15 minutes before start to 120 minutes after start: live conference (🔴 進行中)
-      if (diffMinutes >= -15 && diffMinutes <= 120) {
-        return 'live'
-      }
+  // 1. Live status check: within -15 to +120 minutes of scheduled start time
+  if (confUtc) {
+    const diffMs = now.getTime() - confUtc.getTime()
+    const diffMinutes = Math.floor(diffMs / 60000)
+    if (diffMinutes >= -15 && diffMinutes <= 120) {
+      return 'live'
     }
-    // Throughout the entire calendar day of today, it remains classified as 'today' (🟢 今日召開)
+  }
+
+  // 2. Calendar date alignment relative to viewer's current date:
+  if (confDate === userTodayStr) {
     return 'today'
   }
 
-  // Anchor to 23:59:59.999 for robust midnight boundary comparison
-  const confEndOfDay = getEndOfDay(confDate).getTime()
-  const todayEndOfDay = getEndOfDay(confTodayStr).getTime()
-
-  if (confEndOfDay > todayEndOfDay) {
+  // 3. Future dates
+  if (confDate > userTodayStr) {
     return 'upcoming'
   }
+
+  // 4. Past dates (yesterday or earlier)
   return 'replay'
 }
 
