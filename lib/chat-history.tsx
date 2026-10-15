@@ -33,6 +33,7 @@ import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-ca
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
 import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
 import { CompanyNetworkCard } from '@/components/stocks/company-network-card'
+import { GovBidsCard } from '@/components/stocks/gov-bids-card'
 import {
   BrokerBranchCard,
   CompanyProfileCard,
@@ -485,6 +486,19 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
               case 'showCompanyNetwork':
                 cardContent = <CompanyNetworkCard record={result?.data} query={args.symbol || args.companyName || result?.query} />
                 break
+
+              case 'showGovProcurement': {
+                const procurementData =
+                  result?.data?.company
+                    ? result.data
+                    : result?.company
+                      ? result
+                      : result?.data?.data?.company
+                        ? result.data.data
+                        : null
+                cardContent = procurementData ? <GovBidsCard data={procurementData} /> : null
+                break
+              }
 
               case 'showMacroRiskRegime':
                 cardContent = result?.data ? <MacroRiskRegimeCard result={result.data} /> : null

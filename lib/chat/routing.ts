@@ -32,6 +32,7 @@ export type DeterministicToolName =
   | 'showMacroRiskRegime'
   | 'showStockdataMacroDataset'
   | 'showPolymarketSentiment'
+  | 'showGovProcurement'
 
 const NON_TICKER_WORDS = new Set([
   'AI',
@@ -97,7 +98,37 @@ export function extractExplicitTicker(text: string): string | undefined {
     微軟: 'MSFT',
     亞馬遜: 'AMZN',
     谷歌: 'GOOGL',
-    臉書: 'META'
+    臉書: 'META',
+    漢翔: '2634',
+    龍德造船: '6753',
+    雷虎: '8033',
+    亞航: '2630',
+    全訊: '5222',
+    精誠: '6214',
+    零壹: '3029',
+    邁達特: '6112',
+    凌群: '2453',
+    資通: '2471',
+    安碁資訊: '6690',
+    叡揚: '6752',
+    敦陽科: '2474',
+    宏碁資訊: '6811',
+    大世科: '8099',
+    中鼎: '9933',
+    欣陸: '3703',
+    工信: '5521',
+    山林水: '8473',
+    國統: '8936',
+    華城: '1519',
+    士電: '1503',
+    中興電: '1513',
+    亞力: '1514',
+    達欣工: '2535',
+    泓德能源: '6873',
+    雲豹能源: '6869',
+    森崴能源: '6806',
+    崑鼎: '6803',
+    可寧衛: '8422'
   }
   for (const [name, ticker] of Object.entries(knownAliases)) {
     if (new RegExp(name, 'i').test(text)) {
@@ -244,6 +275,14 @@ export function inferDeterministicTool(
     )
   ) {
     return 'showEarningsCalls'
+  }
+
+  if (
+    /標案|政府採購|公部門採購|公標案|公共工程|得標|投標|決標|採購法|101條|停權|拒絕往來|採購預告|招標公告|公開閱覽|招標|底價|強韌電網|軍工標案|國防標案|電網標案|gov(?:ernment)?\s*procurement|gov(?:ernment)?\s*bids?|public\s*tenders?/i.test(
+      content
+    )
+  ) {
+    return 'showGovProcurement'
   }
 
   if (
@@ -411,7 +450,7 @@ export function isPlausibleFinancialQuery(
 
   // 3. Chinese financial, corporate, valuation, and market keywords
   if (
-    /股|市|盤|價|息|幣|金|債|買|賣|單|券|估|值|盈|損|營|利|財|報|線|率|比|長|跌|漲|衝|空|多|宏觀|傳導|指數|期貨|選擇權|期權|總經|外資|投信|法人|籌碼|大師|巴菲特|彼得林區|達里歐|芒格|費雪|索羅斯|葛拉漢|席格|歐尼爾|米奈爾維尼|波克夏|ETF|DCF|ROE|EPS|P\/E|P\/B|P\/S|YOY|QOQ|CAGR|公司|企業|業務|競爭|同業|對手|產品|護城河|風險|展望|前景|標的|投資|持股|建倉|加碼|減碼|停損|停利|證偽|論點|假說|檔|賺|賠|趨勢|走勢|行情|表現|評價|分析|熱力圖|選股|日曆|優勢|客戶|供應鏈/i.test(
+    /股|市|盤|價|息|幣|金|債|買|賣|單|券|估|值|盈|損|營|利|財|報|線|率|比|長|跌|漲|衝|空|多|宏觀|傳導|指數|期貨|選擇權|期權|總經|外資|投信|法人|籌碼|大師|巴菲特|彼得林區|達里歐|芒格|費雪|索羅斯|葛拉漢|席格|歐尼爾|米奈爾維尼|波克夏|ETF|DCF|ROE|EPS|P\/E|P\/B|P\/S|YOY|QOQ|CAGR|公司|企業|業務|競爭|同業|對手|產品|護城河|風險|展望|前景|標的|投資|持股|建倉|加碼|減碼|停損|停利|證偽|論點|假說|檔|賺|賠|趨勢|走勢|行情|表現|評價|分析|熱力圖|選股|日曆|優勢|客戶|供應鏈|標案|得標|投標|決標|公標案|採購|停權|拒絕往來/i.test(
       trimmed
     )
   ) {
@@ -467,6 +506,7 @@ export async function inferSemanticToolWithClef(
               sepa_strategy: 'SEPA動能策略、VCP型態、突破買點分析',
               market_overview: '整體大盤走勢、市場概況、熱門榜',
               earnings_call: '查詢法人說明會日程、法說簡報、財報電話會議、影音Webcast直播',
+              gov_procurement: '查詢政府標案、公標案得標紀錄、採購預告、政府採購法第101條停權合規、台電電網或軍工標案',
               company_network: '查詢企業集團、關係企業、轉投資、母子公司、股權結構圖譜、關聯公司',
               other_general: '其他一般對話或不明確問題'
             }
@@ -527,6 +567,8 @@ export async function inferSemanticToolWithClef(
         return 'showMarketOverview'
       case 'earnings_call':
         return 'showEarningsCalls'
+      case 'gov_procurement':
+        return 'showGovProcurement'
       case 'company_network':
         return 'showCompanyNetwork'
       default:

@@ -266,3 +266,34 @@ test('Clef System One semantically routes company network query', async (t) => {
   assert.equal(tool, 'showCompanyNetwork')
 })
 
+test('routes tender, procurement, and debarment queries to showGovProcurement', () => {
+  assert.equal(inferDeterministicTool('漢翔最近得標狀況如何？', '2634'), 'showGovProcurement')
+  assert.equal(inferDeterministicTool('中興電台電強韌電網標案總額', '1513'), 'showGovProcurement')
+  assert.equal(inferDeterministicTool('這家公司有沒有被採購法101條停權？', '2474'), 'showGovProcurement')
+  assert.equal(inferDeterministicTool('近期國防標案與採購預告'), 'showGovProcurement')
+  assert.equal(inferDeterministicTool('查詢政府公標案決標紀錄'), 'showGovProcurement')
+  assert.notEqual(inferDeterministicTool('What is Apple chip procurement cost?', 'AAPL'), 'showGovProcurement')
+})
+
+test('Clef System One semantically routes gov procurement query', async (t) => {
+  _resetClefStateForTests()
+  t.after(restoreFetch)
+
+  globalThis.fetch = (async () => ({
+    ok: true,
+    json: async () => ({
+      model: 'clef-flash',
+      answers: {
+        intent: {
+          type: 'choice',
+          choice: 'gov_procurement',
+          confidence: 0.95,
+          probabilities: { gov_procurement: 0.95 }
+        }
+      }
+    })
+  })) as any
+
+  const tool = await inferSemanticToolWithClef('這家公司主要靠政府吃穿嗎？得標狀況如何', '2634')
+  assert.equal(tool, 'showGovProcurement')
+})

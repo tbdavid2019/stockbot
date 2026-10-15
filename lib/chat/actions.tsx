@@ -75,7 +75,13 @@ import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-ca
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
 import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
 import { CompanyNetworkCard } from '@/components/stocks/company-network-card'
+import { GovBidsCard } from '@/components/stocks/gov-bids-card'
 import { lookupTaiwanCompany } from '@/lib/quant/taiwan-company-network'
+import {
+  getCompanyProcurementIntelligence,
+  getGeneralProcurementIntelligence,
+  type GovProcurementResult
+} from '@/lib/tobid'
 import {
   BrokerBranchCard,
   CompanyProfileCard,
@@ -646,6 +652,46 @@ function getSmartFallbackCaption(
             ? `上層主要法人股東包括 ${parsed.upstream.join('、')}。`
             : '',
           `若需深入檢視股權穿透與關聯實體，可點擊上方「開啟互動關係圖譜」查看完整的視覺化圖譜。`
+        ].filter(Boolean)
+        return parts.join('\n\n')
+      }
+    } catch {
+      // Fall through to generic fallback
+    }
+  }
+
+  if (toolName === 'showGovProcurement' && contextData) {
+    try {
+      const parsed = JSON.parse(contextData)
+      if (parsed.isGeneralSearch) {
+        if (parsed.isUnavailable) {
+          return `如上方卡片所示，目前 ToBid 台灣政府採購公開情報服務暫時無法連線；稍後可再次嘗試查詢「${parsed.query}」之最新標案紀錄。`
+        }
+        const parts = [
+          `如上方卡片所示，依據 ToBid 台灣政府採購公開情報統計，關鍵字「${parsed.query}」之最新標案與採購預告：`,
+          `共彙整 ${parsed.recentTendersCount || 0} 筆相關決標或招標案件，以及 ${parsed.forecastsCount || 0} 筆未來採購預告。`,
+          `詳細標案案號、預算與得標廠商明細已完整呈現於上方卡片。`
+        ]
+        return parts.join('\n\n')
+      }
+      if (parsed.company?.name) {
+        let complianceMsg = '🛡️ 政府採購投標資格：正常合規，無停權或拒絕往來紀錄。'
+        if (parsed.complianceStatus === 'debarred') {
+          complianceMsg = '⚠️ 【重大風控警示】該公司目前處於《政府採購法》第 101 條停權列管狀態（拒絕往來廠商），暫無法投標任何公部門採購案件。'
+        } else if (parsed.complianceStatus === 'unknown') {
+          complianceMsg = 'ℹ️ 政府採購停權狀態：待連線核實（未取得合規清單紀錄）。'
+        }
+
+        const parts = [
+          `如上方卡片所示，依據 ToBid 台灣政府採購公開情報統計，${parsed.company.name}（${parsed.company.legalName}）：`,
+          complianceMsg,
+          parsed.hasReport
+            ? `歷年參與政府標案累計得標 ${parsed.totalWins?.toLocaleString()} 案（投標 ${parsed.totalParticipations?.toLocaleString()} 次，勝率 ${parsed.winRatePct?.toFixed(1)}%），累積得標總金額逾 NT$ ${parsed.knownAwardTotal ? (parsed.knownAwardTotal / 100_000_000).toFixed(0) + ' 億' : '0 元'}。`
+            : '',
+          parsed.topClients?.length > 0
+            ? `主要發包客戶機關集中於：${parsed.topClients.map((c: any) => c.unit).join('、')}。`
+            : '',
+          `詳細開標實況與標案明細已完整呈現於上方卡片。`
         ].filter(Boolean)
         return parts.join('\n\n')
       }
@@ -3120,6 +3166,112 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <CompanyNetworkCard record={record} query={queryTarget} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          showGovProcurement: {
+            description:
+              'Display Taiwan Government Procurement intelligence (政府標案與公標案情報), historical contract totals, bidding win rate, top procuring client agencies, competitor head-to-head records, advance procurement forecasts, and Article 101 black swan debarment compliance check via ToBid.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .optional()
+                .describe('Target Taiwan stock symbol (e.g. 2634, 1513, 2453) or company name.'),
+              companyName: z
+                .string()
+                .optional()
+                .describe('Company name or keyword (e.g. 漢翔, 中興電, 凌群, 台電電網).')
+            }),
+            generate: async function* ({ symbol, companyName }) {
+              const queryTarget = (symbol || companyName || resolvedTicker || '').trim()
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在查詢 ToBid 台灣政府標案情報庫、廠商得標率與採購法第 101 條停權合規查核…
+                  </div>
+                </BotCard>
+              )
+
+              let data: GovProcurementResult | null = null
+              let isGeneralSearch = false
+
+              if (queryTarget) {
+                data = await getCompanyProcurementIntelligence(queryTarget)
+              }
+
+              // 若查無公司資料、或該標的無任何有效統計報告、標案紀錄且無核實合規紀錄，回退至全市場標案與採購預告檢索
+              const hasUsableCompanyData =
+                data &&
+                (data.report ||
+                  (data.recentTenders && data.recentTenders.length > 0) ||
+                  data.compliance !== null)
+
+              if (!hasUsableCompanyData) {
+                isGeneralSearch = true
+                const fallbackKeyword = queryTarget || '公共工程 採購預告'
+                data = await getGeneralProcurementIntelligence(fallbackKeyword)
+              }
+
+              if (!data) return null
+
+              const complianceStatus: 'debarred' | 'clean' | 'unknown' =
+                typeof data.compliance?.currently_debarred === 'boolean'
+                  ? data.compliance.currently_debarred
+                    ? 'debarred'
+                    : 'clean'
+                  : 'unknown'
+
+              const context = isGeneralSearch
+                ? JSON.stringify({
+                    isGeneralSearch: true,
+                    query: queryTarget || '全市場標案',
+                    isUnavailable: data.isUnavailable,
+                    recentTendersCount: data.recentTenders?.length || 0,
+                    forecastsCount: data.forecasts?.items?.length || 0
+                  })
+                : JSON.stringify({
+                    company: data.company,
+                    hasReport: !!data.report,
+                    winRatePct: data.report?.win_rate_pct,
+                    totalWins: data.report?.wins,
+                    totalParticipations: data.report?.participations,
+                    knownAwardTotal: data.report?.known_award_total,
+                    complianceStatus,
+                    topClients: data.report?.top_clients?.slice(0, 5).map(c => ({
+                      unit: c.unit,
+                      wins: c.wins,
+                      amount: c.amount
+                    })),
+                    topRivals: data.report?.top_rivals?.slice(0, 3).map(r => ({
+                      name: r.name,
+                      met: r.met,
+                      wins: r.this_vendor_wins,
+                      rivalWins: r.rival_wins
+                    })),
+                    recentTendersCount: data.recentTenders?.length || 0
+                  })
+
+              const caption = await generateCaption(
+                data?.company?.name || queryTarget || 'GOV-PROCUREMENT',
+                [],
+                'showGovProcurement',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'showGovProcurement',
+                { symbol: queryTarget, companyName: data?.company?.name },
+                { data, query: queryTarget, isGeneralSearch },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  {data && <GovBidsCard data={data} />}
                   <BotCaption content={caption} />
                 </BotCard>
               )
