@@ -1,8 +1,7 @@
 import { fetchEarningsCallDashboard } from '@/lib/quant/earnings-call'
 import { EarningsCallOverview } from '@/components/stocks/earnings-call-overview'
 
-export const runtime = 'edge'
-export const preferredRegion = ['hkg1', 'sin1', 'kix1', 'nrt1']
+export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 export const metadata = {
