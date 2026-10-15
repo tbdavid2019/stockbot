@@ -236,3 +236,33 @@ test('routes 16 masters and multi-analyst queries to analyzeStockWithAI', () => 
   assert.equal(inferDeterministicTool('is NVDA worth buying?', 'NVDA'), 'analyzeStockWithAI')
 })
 
+test('routes company network and affiliate queries to showCompanyNetwork', () => {
+  assert.equal(inferDeterministicTool('台積電有哪些關係企業？', '2330'), 'showCompanyNetwork')
+  assert.equal(inferDeterministicTool('鴻海旗下轉投資子公司有哪些？', '2317'), 'showCompanyNetwork')
+  assert.equal(inferDeterministicTool('聯發科集團股與股權結構圖譜'), 'showCompanyNetwork')
+  assert.equal(inferDeterministicTool('東陽母公司與旗下公司關係網'), 'showCompanyNetwork')
+})
+
+test('Clef System One semantically routes company network query', async (t) => {
+  _resetClefStateForTests()
+  t.after(restoreFetch)
+
+  globalThis.fetch = (async () => ({
+    ok: true,
+    json: async () => ({
+      model: 'clef-flash',
+      answers: {
+        intent: {
+          type: 'choice',
+          choice: 'company_network',
+          confidence: 0.94,
+          probabilities: { company_network: 0.94 }
+        }
+      }
+    })
+  })) as any
+
+  const tool = await inferSemanticToolWithClef('想看這家公司的轉投資與控股股權圖', '2330')
+  assert.equal(tool, 'showCompanyNetwork')
+})
+

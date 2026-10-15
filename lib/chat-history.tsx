@@ -32,6 +32,7 @@ import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-c
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
 import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
+import { CompanyNetworkCard } from '@/components/stocks/company-network-card'
 import {
   BrokerBranchCard,
   CompanyProfileCard,
@@ -479,6 +480,10 @@ export function createUIStateFromStoredMessages(messages: any[]): UIState {
 
               case 'showStockCompanyProfile':
                 cardContent = result?.data ? <CompanyProfileCard result={result.data} ticker={args.symbol || result?.symbol} /> : null
+                break
+
+              case 'showCompanyNetwork':
+                cardContent = <CompanyNetworkCard record={result?.data} query={args.symbol || args.companyName || result?.query} />
                 break
 
               case 'showMacroRiskRegime':

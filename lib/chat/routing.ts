@@ -28,6 +28,7 @@ export type DeterministicToolName =
   | 'showStockBrokerBranches'
   | 'showMarketInstitutionalLeaderboard'
   | 'showStockCompanyProfile'
+  | 'showCompanyNetwork'
   | 'showMacroRiskRegime'
   | 'showStockdataMacroDataset'
   | 'showPolymarketSentiment'
@@ -246,6 +247,14 @@ export function inferDeterministicTool(
   }
 
   if (
+    /關係企業|轉投資|關係網|集團股|集團企業|母公司|子公司|旗下公司|控制公司|關聯企業|股權結構|股權關係|股權圖譜|公司圖譜|公司關係|關係圖譜|company network|affiliates|subsidiaries/i.test(
+      content
+    )
+  ) {
+    return 'showCompanyNetwork'
+  }
+
+  if (
     !resolvedTicker &&
     /全市場|哪些股票|排行|買超前|賣超前|institutional leaders|top institutional/i.test(
       content
@@ -458,6 +467,7 @@ export async function inferSemanticToolWithClef(
               sepa_strategy: 'SEPA動能策略、VCP型態、突破買點分析',
               market_overview: '整體大盤走勢、市場概況、熱門榜',
               earnings_call: '查詢法人說明會日程、法說簡報、財報電話會議、影音Webcast直播',
+              company_network: '查詢企業集團、關係企業、轉投資、母子公司、股權結構圖譜、關聯公司',
               other_general: '其他一般對話或不明確問題'
             }
           }
@@ -517,6 +527,8 @@ export async function inferSemanticToolWithClef(
         return 'showMarketOverview'
       case 'earnings_call':
         return 'showEarningsCalls'
+      case 'company_network':
+        return 'showCompanyNetwork'
       default:
         return undefined
     }

@@ -4,6 +4,30 @@
 
 ---
 
+## [2026-10-15] - 深度整合 888 台灣公司關係網：經濟部商業司登記、母子公司生態系、轉投資與互動股權圖譜 (https://taiwan-company-network.david888.com)
+
+### ✨ 新增功能與旗艦整合 (Added & Integrated)
+
+- **🏢 888 台灣公司關係網原生 SDK ([`lib/quant/taiwan-company-network.ts`](lib/quant/taiwan-company-network.ts))**：
+  - 串接 `https://taiwan-company-network.david888.com/api/v1/`，涵蓋 6,331 個公司分片與全台公開登記法人。
+  - 支援多元檢索路徑：股票代號（如 `2330`、`2317.TW`）、中文簡稱（如 `台積電`、`鴻海`、`聯發科`、`東陽`）、完整登記全名（如 `台灣積體電路製造股份有限公司`）。
+  - 自動關聯上市櫃代號：透過逆向 `nameToStock` 雜湊索引，將關係企業名稱即時反查至上市櫃代號（如創意電子 ➔ `3443`、采鈺 ➔ `6789`、鴻華先進 ➔ `2258`）。
+  - 提供資本額單位智能轉換（億/萬新台幣）與董事長/代表人合法遮罩防護。
+- **🗺️ 頂級工藝關係企業圖譜卡片 ([`components/stocks/company-network-card.tsx`](components/stocks/company-network-card.tsx))**：
+  - 依據 Impeccable 標準設計，具備清晰層次、高資訊密度與現代金融調性。
+  - 資訊方塊清晰呈現：實收資本額、代表人/董事長、統一編號、關聯企業總家數、登記地址。
+  - 雙向股權架構：
+    - **母公司 / 主要法人股東關係 (Upstream)**：列出上層控股法人與持股結構。
+    - **轉投資事業 / 子公司群生態系 (Downstream)**：條列旗下投資事業，上市櫃公司標註鮮明代號徽章並支援一鍵跳轉 StockBot 深度分析。
+  - **開啟互動關係圖譜**：右上方提供一鍵直達 `taiwan-company-network.david888.com/graph?company=...` 之視覺化力導向圖譜按鈕。
+- **🧠 雙層智能意圖分流與對話持久化**：
+  - **確定性正則路由 ([`lib/chat/routing.ts`](lib/chat/routing.ts))**：當使用者詢問「關係企業」、「轉投資」、「母公司/子公司」、「旗下公司」、「集團股」、「股權圖譜」、「公司關係網」時，自動精確分流至 `showCompanyNetwork`。
+  - **Clef-Flash System One 語義決策**：擴充 `company_network` 決策分支，支援自然語言模糊意圖（如「想看這家公司的轉投資與控股圖」）。
+  - **對話歷史重水化 ([`lib/chat-history.tsx`](lib/chat-history.tsx))**：LocalStorage 持久化支援 `showCompanyNetwork` 離線與切換還原。
+  - **基本面卡片打通 ([`components/stocks/stockdata-cards.tsx`](components/stocks/stockdata-cards.tsx))**：在 `CompanyProfileCard` 下方提供「查看台灣公司關係網圖譜」快捷導引。
+
+---
+
 ## [2026-10-15] - 修正跨時區跨日法說會判定：修正美東昨日會議被誤判為今日召開之邏輯漏洞
 
 ### 🐞 核心狀態判定修復 (Fixed)

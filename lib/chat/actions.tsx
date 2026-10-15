@@ -74,6 +74,8 @@ import { MacroFactorRegimeCard } from '@/components/stocks/macro-factor-regime-c
 import { InstitutionalFlowCard } from '@/components/stocks/institutional-flow-card'
 import { EconomicCalendarCard } from '@/components/stocks/economic-calendar-card'
 import { EarningsCallCard } from '@/components/stocks/earnings-call-card'
+import { CompanyNetworkCard } from '@/components/stocks/company-network-card'
+import { lookupTaiwanCompany } from '@/lib/quant/taiwan-company-network'
 import {
   BrokerBranchCard,
   CompanyProfileCard,
@@ -3026,6 +3028,78 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               return (
                 <BotCard>
                   <EarningsCallCard data={data} />
+                  <BotCaption content={caption} />
+                </BotCard>
+              )
+            }
+          },
+          showCompanyNetwork: {
+            description:
+              'Display Taiwan Company Network (台灣公司關係網) corporate registry profile, capital, tax ID, representative, parent/major shareholder relationships (upstream), and subsidiary/affiliate ecosystems (downstream) with interactive graph link.',
+            parameters: z.object({
+              symbol: z
+                .string()
+                .optional()
+                .describe('Target Taiwan stock symbol (e.g. 2330, 2317) or company name.'),
+              companyName: z
+                .string()
+                .optional()
+                .describe('Full or partial registered company name (e.g. 台積電, 鴻海, 聯發科).')
+            }),
+            generate: async function* ({ symbol, companyName }) {
+              const queryTarget = (symbol || companyName || resolvedTicker || '').trim()
+              yield (
+                <BotCard>
+                  <div className="rounded-xl border p-4 text-xs text-muted-foreground">
+                    正在查詢 888 台灣公司關係網、商業司登記與關係企業圖譜…
+                  </div>
+                </BotCard>
+              )
+
+              const record = await lookupTaiwanCompany(queryTarget)
+
+              const context = record
+                ? JSON.stringify({
+                    name: record.name,
+                    id: record.id,
+                    capital: record.capitalFormatted,
+                    representative: record.representative,
+                    address: record.address,
+                    stockCode: record.stockCode,
+                    upstreamAffiliatesCount: record.relationships.upstream.length,
+                    upstream: record.relationships.upstream.slice(0, 5).map(u => u.name),
+                    downstreamAffiliatesCount: record.relationships.downstream.length,
+                    downstream: record.relationships.downstream.slice(0, 8).map(d => ({
+                      name: d.name,
+                      stockCode: d.stockCode
+                    })),
+                    webUrl: record.webUrl
+                  })
+                : JSON.stringify({
+                    notFound: true,
+                    query: queryTarget,
+                    message: '在經濟部商業司公開登記索引中未找到符合的台灣公司記錄。'
+                  })
+
+              const caption = await generateCaption(
+                record?.name || queryTarget || 'COMPANY-NETWORK',
+                [],
+                'showCompanyNetwork',
+                aiState,
+                context
+              )
+
+              saveQuantToolResult(
+                aiState,
+                'showCompanyNetwork',
+                { symbol: queryTarget, companyName: record?.name },
+                { data: record, query: queryTarget },
+                caption
+              )
+
+              return (
+                <BotCard>
+                  <CompanyNetworkCard record={record} query={queryTarget} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
