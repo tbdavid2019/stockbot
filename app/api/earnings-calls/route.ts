@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchEarningsCalls } from '@/lib/quant/earnings-call'
 
-export const maxDuration = 30
+export const runtime = 'edge'
+export const preferredRegion = ['hkg1', 'sin1', 'kix1', 'nrt1']
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {

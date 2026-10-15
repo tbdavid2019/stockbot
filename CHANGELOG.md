@@ -10,8 +10,9 @@
   - **根本原因診斷**：
     1. BigGo Finance 後端 API (`https://api.biggo.com/api/v1/finance/stock/earnings-calls/list`) 嚴格強制要求 `stock_filter=all` 參數，若遺漏會直接回傳 HTTP 400 (`code: 1002, message: Some parameters are invalid`)。
     2. BigGo 單次區間不得超過 10 天；先前程式碼中存在未傳送 `start_date`/`end_date` 之 `pageTasks` 導致拋錯，引發 try/catch 攔截回退至僅含 22 檔 benchmark 標的之 fallback 清單。
-    3. Fallback 快取時間過長 (10 分鐘)，使得冷啟動失敗後鎖死在僅有台積電與少量靜態標的。
+    3. **Vercel 美國機房 (`iad1`) 遭 BigGo Envoy API Gateway 阻擋 (HTTP 429 Rate limit exceeded)**：生產環境 Serverless 預設於美東華盛頓執行，IP 遭 BigGo 頻率限制。
   - **核心修復與架構升級**：
+    - **全端切換 Edge Runtime 與亞洲優先節點**：[`app/api/earnings-calls/route.ts`](app/api/earnings-calls/route.ts) 與 [`app/earnings-call/page.tsx`](app/earnings-call/page.tsx) 均宣告 `export const runtime = 'edge'` 與 `export const preferredRegion = ['hkg1', 'sin1', 'kix1', 'nrt1']`，全面繞過 `iad1` 機房阻擋，大幅降低連線延遲。
     - **6 窗口滾動時間窗 (30 天歷史 + 未來 1 週)**：建立 6 組 6 天區間窗口，全數攜帶 `stock_filter=all`、`Referer`、`Origin` 與完整市場代碼 (`market=tw/us/jp/kr/other`)。
     - **單一窗口容錯隔離**：個別時間窗請求若遇網路波動獨立 fallback，絕不讓單一請求拖垮整體清單。
     - **大幅提升抓取數量**：即時抓取量由原本的 22 檔激增至 **400+ 場全球會議**，其中 2026-10-14 完整抓出 **29 場**（包含 1319 東陽、2707 晶華、2340 臺亞、9938 百和、1203 味王、2816 旺旺保、6877 鏵友益、8404 百和興業-KY、2745 五福、8222 寶一、7753 星亞、ASML、BAC、MS、BLK 等全數對齊 BigGo 官方頁面）。
@@ -20,10 +21,11 @@
 
 ### 🎨 介面排版工藝與字體底線合規 ([`components/stocks/earnings-call-card.tsx`](components/stocks/earnings-call-card.tsx), [`components/stocks/earnings-call-overview.tsx`](components/stocks/earnings-call-overview.tsx))
 
-- **🚨 徹底清除 `text-[10px]`、`text-[11px]` 等微型字體**：
-  - 嚴格落實「中文字不可小於 12pt (16px)」與易讀性規範，將標籤、代號、開會時間、狀態徽章與 AI 摘要全面升級為清晰的 `text-xs` (12px)、`text-sm` (14px) 與 `text-base` (16px)。
-  - 公司中文名稱提升至 `text-sm sm:text-base font-semibold`，股票代號提升至 `font-mono text-sm sm:text-base font-bold`。
-  - 總覽頂部摘要列（今日召開、即將舉行、歷史回放、總追蹤）文字統一提升至 `text-sm font-bold`。
+- **🚨 徹底清除所有 `text-xs`、`text-[10px]`、`text-[11px]` 等微型字體**：
+  - 嚴格落實「中文字不可小於 12pt (16px)」與易讀性規範，將標籤、代號、開會時間、狀態徽章與 AI 摘要全面升級為清晰的 `text-sm` (14px) 與 `text-base` (16px) 以上，全檔案搜尋 `text-xs` 結果為 0。
+  - 公司中文名稱提升至 `text-base sm:text-lg font-bold`，股票代號提升至 `font-mono text-base sm:text-lg font-bold`。
+  - 市場標籤、狀態篩選按鈕、時區切換、兩欄/清單檢視切換與即時更新按鈕一律統一為 `text-sm font-semibold`。
+  - 總覽頂部摘要列（今日召開、即將舉行、歷史回放、總追蹤）文字統一提升至 `text-sm font-bold`，並透過 `onDataLoaded` 回呼確保與法說會卡片即時保持同步數據（例如：總追蹤 398+ 場）。
 - **🔄 新增「即時更新 (Refresh)」按鈕與客戶端自動補水 (Hydration)**：
   - 工具列新增獨立重新整理按鈕，支援帶有旋轉動畫的即時重新檢索。
   - 客戶端進入頁面時若偵測到 SSR 資料筆數小於等於 25，自動背景觸發 live API 進行二次補水，確保使用者隨時看到完整的數百場會議。
