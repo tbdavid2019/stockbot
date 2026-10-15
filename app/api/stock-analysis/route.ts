@@ -246,9 +246,16 @@ export async function POST(request: NextRequest) {
     const rawCash = body.initialCash ?? body.initial_cash ?? body.capital ?? body.cash
     if (rawCash !== undefined && rawCash !== null && rawCash !== '') {
       const parsedCash = Number(String(rawCash).replace(/,/g, ''))
-      if (!isNaN(parsedCash) && parsedCash > 0) {
-        requestPayload.initialCash = parsedCash
+      if (isNaN(parsedCash) || !isFinite(parsedCash)) {
+        return NextResponse.json({ error: '初始金額 (initialCash) 必須為有效數字' }, { status: 400 })
       }
+      if (parsedCash <= 0) {
+        return NextResponse.json({ error: '初始金額 (initialCash) 不得為負數或零，必須大於 0' }, { status: 400 })
+      }
+      if (parsedCash < 100) {
+        return NextResponse.json({ error: '初始金額 (initialCash) 數值過小，最低初始投資金額門檻為 100' }, { status: 400 })
+      }
+      requestPayload.initialCash = parsedCash
     }
 
     if (modelName) {
