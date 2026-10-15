@@ -34,6 +34,15 @@ This document contains non-negotiable operational rules and architectural entryp
   - **一律使用「以上是...」、「如上方所示...」、「如上圖所示...」**。
   - **嚴禁使用「以下是...」或「如下所示...」**！
 
+### 4. 🚫 嚴禁本機執行 `pnpm build` (Zero Local Build Policy)
+
+- **Mac 本機磁碟空間極限保護**：**嚴禁**在本機終端執行 `pnpm build` 或 `next build`！本機建置會產生數 GB 的 `.next` 與快取目錄，吃光使用者 Mac 硬碟。
+- **標準驗證流程**：
+  - 本機僅能執行型別檢查：`npx tsc --noEmit`。
+  - 輕量單元測試：`node --experimental-strip-types <test-file>`。
+  - 完成後直接 `git commit` 與 `git push origin main`，全面交由 Vercel 雲端 CI/CD 構建並在線上環境驗證。
+  - 若偵測到本機存在 `.next` 目錄，應主動清理釋放空間 (`rm -rf .next`)。
+
 ---
 
 ## 🗺️ 模組化架構文件索引 (Modular Architecture Index)
@@ -56,4 +65,4 @@ This document contains non-negotiable operational rules and architectural entryp
 - **本機啟動**：`pnpm dev`
 - **Clef 決策推論單元測試**：`node --experimental-strip-types lib/clef.test.ts`
 - **金融路由單元測試**：`node --experimental-strip-types lib/chat/routing.test.ts`
-- **TypeScript 型別檢查**：`npx tsc --noEmit`
+- **TypeScript 型別檢查**：`npx tsc --noEmit`（⚠️ 嚴禁執行 `pnpm build`）
