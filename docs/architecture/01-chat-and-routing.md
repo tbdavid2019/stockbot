@@ -42,6 +42,9 @@ Stockbot 將對話流拆解為兩個獨立職責的模型：
 - 目前使用的 AI SDK `streamUI` 每次 Server Action 執行一個主要工具；跨工具研究流程透過多輪對話與續問按鈕銜接，不宣稱不存在的單次 15-step 執行。
 - **`publishToDavid888Wiki`**：串接 `https://wiki.david888.com/api`，產出 Markdown 深度報告並自動回傳 `shareUrl`、`/present` 簡報與 `/book` 電子書。
 - **`readWebPage`**：透過 2MD Web Reader 萃取線上新聞/網址全文。
+- **`showEarningsCalls`**：全球法人說明會與業績說明會總覽（BigGo Finance、MOPS、TWSE、US Earnings Calls、JPX、KRX），支援 2MD AnyDoc 簡報指引萃取。
+- **`showCompanyNetwork`**：台灣公司關係網圖譜（經濟部商業司、母子公司體系、轉投資與董監事網絡）。
+- **`showGovProcurement`**：ToBid 台灣政府採購標案情報、B2G 四大族群營收先行指標、同業宿敵對決盤與《政府採購法》第 101 條停權黑天鵝風控查核。
 
 ---
 
