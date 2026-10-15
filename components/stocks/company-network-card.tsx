@@ -63,6 +63,11 @@ export function CompanyNetworkCard({ record, query }: CompanyNetworkCardProps) {
   const downstreamCount = record.relationships.downstream.length
   const totalAffiliates = upstreamCount + downstreamCount
 
+  const safeWebUrl =
+    record.webUrl && record.webUrl.startsWith('https://taiwan-company-network.david888.com')
+      ? record.webUrl
+      : `https://taiwan-company-network.david888.com/graph?company=${encodeURIComponent(record.name)}`
+
   return (
     <div className="w-full rounded-2xl border border-border/80 bg-card p-5 sm:p-6 shadow-xs text-card-foreground my-3">
       {/* Header */}
@@ -95,7 +100,7 @@ export function CompanyNetworkCard({ record, query }: CompanyNetworkCardProps) {
 
         {/* Interactive Graph CTA */}
         <a
-          href={record.webUrl}
+          href={safeWebUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-2xs shrink-0 self-start sm:self-auto cursor-pointer"

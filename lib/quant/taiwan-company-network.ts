@@ -56,8 +56,20 @@ const TCN_API_BASE = 'https://taiwan-company-network.david888.com/api/v1'
 // Cache configuration
 let cachedIndex: { data: NetworkIndex; expiresAt: number } | null = null
 let cachedAliases: { aliases: NetworkAliases; nameToStock: Map<string, { code: string; market: string }>; expiresAt: number } | null = null
+const MAX_SHARD_CACHE_SIZE = 150
+const MAX_COMPANY_CACHE_SIZE = 500
+
 const shardCache = new Map<string, { data: Record<string, RawCompanyRecord>; expiresAt: number }>()
 const companyCache = new Map<string, { data: TaiwanCompanyRecord; expiresAt: number }>()
+const inflightLookups = new Map<string, Promise<TaiwanCompanyRecord | null>>()
+
+function setCompanyCache(key: string, data: TaiwanCompanyRecord, expiresAt: number) {
+  if (companyCache.size >= MAX_COMPANY_CACHE_SIZE) {
+    const oldestKey = companyCache.keys().next().value
+    if (oldestKey) companyCache.delete(oldestKey)
+  }
+  companyCache.set(key, { data, expiresAt })
+}
 
 const CACHE_TTL_MS = 12 * 60 * 60 * 1000 // 12 hours for static CDN data
 
@@ -170,11 +182,11 @@ async function getCompanyShard(firstChar: string, index: NetworkIndex): Promise<
       signal: AbortSignal.timeout(15000)
     })
     if (!res.ok) return null
-    const json = await res.json()
+    const json = (await res.json()) as { data?: Record<string, RawCompanyRecord> }
     const shardData = (json.data || {}) as Record<string, RawCompanyRecord>
 
     // Limit cache size to prevent memory bloat
-    if (shardCache.size > 150) {
+    if (shardCache.size >= MAX_SHARD_CACHE_SIZE) {
       const oldestKey = shardCache.keys().next().value
       if (oldestKey) shardCache.delete(oldestKey)
     }
@@ -210,125 +222,137 @@ export async function lookupTaiwanCompany(rawQuery: string): Promise<TaiwanCompa
   const cleaned = cleanQuery(rawQuery)
   if (!cleaned) return null
 
-  // Check in-memory company cache
+  // 1. Check in-memory company cache
   const now = Date.now()
   const cached = companyCache.get(cleaned)
   if (cached && cached.expiresAt > now) {
     return cached.data
   }
 
-  const [index, aliasesData] = await Promise.all([getIndex(), getAliases()])
-  if (!index || !aliasesData) return null
+  // 2. Deduplicate concurrent inflight lookups for the same key
+  const ongoing = inflightLookups.get(cleaned)
+  if (ongoing) return ongoing
 
-  const { aliases: aliasesJson, nameToStock } = aliasesData
-  const aliases = aliasesJson.aliases || {}
+  const lookupPromise = (async (): Promise<TaiwanCompanyRecord | null> => {
+    const [index, aliasesData] = await Promise.all([getIndex(), getAliases()])
+    if (!index || !aliasesData) return null
 
-  // 1. Resolve registered name from aliases mapping
-  let registeredName: string | null = null
-  let matchedStockCode: string | undefined
-  let matchedMarket: string | undefined
+    const { aliases: aliasesJson, nameToStock } = aliasesData
+    const aliases = aliasesJson.aliases || {}
 
-  // Check direct alias match (ticker code e.g. "2330", or short name e.g. "台積電")
-  const aliasEntry = aliases[cleaned] || aliases[rawQuery.trim()]
-  if (aliasEntry && aliasEntry.length > 0) {
-    registeredName = aliasEntry[0].name
-    matchedStockCode = aliasEntry[0].code
-    matchedMarket = aliasEntry[0].market
-  }
+    // Resolve registered name from aliases mapping
+    let registeredName: string | null = null
+    let matchedStockCode: string | undefined
+    let matchedMarket: string | undefined
 
-  // 2. If no alias match, check if cleaned is already a registered name or prefix
-  if (!registeredName) {
-    registeredName = rawQuery.trim()
-  }
+    // Check direct alias match (ticker code e.g. "2330", or short name e.g. "台積電")
+    const aliasEntry = aliases[cleaned] || aliases[rawQuery.trim()]
+    if (aliasEntry && aliasEntry.length > 0) {
+      registeredName = aliasEntry[0].name
+      matchedStockCode = aliasEntry[0].code
+      matchedMarket = aliasEntry[0].market
+    }
 
-  // 3. Shard lookup via first character
-  const firstChar = registeredName[0]
-  const shard = await getCompanyShard(firstChar, index)
-  if (!shard) return null
+    // If no alias match, check if cleaned is already a registered name or prefix
+    if (!registeredName) {
+      registeredName = rawQuery.trim()
+    }
 
-  // Try exact registered name match
-  let rawRecord: RawCompanyRecord | null = shard[registeredName] || null
+    // Shard lookup via first character
+    const firstChar = registeredName[0]
+    const shard = await getCompanyShard(firstChar, index)
+    if (!shard) return null
 
-  // If not found and input wasn't full company name, try prefix/fuzzy search in shard
-  if (!rawRecord) {
-    const qLower = cleaned.toLowerCase()
-    const candidates = Object.keys(shard)
+    // Try exact registered name match
+    let rawRecord: RawCompanyRecord | null = shard[registeredName] || null
 
-    // A. Starts with query (e.g. "聯發科技" -> "聯發科技股份有限公司")
-    const prefixMatch = candidates.find(k => k.startsWith(cleaned) || k.startsWith(rawQuery.trim()))
-    if (prefixMatch) {
-      rawRecord = shard[prefixMatch]
-      registeredName = prefixMatch
-    } else {
-      // B. Substring match
-      const subMatch = candidates.find(k => k.includes(cleaned) && (k.endsWith('股份有限公司') || k.endsWith('有限公司')))
-      if (subMatch) {
-        rawRecord = shard[subMatch]
-        registeredName = subMatch
+    // If not found and input wasn't full company name, try prefix/fuzzy search in shard
+    if (!rawRecord) {
+      const candidates = Object.keys(shard)
+
+      // A. Starts with query (e.g. "聯發科技" -> "聯發科技股份有限公司")
+      const prefixMatch = candidates.find(k => k.startsWith(cleaned) || k.startsWith(rawQuery.trim()))
+      if (prefixMatch) {
+        rawRecord = shard[prefixMatch]
+        registeredName = prefixMatch
+      } else {
+        // B. Substring match
+        const subMatch = candidates.find(k => k.includes(cleaned) && (k.endsWith('股份有限公司') || k.endsWith('有限公司')))
+        if (subMatch) {
+          rawRecord = shard[subMatch]
+          registeredName = subMatch
+        }
       }
     }
-  }
 
-  if (!rawRecord) return null
+    if (!rawRecord) return null
 
-  // Extract stock code and market if not resolved yet
-  if (!matchedStockCode) {
-    const rev = nameToStock.get(rawRecord.name)
-    if (rev) {
-      matchedStockCode = rev.code
-      matchedMarket = rev.market
-    } else if (rawRecord.aliases && rawRecord.aliases.length > 0) {
-      matchedStockCode = rawRecord.aliases[0].code
-      matchedMarket = rawRecord.aliases[0].market
+    // Extract stock code and market if not resolved yet
+    if (!matchedStockCode) {
+      const rev = nameToStock.get(rawRecord.name)
+      if (rev) {
+        matchedStockCode = rev.code
+        matchedMarket = rev.market
+      } else if (rawRecord.aliases && rawRecord.aliases.length > 0) {
+        matchedStockCode = rawRecord.aliases[0].code
+        matchedMarket = rawRecord.aliases[0].market
+      }
     }
-  }
 
-  // Build enriched affiliates with stock tickers
-  const upstreamAffiliates: TaiwanCompanyAffiliate[] = (rawRecord.relationships?.upstream || []).map(name => {
-    const stockInfo = nameToStock.get(name)
-    return {
-      name,
-      stockCode: stockInfo?.code,
-      market: stockInfo?.market
+    // Build enriched affiliates with stock tickers
+    const upstreamAffiliates: TaiwanCompanyAffiliate[] = (rawRecord.relationships?.upstream || []).map(name => {
+      const stockInfo = nameToStock.get(name)
+      return {
+        name,
+        stockCode: stockInfo?.code,
+        market: stockInfo?.market
+      }
+    })
+
+    const downstreamAffiliates: TaiwanCompanyAffiliate[] = (rawRecord.relationships?.downstream || []).map(name => {
+      const stockInfo = nameToStock.get(name)
+      return {
+        name,
+        stockCode: stockInfo?.code,
+        market: stockInfo?.market
+      }
+    })
+
+    // Validate origin for SSRF / external link safety
+    const safeWebUrl =
+      rawRecord.webUrl && rawRecord.webUrl.startsWith('https://taiwan-company-network.david888.com')
+        ? rawRecord.webUrl
+        : `https://taiwan-company-network.david888.com/graph?company=${encodeURIComponent(rawRecord.name)}`
+
+    const result: TaiwanCompanyRecord = {
+      name: rawRecord.name,
+      id: rawRecord.id || '—',
+      capital: rawRecord.capital || 0,
+      capitalFormatted: formatTaiwanCapital(rawRecord.capital || 0),
+      representative: rawRecord.representative || '—',
+      address: rawRecord.address || '—',
+      aliases: rawRecord.aliases || (matchedStockCode ? [{ code: matchedStockCode, market: matchedMarket || 'TWSE' }] : []),
+      stockCode: matchedStockCode,
+      market: matchedMarket,
+      relationships: {
+        upstream: upstreamAffiliates,
+        downstream: downstreamAffiliates
+      },
+      webUrl: safeWebUrl
     }
+
+    // Save to cache with bounded LRU eviction
+    setCompanyCache(cleaned, result, now + CACHE_TTL_MS)
+    if (matchedStockCode && matchedStockCode !== cleaned) {
+      setCompanyCache(matchedStockCode, result, now + CACHE_TTL_MS)
+    }
+    setCompanyCache(result.name, result, now + CACHE_TTL_MS)
+
+    return result
+  })().finally(() => {
+    inflightLookups.delete(cleaned)
   })
 
-  const downstreamAffiliates: TaiwanCompanyAffiliate[] = (rawRecord.relationships?.downstream || []).map(name => {
-    const stockInfo = nameToStock.get(name)
-    return {
-      name,
-      stockCode: stockInfo?.code,
-      market: stockInfo?.market
-    }
-  })
-
-  const webUrl =
-    rawRecord.webUrl ||
-    `https://taiwan-company-network.david888.com/graph?company=${encodeURIComponent(rawRecord.name)}`
-
-  const result: TaiwanCompanyRecord = {
-    name: rawRecord.name,
-    id: rawRecord.id || '—',
-    capital: rawRecord.capital || 0,
-    capitalFormatted: formatTaiwanCapital(rawRecord.capital || 0),
-    representative: rawRecord.representative || '—',
-    address: rawRecord.address || '—',
-    aliases: rawRecord.aliases || (matchedStockCode ? [{ code: matchedStockCode, market: matchedMarket || 'TWSE' }] : []),
-    stockCode: matchedStockCode,
-    market: matchedMarket,
-    relationships: {
-      upstream: upstreamAffiliates,
-      downstream: downstreamAffiliates
-    },
-    webUrl
-  }
-
-  // Save to cache
-  companyCache.set(cleaned, { data: result, expiresAt: now + CACHE_TTL_MS })
-  if (matchedStockCode && matchedStockCode !== cleaned) {
-    companyCache.set(matchedStockCode, { data: result, expiresAt: now + CACHE_TTL_MS })
-  }
-  companyCache.set(result.name, { data: result, expiresAt: now + CACHE_TTL_MS })
-
-  return result
+  inflightLookups.set(cleaned, lookupPromise)
+  return lookupPromise
 }
