@@ -524,77 +524,77 @@ export function EarningsCallCard({ data, standalone = false, onDataLoaded }: Ear
       <div className="mb-4 flex flex-col gap-3">
         {/* Market Filter Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-2.5">
-          <div className="flex flex-wrap items-center rounded-xl bg-card p-1 border border-border text-sm shadow-2xs gap-1">
+          <div className="flex items-center overflow-x-auto no-scrollbar flex-nowrap max-w-full rounded-xl bg-card p-1 border border-border text-xs sm:text-sm shadow-2xs gap-1">
             <button
               type="button"
               onClick={() => setMarketFilter('ALL')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 marketFilter === 'ALL'
                   ? 'bg-muted text-foreground font-bold shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <Globe className="size-4" />
+              <Globe className="size-3.5 sm:size-4" />
               <span>{lang === 'zh' ? '全部市場' : 'All'}</span>
             </button>
             <button
               type="button"
               onClick={() => setMarketFilter('TW')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 marketFilter === 'TW'
                   ? 'bg-muted text-foreground font-bold shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <Building2 className="size-4" />
+              <Building2 className="size-3.5 sm:size-4" />
               <span>{lang === 'zh' ? '台灣市場' : 'Taiwan'}</span>
             </button>
             <button
               type="button"
               onClick={() => setMarketFilter('US')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 marketFilter === 'US'
                   ? 'bg-muted text-foreground font-bold shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <Landmark className="size-4" />
+              <Landmark className="size-3.5 sm:size-4" />
               <span>{lang === 'zh' ? '美國市場' : 'US'}</span>
             </button>
             <button
               type="button"
               onClick={() => setMarketFilter('JP')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 marketFilter === 'JP'
                   ? 'bg-muted text-foreground font-bold shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <span className="text-base">🇯🇵</span>
+              <span className="text-sm">🇯🇵</span>
               <span>{lang === 'zh' ? '日本市場' : 'Japan'}</span>
             </button>
             <button
               type="button"
               onClick={() => setMarketFilter('KR')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 marketFilter === 'KR'
                   ? 'bg-muted text-foreground font-bold shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <span className="text-base">🇰🇷</span>
+              <span className="text-sm">🇰🇷</span>
               <span>{lang === 'zh' ? '韓國市場' : 'Korea'}</span>
             </button>
             <button
               type="button"
               onClick={() => setMarketFilter('OTHER')}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg transition-all cursor-pointer ${
+              className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                 marketFilter === 'OTHER'
                   ? 'bg-muted text-foreground font-bold shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground font-medium'
               }`}
             >
-              <Compass className="size-4" />
+              <Compass className="size-3.5 sm:size-4" />
               <span>{lang === 'zh' ? '其他市場' : 'Other'}</span>
             </button>
           </div>

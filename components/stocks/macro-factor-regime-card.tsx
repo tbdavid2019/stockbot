@@ -10,11 +10,11 @@ export function MacroFactorRegimeCard({
   data: MacroFactorRegimeResult
 }) {
   return (
-    <section className="w-full rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
+    <section className="w-full min-w-0 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
       {/* Header */}
-      <header className="mb-5 flex flex-col sm:flex-row sm:items-start justify-between gap-3.5 border-b border-slate-100 pb-4 dark:border-slate-800">
+      <header className="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5 dark:border-slate-800">
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
               US FDDK 20年凍結研究
             </span>
@@ -22,7 +22,7 @@ export function MacroFactorRegimeCard({
               基準期: 2004–2026 (資料迄 {data.asOfDate})
             </span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+          <h3 className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             {data.title}
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
@@ -30,7 +30,7 @@ export function MacroFactorRegimeCard({
           </p>
         </div>
 
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/70 dark:bg-emerald-950/40 p-3.5 text-xs sm:text-sm text-right shrink-0">
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-50/70 dark:bg-emerald-950/40 p-3 sm:p-3.5 text-xs sm:text-sm text-left sm:text-right shrink-0">
           <p className="text-xs font-bold uppercase text-emerald-700 dark:text-emerald-300">
             {data.activeStrategy.name}
           </p>
@@ -44,12 +44,12 @@ export function MacroFactorRegimeCard({
       </header>
 
       {/* Benchmarks Comparison Table */}
-      <div className="mb-4 overflow-x-auto">
+      <div className="mb-4 overflow-x-auto no-scrollbar">
         <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-3 flex items-center gap-1.5">
           <BarChart3 className="size-4 text-emerald-500" />
           <span>20 年跨資產 ETF 策略與基準對照 (扣除換手成本 10/50 bps)</span>
         </h4>
-        <table className="w-full text-left text-xs sm:text-sm border-collapse">
+        <table className="w-full min-w-[560px] text-left text-xs sm:text-sm border-collapse">
           <thead>
             <tr className="border-b border-slate-200 dark:border-slate-800 text-muted-foreground bg-slate-50/50 dark:bg-zinc-900/40">
               <th className="p-2.5 pr-3 font-semibold">配置策略 / 基準</th>

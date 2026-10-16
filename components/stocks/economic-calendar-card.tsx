@@ -24,11 +24,11 @@ export function EconomicCalendarCard({
       : 'border-amber-500/30 bg-amber-50/70 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
 
   return (
-    <section className="w-full rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
+    <section className="w-full min-w-0 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
       {/* Header */}
-      <header className="mb-5 flex flex-col sm:flex-row sm:items-start justify-between gap-3.5 border-b border-slate-100 pb-4 dark:border-slate-800">
+      <header className="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5 dark:border-slate-800">
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5">
             <span className="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2.5 py-1 rounded-full border border-sky-200 dark:border-sky-800">
               Investing.com 總經情報
             </span>
@@ -36,7 +36,7 @@ export function EconomicCalendarCard({
               資料時間: {data.asOfDate}
             </span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 flex items-center gap-2">
+          <h3 className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50 flex items-center gap-2">
             <span>全球重大總經日曆 & 跨資產風向儀</span>
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
@@ -195,8 +195,8 @@ export function EconomicCalendarCard({
             目前無符合條件的經濟日曆數據
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs sm:text-sm border-collapse">
+          <div className="overflow-x-auto no-scrollbar">
+            <table className="w-full min-w-[580px] text-left text-xs sm:text-sm border-collapse">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-muted-foreground bg-slate-50/50 dark:bg-zinc-900/40">
                   <th className="p-2.5 pr-3 font-semibold">時間 / 倒數</th>

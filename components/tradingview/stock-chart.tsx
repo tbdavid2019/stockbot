@@ -63,7 +63,7 @@ export function StockChart({
   }, [symbol, comparisonSymbols])
 
   return (
-    <div style={{ height: '500px' }}>
+    <div className="h-[360px] sm:h-[440px] md:h-[500px] w-full min-w-0 rounded-2xl overflow-hidden border border-border/80 bg-card shadow-xs">
       <div
         className="tradingview-widget-container"
         ref={container}

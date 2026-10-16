@@ -67,29 +67,29 @@ export function CompanyNetworkCard({ record, query }: CompanyNetworkCardProps) {
       : `https://taiwan-company-network.david888.com/graph?company=${encodeURIComponent(record.name)}`
 
   return (
-    <div className="w-full rounded-2xl border border-border/80 bg-card p-6 sm:p-7 shadow-xs text-card-foreground my-4">
+    <div className="w-full min-w-0 rounded-2xl border border-border/80 bg-card p-3.5 sm:p-7 shadow-xs text-card-foreground my-3 sm:my-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 pb-5 border-b border-border/60">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <span className="inline-flex items-center gap-2 text-base font-semibold text-indigo-800 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/60 px-3.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
-              <Network className="size-4 text-indigo-600 dark:text-indigo-400" />
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 sm:gap-4 pb-4 sm:pb-5 border-b border-border/60">
+        <div className="space-y-1.5 sm:space-y-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5">
+            <span className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-base font-semibold text-indigo-800 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 sm:px-3.5 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
+              <Network className="size-3.5 sm:size-4 text-indigo-600 dark:text-indigo-400" />
               <span>{lang === 'zh' ? '台灣公司關係網 · 商業司登記' : 'Taiwan Company Network'}</span>
             </span>
             {record.stockCode && (
-              <span className="inline-flex items-center gap-1.5 font-mono text-base font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 px-3.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
+              <span className="inline-flex items-center gap-1 font-mono text-xs sm:text-base font-bold text-emerald-800 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 sm:px-3.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
                 <span>{record.market || 'TWSE'}:{record.stockCode}</span>
               </span>
             )}
-            <span className="text-base font-mono text-muted-foreground bg-muted px-3 py-1 rounded-full border border-border/60">
+            <span className="text-xs sm:text-base font-mono text-muted-foreground bg-muted px-2.5 sm:px-3 py-1 rounded-full border border-border/60">
               {lang === 'zh' ? `統編：${record.id}` : `Tax ID: ${record.id}`}
             </span>
           </div>
 
-          <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+          <h3 className="text-xl sm:text-3xl font-extrabold tracking-tight text-foreground">
             {record.name}
           </h3>
-          <p className="text-base text-muted-foreground leading-relaxed max-w-3xl">
+          <p className="text-xs sm:text-base text-muted-foreground leading-relaxed max-w-3xl">
             {lang === 'zh'
               ? '依據經濟部商業司公開登記資料索引，即時彙整實收資本額、代表人、主要母股東與轉投資子公司群生態系。'
               : 'Official business registration summary and corporate affiliate network from Taiwan Company Network.'}
@@ -101,12 +101,12 @@ export function CompanyNetworkCard({ record, query }: CompanyNetworkCardProps) {
           href={safeWebUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-xs shrink-0 self-start sm:self-auto cursor-pointer"
+          className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-base font-bold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-xs shrink-0 self-start sm:self-auto cursor-pointer"
           title={lang === 'zh' ? '前往台灣公司關係網檢視視覺化圖譜' : 'Open interactive graph'}
         >
-          <GitFork className="size-4" />
+          <GitFork className="size-3.5 sm:size-4" />
           <span>{lang === 'zh' ? '開啟互動關係圖譜' : 'Interactive Graph'}</span>
-          <ArrowUpRight className="size-4 opacity-90" />
+          <ArrowUpRight className="size-3.5 sm:size-4 opacity-90" />
         </a>
       </div>
 

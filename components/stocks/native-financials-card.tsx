@@ -205,19 +205,19 @@ export function NativeFinancialsCard({ symbol }: NativeFinancialsCardProps) {
   }
 
   return (
-    <div className="w-full rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-zinc-950 dark:to-zinc-900/50 p-5 sm:p-6 shadow-sm">
+    <div className="w-full min-w-0 rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-zinc-950 dark:to-zinc-900/50 p-3.5 sm:p-6 shadow-sm">
       {/* 標題欄 */}
-      <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-4 mb-4 gap-3">
-        <div className="flex items-center gap-3">
-          <div className="flex size-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-base">
-            <BarChart3 className="size-5" />
+      <div className="flex flex-wrap items-center justify-between border-b border-slate-100 dark:border-slate-800/80 pb-3 mb-3.5 gap-2.5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex size-8 sm:size-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold text-base shrink-0">
+            <BarChart3 className="size-4 sm:size-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-xl sm:text-2xl tracking-tight">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base sm:text-2xl tracking-tight break-words">
                 {formattedSymbol || symbol} 核心財務報表與指標分析
               </h3>
-              <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold">
+              <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 font-semibold shrink-0">
                 最新財報
               </span>
             </div>

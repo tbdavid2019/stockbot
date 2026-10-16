@@ -626,12 +626,12 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
   })()
 
   return (
-    <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 p-5 sm:p-6 shadow-sm">
+    <div className="space-y-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-zinc-950 p-3.5 sm:p-6 shadow-sm w-full min-w-0">
       {/* 標題與分批狀態 */}
-      <div className="border-b border-slate-100 dark:border-slate-800 pb-4 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
+      <div className="border-b border-slate-100 dark:border-slate-800 pb-3 sm:pb-4 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 break-words">
               🏛️ 傳奇投資大師多維度研調報告：{ticker}
             </h3>
             {batchLoading && (
@@ -652,7 +652,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
         </div>
         {roundTable?.signal && (
           <span
-            className={`px-3.5 py-1 rounded-full text-xs sm:text-sm font-bold border ${getSignalColor(roundTable.signal)}`}
+            className={`px-3 py-1 rounded-full text-xs sm:text-sm font-bold border shrink-0 ${getSignalColor(roundTable.signal)}`}
           >
             {getSignalEmoji(roundTable.signal)} ({roundTable.confidence ?? 0}%)
           </span>
@@ -660,7 +660,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       </div>
 
       {/* LLM 讀取三批大師實際結果後產生的投資委員會摘要 */}
-      <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 sm:p-5 dark:border-indigo-900/60 dark:bg-indigo-950/20">
+      <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3.5 sm:p-5 dark:border-indigo-900/60 dark:bg-indigo-950/20">
         <h4 className="mb-2 text-sm sm:text-base font-bold text-indigo-900 dark:text-indigo-200">
           🧠 投資委員會綜合判讀
         </h4>
@@ -687,17 +687,17 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       {/* 最終決策 */}
       {decision && (
         <div
-          className={`rounded-xl border-2 p-4 sm:p-5 ${getActionColor(decision.action)}`}
+          className={`rounded-xl border-2 p-3.5 sm:p-5 ${getActionColor(decision.action)}`}
         >
-          <div className="flex items-center justify-between">
-            <div className="text-2xl sm:text-3xl font-extrabold">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+            <div className="text-xl sm:text-3xl font-extrabold">
               {getActionText(decision.action)}
             </div>
             <div className="text-xs sm:text-sm font-semibold opacity-90">
               信心度：{decision.confidence}% | 建議數量：{decision.quantity} 股
             </div>
           </div>
-          <div className="mt-2.5 text-xs sm:text-sm leading-relaxed">
+          <div className="mt-2 text-xs sm:text-sm leading-relaxed">
             {decisionReasoning}
           </div>
         </div>

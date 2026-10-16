@@ -24,7 +24,7 @@ export function ChatList({
 
   return (
     <div
-      className={`relative mx-auto px-4 w-full transition-all duration-200 ${
+      className={`relative mx-auto px-2.5 sm:px-4 w-full min-w-0 transition-all duration-200 ${
         wide ? 'max-w-7xl' : 'max-w-3xl'
       }`}
     >

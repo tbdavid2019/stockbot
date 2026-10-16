@@ -82,10 +82,17 @@ export const metadata = {
   }
 }
 
-export const viewport = {
+import type { Viewport } from 'next'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: 'white' },
-    { media: '(prefers-color-scheme: dark)', color: 'black' }
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' }
   ]
 }
 
@@ -150,7 +157,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           disableTransitionOnChange
         >
           <DocumentLocale />
-          <div className="flex flex-col min-h-screen">
+          <div className="flex flex-col min-h-[100dvh]">
             <Header />
             <main className="flex flex-col flex-1 bg-muted/50">{children}</main>
           </div>

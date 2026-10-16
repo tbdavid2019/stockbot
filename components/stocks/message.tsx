@@ -21,13 +21,13 @@ export function UserMessage({ children }: { children: React.ReactNode }) {
   const textContent = typeof children === 'string' ? children : ''
 
   return (
-    <div className="group relative flex items-start md:-ml-12">
-      <div className="flex size-[25px] shrink-0 select-none items-center justify-center rounded-md border bg-background shadow-sm">
+    <div className="group relative flex items-start md:-ml-12 w-full min-w-0">
+      <div className="flex size-[22px] sm:size-[25px] shrink-0 select-none items-center justify-center rounded-md border bg-background shadow-xs mt-0.5">
         <IconUser />
       </div>
-      <div className="ml-4 flex-1 space-y-2 overflow-hidden pl-2">
+      <div className="ml-2.5 sm:ml-4 flex-1 min-w-0 space-y-2 overflow-hidden pl-0 sm:pl-2">
         <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 min-w-0 break-words text-sm sm:text-base">{children}</div>
           {textContent && (
             <CopyButton
               value={textContent}
@@ -54,14 +54,14 @@ export function BotMessage({
   const displayText = mainText || text
 
   return (
-    <div className={cn('group relative flex items-start md:-ml-12', className)}>
-      <div className="flex size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md">
-        <StockbotLogo className="size-[25px]" />
+    <div className={cn('group relative flex items-start md:-ml-12 w-full min-w-0', className)}>
+      <div className="flex size-[22px] sm:size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md mt-0.5">
+        <StockbotLogo className="size-[22px] sm:size-[25px]" />
       </div>
-      <div className="ml-4 flex-1 space-y-2 overflow-hidden px-1">
-        <div className="relative group/botmsg">
+      <div className="ml-2.5 sm:ml-4 flex-1 min-w-0 space-y-2 overflow-hidden px-0 sm:px-1">
+        <div className="relative group/botmsg min-w-0">
           <MemoizedReactMarkdown
-            className="prose max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 w-full"
+            className="prose max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-pre:p-0 w-full text-sm sm:text-base"
             remarkPlugins={[remarkGfm, remarkMath]}
             components={{
               p({ children }) {
@@ -129,16 +129,23 @@ export function BotCard({
   showAvatar?: boolean
 }) {
   return (
-    <div className="group relative flex items-start md:-ml-12">
+    <div className="group relative flex items-start md:-ml-12 w-full min-w-0">
       <div
         className={cn(
-          'flex size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md',
-          !showAvatar && 'invisible'
+          'size-[22px] sm:size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md mt-0.5',
+          showAvatar ? 'flex' : 'hidden sm:flex sm:invisible'
         )}
       >
-        <StockbotLogo className="size-[25px]" />
+        <StockbotLogo className="size-[22px] sm:size-[25px]" />
       </div>
-      <div className="ml-4 flex-1 pl-2">{children}</div>
+      <div
+        className={cn(
+          'flex-1 min-w-0 w-full overflow-hidden',
+          showAvatar ? 'ml-2.5 sm:ml-4 pl-0 sm:pl-2' : 'ml-0 sm:ml-4 pl-0 sm:pl-2'
+        )}
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -147,21 +154,21 @@ export function SystemMessage({ children }: { children: React.ReactNode }) {
   return (
     <div
       className={
-        'mt-2 flex items-center justify-center gap-2 text-xs text-gray-500'
+        'mt-2 flex items-center justify-center gap-2 text-xs text-gray-500 w-full'
       }
     >
-      <div className={'max-w-[600px] flex-initial p-2'}>{children}</div>
+      <div className={'max-w-[600px] flex-initial p-2 text-center'}>{children}</div>
     </div>
   )
 }
 
 export function SpinnerMessage() {
   return (
-    <div className="group relative flex items-start md:-ml-12">
-      <div className="flex size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md">
-        <StockbotLogo className="size-[25px]" />
+    <div className="group relative flex items-start md:-ml-12 w-full min-w-0">
+      <div className="flex size-[22px] sm:size-[25px] shrink-0 select-none items-center justify-center overflow-hidden rounded-md mt-0.5">
+        <StockbotLogo className="size-[22px] sm:size-[25px]" />
       </div>
-      <div className="ml-4 h-[24px] flex flex-row items-center flex-1 space-y-2 overflow-hidden px-1">
+      <div className="ml-2.5 sm:ml-4 h-[24px] flex flex-row items-center flex-1 min-w-0 space-y-2 overflow-hidden px-0 sm:px-1">
         {spinner}
       </div>
     </div>

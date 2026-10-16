@@ -218,25 +218,25 @@ export function ApiKeyDialog() {
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="max-w-xl sm:max-w-xl overflow-hidden border border-border bg-card text-card-foreground p-0 shadow-2xl sm:rounded-2xl">
+      <DialogContent className="max-w-xl sm:max-w-xl overflow-hidden border border-border bg-card text-card-foreground p-0 shadow-2xl rounded-2xl">
         {/* Header 頂部導角裝飾 */}
-        <div className="relative border-b border-border/70 bg-muted/40 px-6 py-5 sm:px-7 sm:py-6">
+        <div className="relative border-b border-border/70 bg-muted/40 px-4 py-4 sm:px-7 sm:py-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400">
+            <div className="flex size-10 sm:size-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400 shrink-0">
               <KeyRound className="size-5" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
+              <DialogTitle className="text-base sm:text-xl font-bold tracking-tight text-foreground">
                 自備金鑰設定 (BYOK)
               </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-1 font-medium">
+              <DialogDescription className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 font-medium">
                 自備 API Key 暢享無限制分析 · 伺服器零留存保證
               </DialogDescription>
             </div>
           </div>
         </div>
 
-        <div className="max-h-[75vh] overflow-y-auto px-6 py-5 sm:px-7 sm:py-6 space-y-5">
+        <div className="max-h-[75dvh] overflow-y-auto px-4 py-4 sm:px-7 sm:py-6 space-y-4 sm:space-y-5">
           {/* 安全保證卡片 */}
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4">
             <div className="flex items-start gap-3">
@@ -336,7 +336,7 @@ export function ApiKeyDialog() {
                 value={apiKey}
                 onChange={e => handleKeyChange(e.target.value)}
                 placeholder={PROVIDER_PRESETS[provider].placeholder}
-                className="h-11 w-full rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 pr-10 font-mono text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs transition-colors"
+                className="h-11 w-full rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 pr-10 font-mono text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs transition-colors"
               />
               <button
                 type="button"

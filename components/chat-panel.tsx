@@ -73,7 +73,7 @@ export function ChatPanel({
   }, [handleMarketQuoteSelect])
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 w-full overflow-x-hidden pointer-events-none pb-[env(safe-area-inset-bottom)] duration-300 ease-in-out peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]">
+    <div className="fixed inset-x-0 bottom-0 z-40 w-full overflow-x-hidden pointer-events-none duration-300 ease-in-out peer-[[data-state=open]]:group-[]:lg:pl-[250px] peer-[[data-state=open]]:group-[]:xl:pl-[300px]">
       <div className="pointer-events-auto">
         <ButtonScrollToBottom
           isAtBottom={isAtBottom}
@@ -81,9 +81,9 @@ export function ChatPanel({
         />
 
         <div
-          className={`mx-auto px-3 sm:px-4 ${wide ? 'sm:max-w-6xl' : 'sm:max-w-4xl'}`}
+          className={`mx-auto px-2 sm:px-4 ${wide ? 'sm:max-w-6xl' : 'sm:max-w-4xl'}`}
         >
-          <div className="space-y-3 rounded-t-2xl border-t border-x border-border/80 bg-background/95 p-3 sm:p-4 backdrop-blur-xl shadow-lg">
+          <div className="space-y-2.5 rounded-t-2xl border-t border-x border-border/80 bg-background/95 p-2.5 sm:p-4 backdrop-blur-xl shadow-lg pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
             <PromptForm input={input} setInput={setInput} />
             <FooterText />
           </div>

@@ -241,12 +241,12 @@ export function GovBidsCard({ data, standalone = false }: GovBidsCardProps) {
 
       {/* 4. Tab Navigation */}
       <div>
-        <div className="flex border-b border-zinc-200 dark:border-zinc-800 px-4 gap-4 text-xs sm:text-sm font-medium">
+        <div className="flex border-b border-zinc-200 dark:border-zinc-800 px-3 sm:px-4 gap-3 sm:gap-4 text-xs sm:text-sm font-medium overflow-x-auto no-scrollbar whitespace-nowrap">
           {report && (
             <>
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`py-3 border-b-2 transition-colors ${
+                className={`py-2.5 sm:py-3 border-b-2 transition-colors shrink-0 ${
                   activeTab === 'overview'
                     ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                     : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -256,7 +256,7 @@ export function GovBidsCard({ data, standalone = false }: GovBidsCardProps) {
               </button>
               <button
                 onClick={() => setActiveTab('rivals')}
-                className={`py-3 border-b-2 transition-colors ${
+                className={`py-2.5 sm:py-3 border-b-2 transition-colors shrink-0 ${
                   activeTab === 'rivals'
                     ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                     : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -268,7 +268,7 @@ export function GovBidsCard({ data, standalone = false }: GovBidsCardProps) {
           )}
           <button
             onClick={() => setActiveTab('tenders')}
-            className={`py-3 border-b-2 transition-colors ${
+            className={`py-2.5 sm:py-3 border-b-2 transition-colors shrink-0 ${
               activeTab === 'tenders'
                 ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'
@@ -279,7 +279,7 @@ export function GovBidsCard({ data, standalone = false }: GovBidsCardProps) {
           {forecasts?.items && forecasts.items.length > 0 && (
             <button
               onClick={() => setActiveTab('forecasts')}
-              className={`py-3 border-b-2 transition-colors ${
+              className={`py-2.5 sm:py-3 border-b-2 transition-colors shrink-0 ${
                 activeTab === 'forecasts'
                   ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
                   : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200'

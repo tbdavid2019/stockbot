@@ -279,13 +279,13 @@ export function PromptForm({
             placeholder={
               attachedDoc
                 ? lang === 'en'
-                  ? 'Enter analysis prompt (e.g., analyze margins, free cash flow & master investor evaluation)...'
-                  : '輸入分析要求（例如：請幫我分析這份財報的毛利率與自由現金流，並以巴菲特觀點評估）'
+                  ? 'Enter analysis prompt (e.g. margins, valuation)...'
+                  : '輸入分析指令（例如：分析毛利率與自由現金流）...'
                 : lang === 'zh'
-                  ? '輸入訊息或點擊 📎 上傳財報/PDF 解讀...（例如：台積電股價、TSLA 值得買嗎）'
-                  : 'Send a message or click 📎 to upload financial report/PDF... (e.g. Apple stock price, Should I buy TSLA?)'
+                  ? '輸入股票、問題或 📎 上傳財報（如：台積電、NVDA、SPCX）...'
+                  : 'Message or upload reports (e.g. 2330, NVDA, SPCX)...'
             }
-            className="flex-1 min-h-[44px] max-h-48 resize-none bg-transparent px-2 py-2 text-sm sm:text-base leading-relaxed focus-within:outline-none placeholder:text-muted-foreground/60"
+            className="flex-1 min-h-[44px] max-h-48 resize-none bg-transparent px-2 py-2 text-base leading-relaxed focus-within:outline-none placeholder:text-muted-foreground/60"
             autoFocus
             spellCheck={false}
             autoComplete="off"
@@ -303,7 +303,7 @@ export function PromptForm({
                 <Button
                   type="submit"
                   size="icon"
-                  className="size-8 sm:size-9 rounded-xl shadow-2xs"
+                  className="size-8 sm:size-9 rounded-xl shadow-2xs active:scale-95 transition-transform"
                   disabled={(input.trim() === '' && !attachedDoc) || isUploading}
                 >
                   <div className="rotate-180">

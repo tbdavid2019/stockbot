@@ -10,11 +10,11 @@ export function TransmissionChainCard({
   data: TransmissionAnalysisResult
 }) {
   return (
-    <section className="w-full rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/50 p-5 shadow-sm dark:border-slate-800 dark:from-zinc-950 dark:to-zinc-900/40 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
+    <section className="w-full min-w-0 rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/50 p-3.5 shadow-sm dark:border-slate-800 dark:from-zinc-950 dark:to-zinc-900/40 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
       {/* Header */}
-      <header className="mb-5 flex flex-col sm:flex-row sm:items-start justify-between gap-3.5 border-b border-slate-100 pb-4 dark:border-slate-800">
+      <header className="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5 dark:border-slate-800">
         <div>
-          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5">
             <span className="text-xs font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/50 px-2.5 py-1 rounded-full border border-cyan-200 dark:border-cyan-800">
               DeepEar 邏輯傳導鏈
             </span>
@@ -22,7 +22,7 @@ export function TransmissionChainCard({
               信心度: {(data.confidence * 100).toFixed(0)}%
             </span>
           </div>
-          <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+          <h3 className="text-lg sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
             {data.title}
           </h3>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
