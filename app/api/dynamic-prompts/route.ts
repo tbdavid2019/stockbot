@@ -154,6 +154,22 @@ function parseStocks(content: string): {
       currentCategory = 'TWMID'
     }
 
+    // HTML pattern fallback from stock.david888.com: <b>3702.TW</b></a><b> 大聯大</b> <code>115.00</code>
+    const htmlTwMatch = trimmed.match(
+      /(?:<b>)?(\d{4})(?:\.TW)?(?:<\/b>)?.*?<b>\s*([^<]+)<\/b>.*?<code>([\d.]+)<\/code>/i
+    )
+    if (htmlTwMatch) {
+      const [, symbol, rawName, price] = htmlTwMatch
+      const name = rawName.trim()
+      const item = { symbol, name, price, raw: `${symbol} ${name}` }
+      if (currentCategory === 'TW50' && !tw50.some(s => s.symbol === symbol)) {
+        tw50.push(item)
+      } else if (!twMid.some(s => s.symbol === symbol)) {
+        twMid.push(item)
+      }
+      continue
+    }
+
     const twMatch = trimmed.match(
       /^(\d{4})(?:\.TW)?\s+([\u4e00-\u9fa5A-Za-z0-9]+)\s+([\d.]+)?/
     )

@@ -38,8 +38,8 @@ export function Header() {
             className="flex items-center gap-1.5 text-sm font-bold text-foreground transition-opacity hover:opacity-85 sm:gap-2 sm:text-base shrink-0"
           >
             <StockbotLogo className="size-8 shrink-0 rounded-md sm:size-9" />
-            <span className="hidden sm:inline tracking-tight font-extrabold">888 StockBot</span>
-            <span className="sm:hidden tracking-tight font-extrabold text-xs">888</span>
+            <span className="hidden sm:inline font-display tracking-tight font-extrabold">888 StockBot</span>
+            <span className="sm:hidden font-display tracking-tight font-extrabold text-xs">888</span>
           </a>
 
           <IconSeparator className="hidden size-5 text-muted-foreground/30 sm:block" />

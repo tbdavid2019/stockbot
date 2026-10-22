@@ -2,6 +2,23 @@
 
 本專案遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/) 格式規範記錄各版本更新與功能演進。
 
+## [2026-10-22] - 修復跑馬燈第二排即時報價、Yahoo Finance 報價端點與中英文數字字體忽大忽小比例失衡
+
+### 📈 跑馬燈第二排即時報價修復 ([`app/api/market-quotes/route.ts`](app/api/market-quotes/route.ts), [`components/tradingview/market-quotes.tsx`](components/tradingview/market-quotes.tsx), [`app/api/dynamic-prompts/route.ts`](app/api/dynamic-prompts/route.ts))
+- **實作 `/api/market-quotes` 即時報價端點**：
+  - 自動並行聚合台股主力股（台積電、鴻海、聯發科、廣達、富邦金、長榮）與美股七巨頭（NVDA、AAPL、MSFT、TSLA、GOOGL、META）之 Yahoo Finance 最新成交價與漲跌幅。
+  - 具備 60 秒伺服器端智慧快取保護，並提供內建基準報價初始狀態，徹底根除第二排個股報價呈現破折號 `—` 的問題。
+  - [`components/tradingview/market-quotes.tsx`](components/tradingview/market-quotes.tsx) 同步升級漲跌幅標記（翡翠綠 `+2.54%` / 陶土紅 `-1.24%`）與千分位數值格式化。
+  - [`app/api/dynamic-prompts/route.ts`](app/api/dynamic-prompts/route.ts) 補充 HTML 標籤結構解析正規表達式，相容 `stock.david888.com` 最新文章排版。
+
+### 🔤 解決字體忽大忽小問題，重構字型宣告架構 ([`app/globals.css`](app/globals.css), [`tailwind.config.ts`](tailwind.config.ts), [`components/header.tsx`](components/header.tsx))
+- **移除全域 `sans` 中的 `Outfit`，回歸 CJK 與繁中等比視認度**：
+  - 診斷出由於 `Outfit` 為純英文幾何展示字型，其大寫字母與數字之 x-height 與寬度顯著大於東亞字型，導致在 `鴻海 (2317)`、`台積電 (2330)`、`Live v4.5` 等中英數混排處產生英文/數字突兀膨脹、字體忽大忽小的視覺瑕疵。
+  - 將全域 `sans` 基準字型恢復為 `Zen Kaku Gothic New` 與系統 CJK 字型鏈，確保中英文與數字字高、字寬及 baseline 絕對協調統一。
+  - 將 `Outfit` 獨立收斂為 `font-display` 工具類別，專供品牌 Logo（如頁首 `888 StockBot`）純英數展示排版使用。
+
+---
+
 ## [2026-10-22] - Stockbot 全面導入 2md.aiurl.tw 配色體系與 WCAG AA/AAA 可讀性對比度升級
 
 ### 🎨 2MD 原生五色體系全面導入 ([`app/globals.css`](app/globals.css), [`tailwind.config.ts`](tailwind.config.ts), [`app/layout.tsx`](app/layout.tsx))

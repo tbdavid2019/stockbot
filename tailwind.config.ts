@@ -18,8 +18,13 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: [
+        display: [
           'Outfit',
+          '"Zen Kaku Gothic New"',
+          'system-ui',
+          'sans-serif'
+        ],
+        sans: [
           '"Zen Kaku Gothic New"',
           'var(--font-geist-sans)',
           'PingFang TC',
