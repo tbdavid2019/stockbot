@@ -48,7 +48,7 @@ export function Header() {
           <button
             type="button"
             onClick={handleNewChat}
-            className="inline-flex items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/10 px-2 py-1 text-xs font-semibold text-orange-600 hover:bg-orange-500/20 dark:text-orange-400 transition-colors shadow-2xs shrink-0 sm:px-2.5 sm:text-sm"
+            className="inline-flex items-center gap-1 rounded-lg border border-[#17324D]/20 bg-primary px-2 py-1 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition-colors shadow-2xs shrink-0 sm:px-2.5 sm:text-sm"
             title={lang === 'zh' ? '開啟新對話' : 'Start New Chat'}
           >
             <Plus className="size-3.5" />
@@ -66,13 +66,13 @@ export function Header() {
           {/* Dedicated 法說會總覽 Navigation Link */}
           <a
             href="/earnings-call"
-            className="flex items-center gap-1 rounded-lg border border-indigo-200/90 bg-indigo-50/80 px-1.5 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 hover:border-indigo-300 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 dark:hover:bg-indigo-900/80 transition-all shadow-2xs shrink-0 sm:px-2.5 sm:text-sm"
+            className="flex items-center gap-1 rounded-lg border border-border bg-accent/80 px-1.5 py-1 text-xs font-semibold text-accent-foreground hover:bg-accent transition-all shadow-2xs shrink-0 sm:px-2.5 sm:text-sm"
             title={lang === 'zh' ? '法人說明會總覽 (Earnings Calls) · MOPS / TWSE / 美股即時日程與簡報' : 'Earnings Calls & Webcasts · MOPS / TWSE / US Corporate Earnings'}
           >
-            <Radio className="size-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <Radio className="size-3.5 text-[#A9471D] dark:text-[#FFB010] shrink-0" />
             <span className="hidden sm:inline font-semibold">{lang === 'zh' ? '法說會總覽' : 'Earnings Calls'}</span>
             <span className="sm:hidden font-semibold">{lang === 'zh' ? '法說' : 'Calls'}</span>
-            <span className="hidden md:inline-flex items-center rounded bg-indigo-200/70 px-1 py-0.5 text-xs font-mono text-indigo-900 dark:bg-indigo-900/70 dark:text-indigo-200 font-bold">
+            <span className="hidden md:inline-flex items-center rounded bg-[#17324D] px-1.5 py-0.5 text-xs font-mono text-[#FFF9E8] dark:bg-[#FFB010] dark:text-[#0C1520] font-bold">
               MOPS
             </span>
           </a>
@@ -80,7 +80,7 @@ export function Header() {
 
         <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-2">
           {/* Telegram Disclaimer Link - only show on large screens to protect mobile navbar */}
-          <div className="hidden text-xs leading-snug text-orange-600 lg:block font-medium">
+          <div className="hidden text-xs leading-snug text-[#A9471D] dark:text-[#FFB010] lg:block font-medium">
             {lang === 'en'
               ? 'For reference only · Investment advice: '
               : '本服務僅供參考；建議請至 '}
@@ -88,7 +88,7 @@ export function Header() {
               href="https://t.me/oli_billion_bot"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-orange-700 font-semibold"
+              className="underline hover:text-[#17324D] dark:hover:text-[#FAF4E6] font-semibold"
             >
               oli-™股靈精怪
             </a>

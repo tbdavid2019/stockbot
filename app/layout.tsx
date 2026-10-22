@@ -91,8 +91,8 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
   interactiveWidget: 'resizes-content',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' }
+    { media: '(prefers-color-scheme: light)', color: '#FFF9E8' },
+    { media: '(prefers-color-scheme: dark)', color: '#0C1520' }
   ]
 }
 
@@ -127,7 +127,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
         <link rel="describedby" href="/llms.txt" />

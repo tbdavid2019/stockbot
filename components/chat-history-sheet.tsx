@@ -288,12 +288,12 @@ export function ChatHistorySheet({
         <SheetHeader className="border-b px-4 py-3 text-left">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <TrendingUp className="size-5 text-primary" />
+              <TrendingUp className="size-5 text-[#A9471D] dark:text-[#FFB010]" />
               <SheetTitle className="text-base font-bold">
                 {lang === 'zh' ? '對話歷史紀錄' : 'Chat History'}
               </SheetTitle>
               {sessions.length > 0 && (
-                <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:bg-orange-950/60 dark:text-orange-300">
+                <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-accent-foreground">
                   {sessions.length} {lang === 'zh' ? '筆對話' : 'chats'}
                 </span>
               )}
@@ -433,7 +433,7 @@ export function ChatHistorySheet({
                 className={cn(
                   'group relative flex flex-col rounded-lg border p-2.5 transition-all cursor-pointer text-left',
                   isActive
-                    ? 'border-orange-500 bg-orange-50/50 dark:border-orange-600 dark:bg-orange-950/20 shadow-xs'
+                    ? 'border-[#17324D] bg-accent/60 dark:border-[#FFB010] dark:bg-accent/30 shadow-xs'
                     : 'border-transparent bg-background hover:border-border hover:bg-muted/50'
                 )}
               >

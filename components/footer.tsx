@@ -36,7 +36,7 @@ export function FooterText({ className, ...props }: React.ComponentProps<'div'>)
           'inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all cursor-pointer shadow-2xs',
           hasCustomKey
             ? 'border border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20'
-            : 'border border-border/80 bg-background/90 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-orange-400'
+            : 'border border-border/80 bg-background/90 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-[#17324D] dark:hover:border-[#FFB010]'
         )}
         title={
           lang === 'zh'
@@ -44,7 +44,7 @@ export function FooterText({ className, ...props }: React.ComponentProps<'div'>)
             : 'Bring Your Own Key (BYOK) · Zero server retention'
         }
       >
-        <KeyRound className="size-3.5 text-orange-500 dark:text-orange-400" />
+        <KeyRound className="size-3.5 text-[#A9471D] dark:text-[#FFB010]" />
         {hasCustomKey ? (
           <span className="flex items-center gap-1 font-semibold">
             <span className="relative flex size-1.5">

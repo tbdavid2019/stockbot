@@ -2,6 +2,28 @@
 
 本專案遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/) 格式規範記錄各版本更新與功能演進。
 
+## [2026-10-22] - Stockbot 全面導入 2md.aiurl.tw 配色體系與 WCAG AA/AAA 可讀性對比度升級
+
+### 🎨 2MD 原生五色體系全面導入 ([`app/globals.css`](app/globals.css), [`tailwind.config.ts`](tailwind.config.ts), [`app/layout.tsx`](app/layout.tsx))
+- **Pantone 14-1064 TPG Saffron & 2MD 原生語意色盤**：
+  - 番紅花金黃 (`--saffron: #ffb010`)、深海軍藍 (`--deep-blue: #17324d`)、陶土磚紅 (`--clay: #a9471d`)、暖奶油白 (`--warm-cream: #fff9e8`)、玄墨黑 (`--ink: #2b251a`)。
+  - 淺色模式與深色模式變數全面重構，主色調以 2MD 番紅花為主，深色模式採用黑曜岩深藍底色搭配微光番紅花。
+  - 在 `tailwind.config.ts` 註冊 `saffron`, `deepblue`, `clay`, `warmcream`, `ink` 語意色，並在 `fontFamily.sans` 最前列導入 `Outfit`。
+  - `app/layout.tsx` 的 `viewport.themeColor` 與 Google Fonts `@import` 同步升級，加入 `Outfit:wght@500;600;700;800`。
+
+### ♿ WCAG AA/AAA 對比度合規與 0 警報升級
+- **消除 AI 配色反模式 (Impeccable 0 警告)**：
+  - 修復 [`components/stocks/financial-report-card.tsx`](components/stocks/financial-report-card.tsx) 移除紫藍漸層與套版類別，圖示方塊改為 2MD `bg-primary text-primary-foreground font-bold`。
+  - 修復 [`components/stocks/sepa-strategy-card.tsx`](components/stocks/sepa-strategy-card.tsx) 移除 `violet-*` 類別，改用 2MD 磚紅 `#A9471D` 與語意 `accent`。
+- **全站元件 WCAG 對比度與視覺層次微調**：
+  - [`components/ui/button.tsx`](components/ui/button.tsx)：升級 `default` 陰影與字重，`link` 樣式在淺深色下分別為 `#17324D` 與 `#FFB010`。
+  - [`components/header.tsx`](components/header.tsx) & [`components/footer.tsx`](components/footer.tsx)：新對話按鈕、法說會總覽與 BYOK 按鈕對齊 2MD 樣式。
+  - [`components/prompt-form.tsx`](components/prompt-form.tsx) & [`components/empty-screen.tsx`](components/empty-screen.tsx)：附件標籤、總經/法說標籤移除 indigo，修復 `sky-600` 對比度不足問題（淺色使用 `#17324D`、深色使用 `sky-300`），輸入框 placeholder 對比度提升至 7.18:1 (AAA)。
+  - [`components/api-key-dialog.tsx`](components/api-key-dialog.tsx)：BYOK 對話框模型供應商選擇器、輸入框聚焦邊框與儲存按鈕升級為 2MD 番紅花金與深藍樣式。
+  - [`components/chat-history-sheet.tsx`](components/chat-history-sheet.tsx), [`components/stocks/economic-calendar-card.tsx`](components/stocks/economic-calendar-card.tsx), [`components/stocks/earnings-briefing-card.tsx`](components/stocks/earnings-briefing-card.tsx), [`components/stocks/options-payoff-card.tsx`](components/stocks/options-payoff-card.tsx), [`components/tradingview/stock-analysis.tsx`](components/tradingview/stock-analysis.tsx)。
+
+---
+
 ## [2026-10-15] - 深度整合 ToBid 台灣政府採購公開情報：四大關鍵 B2G 族群標案、宿敵對戰勝率與採購法第 101 條停權黑天鵝風控
 
 ### 🏛️ ToBid 台灣政府採購公開情報 ([`lib/tobid.ts`](lib/tobid.ts), [`lib/tobid-entities.ts`](lib/tobid-entities.ts), [`components/stocks/gov-bids-card.tsx`](components/stocks/gov-bids-card.tsx))

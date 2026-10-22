@@ -660,12 +660,12 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       </div>
 
       {/* LLM 讀取三批大師實際結果後產生的投資委員會摘要 */}
-      <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-3.5 sm:p-5 dark:border-indigo-900/60 dark:bg-indigo-950/20">
-        <h4 className="mb-2 text-sm sm:text-base font-bold text-indigo-900 dark:text-indigo-200">
+      <div className="rounded-xl border border-border bg-accent/70 p-3.5 sm:p-5 dark:bg-accent/40">
+        <h4 className="mb-2 text-sm sm:text-base font-bold text-accent-foreground">
           🧠 投資委員會綜合判讀
         </h4>
         {summaryLoading && (
-          <p className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             正在交叉比對 16 位大師的共識、分歧與關鍵數字…
           </p>
         )}
@@ -784,7 +784,7 @@ export function StockAnalysis({ symbol }: StockAnalysisProps) {
       {/* 各分析師觀點信號 */}
       <div className="space-y-3">
         <h4 className="font-bold text-sm sm:text-base text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-          <BarChart3 className="size-4 text-primary shrink-0" />
+          <BarChart3 className="size-4 text-[#A9471D] dark:text-[#FFB010] shrink-0" />
           <span>各大師與專業分析師信號</span>
         </h4>
         <div className="grid gap-3 sm:grid-cols-2">

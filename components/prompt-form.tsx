@@ -131,7 +131,7 @@ export function PromptForm({
     if (currentDoc) {
       userDisplayNode = (
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-900 dark:bg-indigo-950/50 dark:border-indigo-800 dark:text-indigo-300 text-xs font-semibold">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent border border-border text-[#17324D] dark:text-[#FFB010] text-xs font-semibold">
             <span>📑 附件財報/文件：{currentDoc.filename}</span>
             {currentDoc.pages ? (
               <span className="text-xs opacity-75">
@@ -191,23 +191,23 @@ export function PromptForm({
         }}
       />
 
-      <div className="flex flex-col rounded-2xl border border-border bg-card p-2 sm:p-2.5 shadow-xs transition-all focus-within:border-orange-500/50 focus-within:ring-1 focus-within:ring-orange-500/20">
+      <div className="flex flex-col rounded-2xl border border-border bg-card p-2 sm:p-2.5 shadow-xs transition-all focus-within:border-[#17324D] dark:focus-within:border-[#FFB010] focus-within:ring-1 focus-within:ring-[#17324D]/25 dark:focus-within:ring-[#FFB010]/30">
         {/* Attached Document Preview Chip */}
         {attachedDoc && (
-          <div className="mb-2 flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/80 px-2.5 py-1 text-xs text-indigo-900 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-200">
-            <FileText className="size-3.5 text-indigo-600 dark:text-indigo-400" />
+          <div className="mb-2 flex items-center gap-2 rounded-lg border border-border bg-accent/80 px-2.5 py-1 text-xs text-[#17324D] dark:text-[#FFB010]">
+            <FileText className="size-3.5 text-[#17324D] dark:text-[#FFB010]" />
             <span className="font-semibold truncate max-w-[220px] sm:max-w-xs">
               {attachedDoc.filename}
             </span>
             {attachedDoc.pages && (
-              <span className="rounded bg-indigo-200/60 px-1.5 py-0.5 text-xs dark:bg-indigo-900/60">
+              <span className="rounded bg-accent px-1.5 py-0.5 text-xs text-accent-foreground font-semibold">
                 {attachedDoc.pages} {lang === 'en' ? 'pages' : '頁'}
               </span>
             )}
             <button
               type="button"
               onClick={() => setAttachedDoc(null)}
-              className="ml-auto text-indigo-600 hover:text-indigo-900 dark:text-indigo-400"
+              className="ml-auto text-[#17324D] hover:opacity-80 dark:text-[#FFB010]"
               title={lang === 'en' ? 'Remove attachment' : '移除附件'}
             >
               <IconClose className="size-3.5" />
@@ -248,11 +248,11 @@ export function PromptForm({
                   variant="outline"
                   size="icon"
                   disabled={isUploading}
-                  className="size-8 rounded-full bg-card p-0 border border-border hover:text-indigo-600 hover:border-indigo-300 dark:hover:border-indigo-700 text-foreground"
+                  className="size-8 rounded-full bg-card p-0 border border-border hover:text-[#17324D] hover:border-[#17324D] dark:hover:text-[#FFB010] dark:hover:border-[#FFB010] text-foreground"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {isUploading ? (
-                    <div className="size-3.5 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+                    <div className="size-3.5 animate-spin rounded-full border-2 border-[#17324D] dark:border-[#FFB010] border-t-transparent" />
                   ) : (
                     <Paperclip className="size-4" />
                   )}
@@ -285,7 +285,7 @@ export function PromptForm({
                   ? '輸入股票、問題或 📎 上傳財報（如：台積電、NVDA、SPCX）...'
                   : 'Message or upload reports (e.g. 2330, NVDA, SPCX)...'
             }
-            className="flex-1 min-h-[44px] max-h-48 resize-none bg-transparent px-2 py-2 text-base leading-relaxed focus-within:outline-none placeholder:text-muted-foreground/60"
+            className="flex-1 min-h-[44px] max-h-48 resize-none bg-transparent px-2 py-2 text-base leading-relaxed focus-within:outline-none placeholder:text-muted-foreground"
             autoFocus
             spellCheck={false}
             autoComplete="off"

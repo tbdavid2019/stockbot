@@ -24,12 +24,12 @@ export function EconomicCalendarCard({
       : 'border-amber-500/30 bg-amber-50/70 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
 
   return (
-    <section className="w-full min-w-0 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6 text-slate-800 dark:text-slate-100 my-3">
+    <section className="w-full min-w-0 rounded-2xl border border-border bg-card p-3.5 shadow-sm sm:p-6 text-card-foreground my-3">
       {/* Header */}
       <header className="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-slate-100 pb-3.5 dark:border-slate-800">
         <div>
           <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50 px-2.5 py-1 rounded-full border border-sky-200 dark:border-sky-800">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#17324D] dark:text-sky-300 bg-sky-50 dark:bg-sky-950/50 px-2.5 py-1 rounded-full border border-sky-200 dark:border-sky-800">
               Investing.com 總經情報
             </span>
             <span className="text-xs text-muted-foreground bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full font-mono">
@@ -59,7 +59,7 @@ export function EconomicCalendarCard({
       {/* Cross-Asset Macro & Futures Grid */}
       <div className="mb-6">
         <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-3 flex items-center gap-1.5">
-          <Globe className="size-3.5 text-sky-600 dark:text-sky-400" />
+          <Globe className="size-3.5 text-[#17324D] dark:text-sky-300" />
           <span>跨資產即時盤前與總經指標 (Futures & Yields)</span>
         </h4>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
@@ -153,7 +153,7 @@ export function EconomicCalendarCard({
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <h4 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-            <Calendar className="size-4 text-primary" />
+            <Calendar className="size-4 text-[#A9471D] dark:text-[#FFB010]" />
             <span>即時重大總體經濟日曆 (Economic Calendar)</span>
           </h4>
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-lg text-xs self-start sm:self-auto">
@@ -230,7 +230,7 @@ export function EconomicCalendarCard({
                             href={evt.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:underline hover:text-sky-600 dark:hover:text-sky-400"
+                            className="hover:underline text-[#17324D] dark:text-sky-300"
                           >
                             {evt.event}
                           </a>
@@ -274,7 +274,7 @@ export function EconomicCalendarCard({
           href="https://www.investing.com/economic-calendar/"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sky-600 hover:underline dark:text-sky-400 flex items-center gap-1"
+          className="text-[#17324D] hover:underline dark:text-sky-300 flex items-center gap-1"
         >
           查看 Investing.com 完整日曆 ↗
         </a>

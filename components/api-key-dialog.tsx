@@ -222,7 +222,7 @@ export function ApiKeyDialog() {
         {/* Header 頂部導角裝飾 */}
         <div className="relative border-b border-border/70 bg-muted/40 px-4 py-4 sm:px-7 sm:py-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 sm:size-11 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 ring-1 ring-orange-500/20 dark:bg-orange-500/20 dark:text-orange-400 shrink-0">
+            <div className="flex size-10 sm:size-11 items-center justify-center rounded-xl bg-accent text-[#A9471D] ring-1 ring-border dark:text-[#FFB010] shrink-0">
               <KeyRound className="size-5" />
             </div>
             <div>
@@ -269,12 +269,12 @@ export function ApiKeyDialog() {
                       onClick={() => handleProviderChange(p)}
                       className={`relative flex items-center justify-between rounded-xl border px-3.5 py-2.5 text-sm font-semibold transition-all ${
                         isSelected
-                          ? 'border-orange-500 bg-orange-500/15 text-orange-600 dark:text-orange-400 font-bold ring-2 ring-orange-500/30 shadow-xs'
+                          ? 'border-[#17324D] dark:border-[#FFB010] bg-accent text-[#A9471D] dark:text-[#FFB010] font-bold ring-2 ring-[#17324D]/30 dark:ring-[#FFB010]/30 shadow-xs'
                           : 'border-border bg-muted/40 text-foreground/80 hover:border-border hover:bg-muted/70 hover:text-foreground shadow-2xs'
                       }`}
                     >
                       <span className="truncate">{preset.name.split(' ')[0]}</span>
-                      {isSelected && <Check className="size-4 text-orange-500 shrink-0" />}
+                      {isSelected && <Check className="size-4 text-[#A9471D] dark:text-[#FFB010] shrink-0" />}
                     </button>
                   )
                 }
@@ -293,7 +293,7 @@ export function ApiKeyDialog() {
                   href="https://console.groq.com/keys"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-[#A9471D] hover:underline dark:text-[#FFB010]"
                 >
                   免費取得 Groq Key <ExternalLink className="size-3" />
                 </a>
@@ -303,7 +303,7 @@ export function ApiKeyDialog() {
                   href="https://aistudio.google.com/app/apikey"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-[#A9471D] hover:underline dark:text-[#FFB010]"
                 >
                   免費取得 Gemini Key <ExternalLink className="size-3" />
                 </a>
@@ -313,7 +313,7 @@ export function ApiKeyDialog() {
                   href="https://platform.openai.com/api-keys"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-[#A9471D] hover:underline dark:text-[#FFB010]"
                 >
                   前往 OpenAI 控制台 <ExternalLink className="size-3" />
                 </a>
@@ -323,7 +323,7 @@ export function ApiKeyDialog() {
                   href="https://platform.deepseek.com/api_keys"
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-medium text-[#A9471D] hover:underline dark:text-[#FFB010]"
                 >
                   前往 DeepSeek 平台 <ExternalLink className="size-3" />
                 </a>
@@ -336,7 +336,7 @@ export function ApiKeyDialog() {
                 value={apiKey}
                 onChange={e => handleKeyChange(e.target.value)}
                 placeholder={PROVIDER_PRESETS[provider].placeholder}
-                className="h-11 w-full rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 pr-10 font-mono text-base sm:text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs transition-colors"
+                className="h-11 w-full rounded-xl border border-border bg-muted/30 px-3.5 py-2.5 pr-10 font-mono text-base sm:text-sm text-foreground placeholder:text-muted-foreground focus:border-[#17324D] dark:focus:border-[#FFB010] focus:outline-none focus:ring-1 focus:ring-[#17324D] dark:focus:ring-[#FFB010] shadow-2xs transition-colors"
               />
               <button
                 type="button"
@@ -359,7 +359,7 @@ export function ApiKeyDialog() {
                 type="button"
                 onClick={() => setModelListVersion(value => value + 1)}
                 disabled={isLoadingModels || apiKey.trim().length < 5}
-                className="text-xs text-orange-600 hover:underline disabled:opacity-50 dark:text-orange-400"
+                className="text-xs text-[#A9471D] hover:underline disabled:opacity-50 dark:text-[#FFB010]"
               >
                 {isLoadingModels ? '載入中…' : '重新載入模型清單'}
               </button>
@@ -369,7 +369,7 @@ export function ApiKeyDialog() {
                 aria-label="供應商可用模型"
                 value={models.some(item => item.id === model) ? model : ''}
                 onChange={event => setModel(event.target.value)}
-                className="h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                className="h-11 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground focus:border-[#17324D] dark:focus:border-[#FFB010] focus:outline-none focus:ring-1 focus:ring-[#17324D] dark:focus:ring-[#FFB010]"
               >
                 <option value="" disabled>選擇模型（{models.length} 個）</option>
                 {models.map(item => <option key={item.id} value={item.id}>{item.name === item.id ? item.id : `${item.name} · ${item.id}`}</option>)}
@@ -381,7 +381,7 @@ export function ApiKeyDialog() {
               value={model}
               onChange={event => setModel(event.target.value)}
               placeholder="從清單選擇，或輸入模型 ID"
-              className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+              className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-[#17324D] dark:focus:border-[#FFB010] focus:outline-none focus:ring-1 focus:ring-[#17324D] dark:focus:ring-[#FFB010]"
             />
             <p className="text-xs leading-normal text-muted-foreground" role="status">
               {isLoadingModels ? '正在向供應商取得此金鑰可用的模型…'
@@ -419,7 +419,7 @@ export function ApiKeyDialog() {
                     value={baseURL}
                     onChange={e => setBaseURL(e.target.value)}
                     placeholder="https://api.openai.com/v1"
-                    className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 shadow-2xs"
+                    className="h-10 w-full rounded-lg border border-border bg-card px-3 py-2 font-mono text-sm text-foreground focus:border-[#17324D] dark:focus:border-[#FFB010] focus:outline-none focus:ring-1 focus:ring-[#17324D] dark:focus:ring-[#FFB010] shadow-2xs"
                   />
                 </div>
               </div>
@@ -484,7 +484,7 @@ export function ApiKeyDialog() {
               type="button"
               onClick={handleSave}
               disabled={!apiKey.trim() || !model.trim()}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-orange-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-orange-700 active:scale-[0.98] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50"
             >
               <Sparkles className="size-4" />
               儲存並啟用

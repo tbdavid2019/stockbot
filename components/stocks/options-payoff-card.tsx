@@ -62,10 +62,10 @@ export function OptionsPayoffCard({ symbol, data }: Props) {
       )
       .join(' ')
   return (
-    <section className="w-full rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6">
+    <section className="w-full rounded-2xl border border-border bg-card p-5 shadow-sm text-card-foreground sm:p-6">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
         <div>
-          <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#A9471D] dark:text-[#FFB010]">
             Black-Scholes 期權損益模擬器
           </p>
           <h3 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight">
@@ -91,7 +91,7 @@ export function OptionsPayoffCard({ symbol, data }: Props) {
           <label key={String(label)} className="text-xs sm:text-sm font-semibold text-foreground">
             {String(label)}
             <input
-              className="mt-1.5 w-full accent-orange-500 cursor-pointer"
+              className="mt-1.5 w-full accent-[#17324D] dark:accent-[#FFB010] cursor-pointer"
               type="range"
               min={Number(min)}
               max={Number(max)}

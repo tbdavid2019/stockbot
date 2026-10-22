@@ -19,6 +19,7 @@ module.exports = {
     extend: {
       fontFamily: {
         sans: [
+          'Outfit',
           '"Zen Kaku Gothic New"',
           'var(--font-geist-sans)',
           'PingFang TC',
@@ -37,6 +38,11 @@ module.exports = {
         ]
       },
       colors: {
+        saffron: '#FFB010',
+        deepblue: '#17324D',
+        clay: '#A9471D',
+        warmcream: '#FFF9E8',
+        ink: '#2B251A',
         border: 'hsl(var(--border) / <alpha-value>)',
         input: 'hsl(var(--input) / <alpha-value>)',
         ring: 'hsl(var(--ring) / <alpha-value>)',
@@ -70,6 +76,10 @@ module.exports = {
           DEFAULT: 'hsl(var(--card) / <alpha-value>)',
           foreground: 'hsl(var(--card-foreground) / <alpha-value>)'
         }
+      },
+      boxShadow: {
+        '2xs': '0 1px 1px 0 rgb(0 0 0 / 0.05)',
+        xs: '0 1px 2px 0 rgb(0 0 0 / 0.05)'
       },
       borderRadius: {
         lg: 'var(--radius)',

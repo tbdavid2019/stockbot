@@ -22,10 +22,10 @@ export function SepaStrategyCard({
     [data.positionSizing.entryPivot, equity, risk]
   )
   return (
-    <section className="w-full rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6">
+    <section className="w-full rounded-2xl border border-border bg-card p-5 shadow-sm text-card-foreground sm:p-6">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
         <div>
-          <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#A9471D] dark:text-[#FFB010]">
             Minervini SEPA 趨勢動能
           </p>
           <h3 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight">{symbol} 趨勢模板</h3>
@@ -98,9 +98,9 @@ export function SepaStrategyCard({
             className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-transparent p-2.5 font-mono text-sm"
           />
         </label>
-        <div className="rounded-xl border border-violet-200 dark:border-violet-800/60 bg-violet-50/80 p-3.5 sm:p-4 text-xs sm:text-sm dark:bg-violet-950/40">
-          <p className="text-xs sm:text-sm font-semibold text-violet-800 dark:text-violet-300">建議建倉股數</p>
-          <p className="my-0.5 font-mono text-2xl sm:text-3xl font-extrabold text-violet-900 dark:text-violet-100">{sizing.shares.toLocaleString()}</p>
+        <div className="rounded-xl border border-border bg-accent/70 p-3.5 sm:p-4 text-xs sm:text-sm dark:bg-accent/40">
+          <p className="text-xs sm:text-sm font-semibold text-accent-foreground">建議建倉股數</p>
+          <p className="my-0.5 font-mono text-2xl sm:text-3xl font-extrabold text-foreground">{sizing.shares.toLocaleString()}</p>
           <p className="text-xs text-muted-foreground">
             最高風險額 ${sizing.riskAmount.toFixed(0)}
           </p>

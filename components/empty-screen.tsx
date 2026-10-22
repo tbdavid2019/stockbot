@@ -358,7 +358,7 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
       <div className="space-y-2.5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border/80 bg-muted/60 px-3 py-1 text-xs font-semibold text-foreground">
-            <TrendingUp className="size-3.5 text-orange-600 dark:text-orange-400" />
+            <TrendingUp className="size-3.5 text-[#A9471D] dark:text-[#FFB010]" />
             <span>888 StockBot · {lang === 'zh' ? 'AI 智慧投資情報' : 'AI Market Intelligence'}</span>
           </span>
           <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-mono font-semibold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
@@ -385,12 +385,12 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-1">
               <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-accent-foreground border border-border">
                   <Radio className="size-4" />
                 </span>
                 <span>{lang === 'zh' ? '法人說明會總覽' : 'Earnings Calls'}</span>
               </span>
-              <span className="rounded bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+              <span className="rounded bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground border border-border">
                 MOPS
               </span>
             </div>
@@ -431,12 +431,12 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-1">
               <span className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
-                <span className="flex size-7 items-center justify-center rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                <span className="flex size-7 items-center justify-center rounded-lg bg-sky-500/10 text-[#17324D] dark:text-sky-300 border border-sky-500/20">
                   <Calendar className="size-4" />
                 </span>
                 <span>{lang === 'zh' ? '全球重大總經日曆' : 'Macro Calendar'}</span>
               </span>
-              <span className="rounded bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-500/20">
+              <span className="rounded bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-[#17324D] dark:text-sky-300 border border-sky-500/20">
                 Investing
               </span>
             </div>
@@ -540,7 +540,7 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
             <span className="text-xs sm:text-sm font-semibold text-foreground">
               {promptLabels[promptLabelIndex]}
             </span>
-            <span className="inline-flex items-center rounded-full bg-orange-500/10 px-2.5 py-0.5 text-xs font-semibold text-orange-600 dark:text-orange-400 border border-orange-500/20">
+            <span className="inline-flex items-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold text-[#A9471D] dark:text-[#FFB010] border border-border">
               {promptModes[promptLabelIndex % promptModes.length]}
             </span>
           </div>
@@ -584,12 +584,12 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
                 <div>
                   <div className="flex items-center gap-2 mb-1.5">
                     {isEarningsCall ? (
-                      <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                      <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-accent px-2 py-0.5 text-xs font-semibold text-accent-foreground border border-border">
                         <Radio className="size-3" />
                         <span>{lang === 'zh' ? '法說' : 'Earnings'}</span>
                       </span>
                     ) : isMacro ? (
-                      <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-sky-600 dark:text-sky-400 border border-sky-500/20">
+                      <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-sky-500/10 px-2 py-0.5 text-xs font-semibold text-[#17324D] dark:text-sky-300 border border-sky-500/20">
                         <Activity className="size-3" />
                         <span>{lang === 'zh' ? '總經' : 'Macro'}</span>
                       </span>
@@ -599,7 +599,7 @@ export function EmptyScreen({ wide = false }: { wide?: boolean }) {
                         <span>{lang === 'zh' ? '研調' : 'Research'}</span>
                       </span>
                     )}
-                    <h4 className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">
+                    <h4 className="text-xs sm:text-sm font-semibold text-foreground group-hover:text-[#A9471D] dark:group-hover:text-[#FFB010] transition-colors truncate">
                       {example.heading}
                     </h4>
                   </div>

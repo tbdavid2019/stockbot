@@ -40,15 +40,15 @@ export function FinancialReportCard({
   const isPdf = filename.toLowerCase().endsWith('.pdf') || url?.toLowerCase().includes('.pdf')
 
   return (
-    <div className="rounded-2xl border border-indigo-200 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/60 via-background to-blue-50/40 dark:from-indigo-950/20 dark:via-background dark:to-blue-950/10 p-5 sm:p-6 shadow-sm space-y-4 text-slate-800 dark:text-slate-100">
+    <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm space-y-4 text-card-foreground">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground font-bold shadow-sm">
             {isPdf ? <FileText className="size-5" /> : <BarChart3 className="size-5" />}
           </div>
           <div className="min-w-0">
-            <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 truncate">
+            <h4 className="font-bold text-base sm:text-lg text-foreground truncate">
               {displayTitle}
             </h4>
             <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mt-0.5">
@@ -56,7 +56,7 @@ export function FinancialReportCard({
               {pages !== undefined && pages > 0 && (
                 <>
                   <span>•</span>
-                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">共 {pages} 頁</span>
+                  <span className="font-semibold text-[#17324D] dark:text-[#FFB010]">共 {pages} 頁</span>
                 </>
               )}
             </div>
@@ -82,7 +82,7 @@ export function FinancialReportCard({
 
       {/* Snippet / Content Preview */}
       {contentSnippet && (
-        <div className="rounded-xl border bg-background/80 p-4 text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-mono leading-relaxed max-h-56 overflow-y-auto">
+        <div className="rounded-xl border bg-background/80 p-4 text-xs sm:text-sm text-card-foreground/90 font-mono leading-relaxed max-h-56 overflow-y-auto">
           <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm">
             {isExpanded ? fullContent || contentSnippet : contentSnippet}
           </pre>
@@ -94,7 +94,7 @@ export function FinancialReportCard({
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-xs sm:text-sm text-indigo-600 dark:text-indigo-400 hover:underline font-bold"
+            className="text-xs sm:text-sm text-[#17324D] dark:text-[#FFB010] hover:underline font-bold"
           >
             {isExpanded ? '收合完整文件 ▲' : '展開完整文件全文 ▼'}
           </button>

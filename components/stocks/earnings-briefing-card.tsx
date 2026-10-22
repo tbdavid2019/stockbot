@@ -34,10 +34,10 @@ export function EarningsBriefingCard({ data }: { data: EarningsIntelligence }) {
     data.priceTarget.high !== undefined
 
   return (
-    <section className="w-full rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-zinc-950 sm:p-6">
+    <section className="w-full rounded-2xl border border-border bg-card p-5 shadow-sm text-card-foreground sm:p-6">
       <header className="mb-5 flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-4 dark:border-slate-800">
         <div>
-          <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#17324D] dark:text-sky-300">
             Earnings Intelligence 財報情報
           </p>
           <h3 className="mt-1 text-xl sm:text-2xl font-bold tracking-tight">{data.symbol} 財報前瞻與共識</h3>

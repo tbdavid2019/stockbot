@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
 @import '@fontsource/maple-mono/400.css';
 @import '@fontsource/maple-mono/600.css';
 @import '@fontsource/jetbrains-mono/400.css';
@@ -40,67 +40,74 @@
 
 @layer base {
   :root {
-    /* Pantone Light: Cloud Dancer & Warm Paper Precision */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* 2MD Native Palette: Pantone 14-1064 TPG Saffron, Deep Blue, Clay, Warm Cream & Ink */
+    --saffron: #ffb010;
+    --deep-blue: #17324d;
+    --clay: #a9471d;
+    --warm-cream: #fff9e8;
+    --ink: #2b251a;
+    --canvas: #fff0cc;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --background: 44 100% 95%;          /* #FFF9E8 Warm Cream */
+    --foreground: 39 25% 14%;           /* #2B251A 2MD Ink (14.45:1 AAA) */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --card: 45 100% 98%;                /* #FFFDF7 Crisp Warm Ivory */
+    --card-foreground: 39 25% 14%;      /* #2B251A 2MD Ink (14.94:1 AAA) */
 
-    --primary: 24 95% 48%;
-    --primary-foreground: 0 0% 100%;
+    --popover: 45 100% 98%;             /* #FFFDF7 Crisp Warm Ivory */
+    --popover-foreground: 39 25% 14%;   /* #2B251A 2MD Ink */
 
-    --secondary: 214 32% 94%;
-    --secondary-foreground: 222 47% 11%;
+    --primary: 40 100% 53%;             /* #FFB010 2MD Saffron */
+    --primary-foreground: 210 54% 20%;  /* #17324D 2MD Deep Blue (7.17:1 AAA on Saffron) */
 
-    --muted: 214 32% 95%;
-    --muted-foreground: 215 25% 40%;
+    --secondary: 43 64% 89%;            /* #F5EBD1 Soft Saffron Parchment */
+    --secondary-foreground: 39 25% 14%; /* #2B251A 2MD Ink */
 
-    --accent: 24 95% 96%;
-    --accent-foreground: 24 95% 36%;
+    --muted: 43 64% 89%;                /* #F5EBD1 Soft Saffron Parchment */
+    --muted-foreground: 39 21% 31%;     /* #5E533E Deepened Bistre (7.18:1 AAA on BG, 6.36:1 AA on Muted) */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 100%;
+    --accent: 42 100% 90%;              /* #FFF0CC 2MD Canvas */
+    --accent-foreground: 210 54% 20%;   /* #17324D 2MD Deep Blue */
 
-    --border: 214 32% 88%;
-    --input: 214 32% 88%;
-    --ring: 24 95% 48%;
+    --destructive: 18 71% 39%;          /* #A9471D 2MD Clay Terracotta */
+    --destructive-foreground: 44 100% 95%; /* #FFF9E8 Warm Cream (5.54:1 AA) */
+
+    --border: 42 55% 71%;               /* #DDC58B 2MD Card Border */
+    --input: 42 43% 63%;                /* #C9B077 Warm Input Border */
+    --ring: 210 54% 20%;                /* #17324D 2MD Deep Blue Ring */
 
     --radius: 0.75rem;
   }
 
   .dark {
-    /* Pantone Dark: Deep Midnight Obsidian & Warm Amber Terminal */
-    --background: 222 47% 6%;
-    --foreground: 210 40% 98%;
+    /* 2MD Dark: Deep Obsidian Navy & Luminous Saffron */
+    --background: 213 45% 9%;           /* #0C1520 Deep Obsidian Navy */
+    --foreground: 42 67% 94%;           /* #FAF4E6 Warm Cream Text (16.74:1 AAA) */
 
-    --card: 222 47% 10%;
-    --card-foreground: 210 40% 98%;
+    --card: 212 45% 13%;                /* #122030 Rich Midnight Slate Blue */
+    --card-foreground: 42 67% 94%;      /* #FAF4E6 Warm Cream Text (15.02:1 AAA) */
 
-    --popover: 222 47% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 213 45% 15%;             /* #152538 */
+    --popover-foreground: 42 67% 94%;   /* #FAF4E6 */
 
-    --primary: 24 95% 53%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 40 100% 53%;             /* #FFB010 2MD Saffron */
+    --primary-foreground: 213 45% 9%;   /* #0C1520 Deep Obsidian Ink (10.03:1 AAA on Saffron) */
 
-    --secondary: 217 33% 15%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 212 43% 19%;           /* #1B2E44 Muted Navy Surface */
+    --secondary-foreground: 42 67% 94%; /* #FAF4E6 */
 
-    --muted: 217 33% 15%;
-    --muted-foreground: 215 20% 68%;
+    --muted: 212 44% 17%;               /* #18293D */
+    --muted-foreground: 38 14% 67%;     /* #B8AFA0 Warm Sand Muted Text (7.59:1 AAA on Card) */
 
-    --accent: 217 33% 18%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 213 41% 23%;              /* #223852 */
+    --accent-foreground: 40 100% 59%;   /* #FFB82E Luminous Saffron */
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 19 68% 54%;          /* #D96B38 Warm Terracotta Clay */
+    --destructive-foreground: 213 45% 9%; /* #0C1520 (5.34:1 AA) */
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 24 95% 53%;
+    --border: 212 41% 24%;              /* #243B56 */
+    --input: 213 40% 28%;               /* #2A4463 */
+    --ring: 40 100% 53%;                /* #FFB010 Saffron Ring */
   }
 }
 
@@ -114,10 +121,10 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif;
+    font-family: 'Outfit', 'Zen Kaku Gothic New', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans TC', sans-serif;
   }
   ::selection {
-    background-color: hsl(24 95% 50% / 0.25);
+    background-color: hsl(40 100% 53% / 0.35);
     color: inherit;
   }
 
