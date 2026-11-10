@@ -39,12 +39,17 @@ export function NativeStockNewsCard({ symbol, initialNews }: NativeNewsCardProps
         })
         if (res.ok) {
           const data = await res.json()
-          if (isMounted && data?.results && Array.isArray(data.results)) {
+          const rawItems = Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data?.results)
+            ? data.results
+            : []
+          if (isMounted && rawItems.length > 0) {
             setNews(
-              data.results.map((r: any) => ({
+              rawItems.map((r: any) => ({
                 title: r.title,
                 url: r.url,
-                description: r.description,
+                description: r.description || '',
                 publisher: r.domain || r.publisher || '即時財經新聞'
               }))
             )

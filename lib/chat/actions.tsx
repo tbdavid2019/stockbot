@@ -33,7 +33,7 @@ import { WikiPublishResultCard } from '@/components/stocks/wiki-publish-result'
 import { FinancialReportCard } from '@/components/stocks/financial-report-card'
 import { QuotaExceededCard } from '@/components/stocks/quota-exceeded-card'
 import { BotCaption } from '@/components/stocks/bot-caption'
-import { readUrl2MD } from '@/lib/2md'
+import { readUrl2MD, searchWeb2MD } from '@/lib/2md'
 import { searchResearchEvidence } from '@/lib/research-search'
 import { fetchFinancialFundamentals } from '@/lib/financial-fundamentals'
 import {
@@ -537,12 +537,11 @@ Language: reply in the same language the user used most recently. If Chinese, re
         }
       ]
 
-  // Ordinary card captions remain a single-provider, 1.5-second best-effort
-  // path. Evidence synthesis is a separate answer task and gets a bounded
-  // second provider without nesting another RSC stream.
+  // 普通卡片與研究綜合均支援 2~3 個候選提供商容錯，並提供足夠超時（6~8 秒）
+  // 以容納具備 Reasoning / 深度思考機制的現代模型（如 group/talk）
   const candidates = getProviderCandidates(userApiKey).slice(
     0,
-    isResearchSynthesis ? 2 : 1
+    isResearchSynthesis ? 3 : 2
   )
 
   for (const candidate of candidates) {
@@ -551,9 +550,10 @@ Language: reply in the same language the user used most recently. If Chinese, re
         baseURL: candidate.baseURL,
         apiKey: candidate.apiKey
       })
+      const timeoutMs = isResearchSynthesis ? 8000 : 6000
       const result = await generateText({
         model: client(candidate.model),
-        abortSignal: AbortSignal.timeout(isResearchSynthesis ? 7000 : 1500),
+        abortSignal: AbortSignal.timeout(timeoutMs),
         maxTokens: isResearchSynthesis ? 700 : undefined,
         temperature: isResearchSynthesis ? 0.2 : undefined,
         messages: messagesToModel
@@ -639,6 +639,10 @@ function getSmartFallbackCaption(
   question?: string,
   contextData?: string
 ): string {
+  if (toolName === 'showStockNews' && contextData) {
+    return `如上方卡片所示，${symbol} 最新重大動態與財報情報已為您即時彙整：\n\n${contextData}\n\n若需進一步剖析各項消息對營運體質或估值的影響，可點擊下方快捷追問。`
+  }
+
   if (toolName === 'showCompanyNetwork' && contextData) {
     try {
       const parsed = JSON.parse(contextData)
@@ -1761,20 +1765,42 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
               const formattedSymbol = formatStockSymbol(
                 resolvedTicker || symbol
               )
+
+              let initialNews: any[] = []
+              try {
+                const searchRes = await searchWeb2MD(
+                  `${formattedSymbol} 最新重大新聞 財報 市場動態`,
+                  5
+                )
+                if (searchRes && searchRes.length > 0) {
+                  initialNews = searchRes
+                }
+              } catch (e) {
+                console.warn('[showStockNews] searchWeb2MD error:', e)
+              }
+
               let caption = ''
 
               yield (
                 <BotCard>
-                  <NativeStockNewsCard symbol={formattedSymbol} />
+                  <NativeStockNewsCard symbol={formattedSymbol} initialNews={initialNews} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
+
+              const newsSummary =
+                initialNews.length > 0
+                  ? initialNews
+                      .map((n, i) => `[${i + 1}] ${n.title}：${n.description}`)
+                      .join('\n')
+                  : undefined
 
               caption = await generateCaption(
                 formattedSymbol,
                 [],
                 'showStockNews',
-                aiState
+                aiState,
+                newsSummary
               )
 
               const toolCallId = nanoid()
@@ -1816,7 +1842,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
 
               return (
                 <BotCard>
-                  <NativeStockNewsCard symbol={formattedSymbol} />
+                  <NativeStockNewsCard symbol={formattedSymbol} initialNews={initialNews} />
                   <BotCaption content={caption} />
                 </BotCard>
               )
