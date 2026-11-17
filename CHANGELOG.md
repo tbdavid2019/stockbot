@@ -2,6 +2,15 @@
 
 本專案遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/) 格式規範記錄各版本更新與功能演進。
 
+## [2026-11-17] - Next.js 15 安全升級 (Tier 2)
+
+### 🔒 安全修補與框架依賴升級 ([`package.json`](package.json), [`pnpm-lock.yaml`](pnpm-lock.yaml), [`app/(chat)/chat/[id]/page.tsx`](app/(chat)/chat/[id]/page.tsx))
+- **升級 Next.js 至 `15.5.29`**：修補 Next.js 14.x 已停止維護之 3 個 Critical 及多個 High 安全漏洞（`pnpm audit` 中 `next` 相關漏洞歸零，總漏洞數由 68 降至 34）。
+- **同步升級相容依賴**：`eslint-config-next` 升至 `15.5.29`、`geist` 升至 `^1.9.2`、`@typescript-eslint/parser` 升至 `^8.73.0`，消除 Next 15 peer dependency 警告。
+- **Next.js 15 非同步路由參數適配**：更新 [`app/(chat)/chat/[id]/page.tsx`](app/(chat)/chat/[id]/page.tsx) 的 `ChatPage` 為 `params: Promise<{ id: string }>` 並 `await params`。
+
+---
+
 ## [2026-10-22] - 修復跑馬燈第二排即時報價、Yahoo Finance 報價端點與中英文數字字體忽大忽小比例失衡
 
 ### 📈 跑馬燈第二排即時報價修復 ([`app/api/market-quotes/route.ts`](app/api/market-quotes/route.ts), [`components/tradingview/market-quotes.tsx`](components/tradingview/market-quotes.tsx), [`app/api/dynamic-prompts/route.ts`](app/api/dynamic-prompts/route.ts))

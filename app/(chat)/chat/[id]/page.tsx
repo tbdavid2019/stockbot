@@ -8,12 +8,17 @@ export const metadata = {
 
 export const maxDuration = 60
 
-export default async function ChatPage({ params }: { params: { id: string } }) {
+export default async function ChatPage({
+  params
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
   const missingKeys = await getMissingKeys()
 
   return (
-    <AI initialAIState={{ chatId: params.id, messages: [] }}>
-      <Chat id={params.id} missingKeys={missingKeys} />
+    <AI initialAIState={{ chatId: id, messages: [] }}>
+      <Chat id={id} missingKeys={missingKeys} />
     </AI>
   )
 }
