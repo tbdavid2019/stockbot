@@ -2,6 +2,15 @@
 
 本專案遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/) 格式規範記錄各版本更新與功能演進。
 
+## [2026-11-24] - 指定相依安全修補
+
+### 🔒 依賴升級與鎖檔修補 ([`package.json`](package.json), [`pnpm-lock.yaml`](pnpm-lock.yaml))
+- **升級 SheetJS 至官方 `xlsx` `0.20.3` 發行檔**：採用 SheetJS CDN 發行檔，並在 lockfile 固定經 SHA-512 驗證的 tarball integrity。
+- **更新易受影響的依賴**：`nanoid` 升至 `5.1.16`，`postcss` 升至 `8.5.33`；以限定版本的 pnpm overrides 修補實際解析到的 `brace-expansion`、`devalue`、`jsondiffpatch`、`nanoid` 3.x 與 `prismjs`。
+- **保留相容性待上游升級**：`ai@3.2.16`、`@ai-sdk/provider-utils@1.0.0` 與 `zod@3.23.8` 仍符合各自通知的受影響範圍；修補版本需要 AI SDK 5 / Zod 4 相容遷移，現有 RSC 與訊息格式需另案調整。
+
+---
+
 ## [2026-11-17] - Next.js 15 安全升級 (Tier 2)
 
 ### 🔒 安全修補與框架依賴升級 ([`package.json`](package.json), [`pnpm-lock.yaml`](pnpm-lock.yaml), [`app/(chat)/chat/[id]/page.tsx`](app/(chat)/chat/[id]/page.tsx))
