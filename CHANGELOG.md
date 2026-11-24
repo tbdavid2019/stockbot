@@ -2,6 +2,16 @@
 
 本專案遵循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.0.0/) 格式規範記錄各版本更新與功能演進。
 
+## [2026-11-24] - AI SDK、Provider Utils 與 Zod 第二批安全修補
+
+### 🔒 相容升級並保留聊天狀態格式 ([`package.json`](package.json), [`pnpm-lock.yaml`](pnpm-lock.yaml), [`lib/chat/actions.tsx`](lib/chat/actions.tsx))
+- **升級 AI SDK 相容套件組**：使用 `ai@6.0.336`、`@ai-sdk/rsc@2.0.336`、`@ai-sdk/openai-compatible@2.0.94`、`@ai-sdk/provider-utils@4.0.67` 與 `zod@4.6.7`，並解析至修補版 `undici@6.29.1`。
+- **保留既有 RSC 工具串流及模型端點**：轉接 `ai/rsc` 至 `@ai-sdk/rsc`，將工具 schema 與 token 參數名稱更新至 SDK 介面，OpenAI 相容設定仍使用原有 base URL、API key 與模型名稱。
+- **保留既有聊天持久化格式**：應用程式定義的訊息型別維持既有 `id`、`role`、`content`、tool-call `args` 與 tool-result `result` 結構；localStorage key 與讀寫流程維持原格式，無資料遷移。
+- **驗證結果**：指定的 ai、provider-utils、zod 與新引入 Undici 警報均已清除；`pnpm audit` 僅剩既有 KaTeX、postcss-selector-parser、Satori 警報。
+
+---
+
 ## [2026-11-24] - 指定相依安全修補
 
 ### 🔒 依賴升級與鎖檔修補 ([`package.json`](package.json), [`pnpm-lock.yaml`](pnpm-lock.yaml))

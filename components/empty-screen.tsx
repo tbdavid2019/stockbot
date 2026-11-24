@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useLocalStorage } from '@/lib/hooks/use-local-storage'
-import { useActions, useUIState } from 'ai/rsc'
+import { useActions, useUIState } from '@ai-sdk/rsc'
 import type { AI } from '@/lib/chat/actions'
 import { nanoid } from 'nanoid'
 import { UserMessage } from './stocks/message'

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { readUrl2MD } from '@/lib/2md'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { isSafeApiBaseUrl } from '@/lib/security-url'
@@ -112,7 +112,11 @@ export async function POST(req: NextRequest) {
 
     if (apiKey) {
       try {
-        const client = createOpenAI({ baseURL, apiKey })
+        const client = createOpenAICompatible({
+          name: 'stockbotModelProvider',
+          baseURL,
+          apiKey
+        })
         const prompt = `你是頂級機構法人資深半導體與科技股產業分析師。
 請根據以下【${targetName} (${targetSymbol})】法人說明會簡報之萃取內容，精準提煉關鍵營運與財務指引：
 
@@ -127,7 +131,7 @@ export async function POST(req: NextRequest) {
 ${truncatedContent}`
 
         const { text } = await generateText({
-          model: client(modelName),
+          model: client.chatModel(modelName),
           prompt,
           abortSignal: AbortSignal.timeout(20000)
         })

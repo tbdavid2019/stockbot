@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useActions, useUIState } from 'ai/rsc'
+import { useActions, useUIState } from '@ai-sdk/rsc'
 import { UserMessage } from './message'
 import { nanoid } from 'nanoid'
 import type { AI } from '@/lib/chat/actions'
