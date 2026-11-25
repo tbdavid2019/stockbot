@@ -1,4 +1,4 @@
-import { StreamableValue, readStreamableValue } from 'ai/rsc'
+import { StreamableValue, readStreamableValue } from '@ai-sdk/rsc'
 import { useEffect, useState } from 'react'
 
 export const useStreamableText = (

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { generateText } from 'ai'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { isSafeApiBaseUrl } from '@/lib/security-url'
@@ -45,7 +45,8 @@ export async function POST(req: NextRequest) {
     }
     const testModel = model.trim()
 
-    const client = createOpenAI({
+    const client = createOpenAICompatible({
+      name: 'stockbotModelProvider',
       baseURL: testBaseURL,
       apiKey: apiKey.trim()
     })
@@ -56,9 +57,9 @@ export async function POST(req: NextRequest) {
 
     try {
       const result = await generateText({
-        model: client(testModel),
+        model: client.chatModel(testModel),
         prompt: 'test',
-        maxTokens: 1,
+        maxOutputTokens: 1,
         abortSignal: abortController.signal
       })
 

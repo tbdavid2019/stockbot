@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
 
-import { useActions, useUIState } from 'ai/rsc'
+import { useActions, useUIState } from '@ai-sdk/rsc'
 
 import { UserMessage } from './stocks/message'
 import { type AI } from '@/lib/chat/actions'

@@ -6,8 +6,8 @@ import {
   getMutableAIState,
   streamUI,
   createStreamableValue
-} from 'ai/rsc'
-import { createOpenAI } from '@ai-sdk/openai'
+} from '@ai-sdk/rsc'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 
 import { BotCard, BotMessage } from '@/components/stocks/message'
 
@@ -546,15 +546,16 @@ Language: reply in the same language the user used most recently. If Chinese, re
 
   for (const candidate of candidates) {
     try {
-      const client = createOpenAI({
+      const client = createOpenAICompatible({
+        name: 'stockbotModelProvider',
         baseURL: candidate.baseURL,
         apiKey: candidate.apiKey
       })
       const timeoutMs = isResearchSynthesis ? 8000 : 6000
       const result = await generateText({
-        model: client(candidate.model),
+        model: client.chatModel(candidate.model),
         abortSignal: AbortSignal.timeout(timeoutMs),
-        maxTokens: isResearchSynthesis ? 700 : undefined,
+        maxOutputTokens: isResearchSynthesis ? 700 : undefined,
         temperature: isResearchSynthesis ? 0.2 : undefined,
         messages: messagesToModel
       })
@@ -839,14 +840,15 @@ ${context.transcript || 'none'}
 
   for (const candidate of getProviderCandidates(userApiKey).slice(0, 1)) {
     try {
-      const client = createOpenAI({
+      const client = createOpenAICompatible({
+        name: 'stockbotModelProvider',
         baseURL: candidate.baseURL,
         apiKey: candidate.apiKey
       })
       const result = await generateText({
-        model: client(candidate.model),
+        model: client.chatModel(candidate.model),
         abortSignal: AbortSignal.timeout(2500),
-        maxTokens: 260,
+        maxOutputTokens: 260,
         temperature: 0.35,
         messages: [{ role: 'system', content: instruction }]
       })
@@ -1153,13 +1155,14 @@ async function submitUserMessage(content: string, userApiKey?: string) {
 
   for (const candidate of candidates) {
     try {
-      const client = createOpenAI({
+      const client = createOpenAICompatible({
+        name: 'stockbotModelProvider',
         baseURL: candidate.baseURL,
         apiKey: candidate.apiKey
       })
 
       const result = await streamUI({
-        model: client(candidate.toolModel),
+        model: client.chatModel(candidate.toolModel),
         initial: <SpinnerMessage />,
         maxRetries: 0,
         toolChoice: deterministicTool
@@ -1319,7 +1322,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockChart: {
             description:
               'Show a stock chart for one or more stocks. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe(
@@ -1451,7 +1454,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockPrice: {
             description:
               'Show the current price and price history of a stock. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe(
@@ -1526,7 +1529,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           answerFinancialMetric: {
             description:
               'Answer a financial summary or requested metric such as revenue, margins, EBITDA, EBIT, EPS, FCF, ROE, ROIC, growth, valuation multiples, leverage ratios, or dividend yield. Search live evidence privately and return a concise synthesized answer instead of a raw search-results list.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe('The explicit stock ticker supplied by the user.')
@@ -1679,7 +1682,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockFinancials: {
             description:
               'Show the financial statements and metrics of a stock. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe(
@@ -1754,7 +1757,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockNews: {
             description:
               'Show the latest news and events for a stock or cryptocurrency. If the user already supplied an explicit ticker (including one in parentheses), call this tool directly. Use searchFinancialWeb only when no ticker is available and the company name is ambiguous.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe(
@@ -1851,7 +1854,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockScreener: {
             description:
               'This tool shows a generic stock screener which can be used to find new stocks based on financial or technical parameters.',
-            parameters: z.object({}),
+            inputSchema: z.object({}),
             generate: async function* ({}) {
               let caption = ''
 
@@ -1917,7 +1920,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           showMarketOverview: {
             description: `This tool shows an overview of today's stock, futures, bond, and forex market performance including change values, Open, High, Low, and Close values.`,
-            parameters: z.object({}),
+            inputSchema: z.object({}),
             generate: async function* ({}) {
               let caption = ''
 
@@ -1983,7 +1986,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           showMarketHeatmap: {
             description: `Display a sector performance heatmap widget for US (S&P 500) and major international stock markets. CRITICAL RESTRICTION: TradingView embed widget DOES NOT support Taiwan stock heatmaps (TWSE/TPEx has no sector heatmap data source and will show US or blank). NEVER call this tool for Taiwan stock market questions (e.g. 台股、加權指數、大盤走勢、台灣股市表現). For Taiwan market questions, use searchFinancialWeb to fetch live TAIEX index performance, turnover, and sector drivers, or use showMarketOverview.`,
-            parameters: z.object({}),
+            inputSchema: z.object({}),
             generate: async function* ({}) {
               let caption = ''
 
@@ -2049,7 +2052,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           showETFHeatmap: {
             description: `This tool shows a heatmap of today's ETF performance across sectors and asset classes. It is preferred over showMarketOverview if asked specifically about the ETF market.`,
-            parameters: z.object({}),
+            inputSchema: z.object({}),
             generate: async function* ({}) {
               let caption = ''
 
@@ -2115,7 +2118,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           },
           showTrendingStocks: {
             description: `This tool shows the daily top trending stocks including the top five gaining, losing, and most active stocks based on today's performance`,
-            parameters: z.object({}),
+            inputSchema: z.object({}),
             generate: async function* ({}) {
               let caption = ''
 
@@ -2182,7 +2185,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           analyzeStockWithAI: {
             description:
               'Provide comprehensive legendary investor strategy evaluation and multi-master valuation from legendary investors like Warren Buffett, Ben Graham, Peter Lynch, etc. Use this tool when the user asks whether a stock is worth buying, wants investment advice, or asks for multi-master analysis. Keywords: should I buy, worth buying, good investment, 值得買, 該買嗎, 分析, 投資建議, 大師分析, 16位大師, 13位大師, 評估. If the request contains an explicit ticker, including a ticker in parentheses after a company name, call this tool directly and do not search again. Search only when no ticker can be resolved, or inherit the active ticker from conversation history.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe(
@@ -2257,7 +2260,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           calculateCompanyValuation: {
             description:
               'Calculate a company valuation using DCF, CAPM/WACC, peer multiples, and a 5 by 5 sensitivity matrix.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().describe('The explicit stock ticker.')
             }),
             generate: async function* ({ symbol }) {
@@ -2342,7 +2345,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           analyzeSepaStrategy: {
             description:
               'Evaluate Minervini SEPA Trend Template, four stages, VCP, and risk-based position sizing for a ticker.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().describe('The explicit stock ticker.'),
               accountEquity: z.number().optional(),
               riskPercent: z.number().optional(),
@@ -2405,7 +2408,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           previewEarnings: {
             description:
               'Show upcoming earnings date, EPS and revenue consensus ranges, analyst price targets, and the last four EPS surprises.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().describe('The explicit stock ticker.')
             }),
             generate: async function* ({ symbol }) {
@@ -2456,7 +2459,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           simulateOptionsPayoff: {
             description:
               'Simulate an interactive multi-leg options payoff curve with Black-Scholes theoretical pricing and Greeks.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().describe('The explicit underlying ticker.'),
               strategy: z
                 .enum([
@@ -2565,7 +2568,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           analyzeEtfPremium: {
             description:
               'Analyze an ETF market price versus NAV, peer median divergence, bid-ask context, and dealer gamma exposure.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().describe('The explicit ETF ticker.'),
               nav: z.number().optional(),
               gex: z.number().optional(),
@@ -2633,7 +2636,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           analyzeStockLiquidity: {
             description:
               'Compute Amihud illiquidity, float turnover, and square-root market impact for a custom order size.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().describe('The explicit stock ticker.'),
               orderSize: z.number().optional().default(50000)
             }),
@@ -2735,7 +2738,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showTransmissionChain: {
             description:
               'Analyze multi-tier financial transmission chains (Event -> 1st Order Impact -> 2nd Order Impact -> 3rd Order Stock Impact) using DeepEar Lite intelligence and quantitative causal mapping. Use this whenever the user asks about macro events, supply chain shocks, transmission chains, or sector ripple effects.',
-            parameters: z.object({
+            inputSchema: z.object({
               topic: z
                 .string()
                 .describe(
@@ -2799,7 +2802,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           trackInvestmentSignal: {
             description:
               'Track and evaluate investment signal evolution across 4 states (Strengthened, Weakened, Falsified, Unchanged) and explicit falsification triggers. Use this when the user asks whether an investment thesis or signal is invalidated/falsified, strengthened, or needs validation.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().describe('The stock ticker to evaluate.'),
               hypothesis: z
                 .string()
@@ -2878,7 +2881,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showMacroFactorRegime: {
             description:
               'Analyze 20-year US factor regimes, multi-factor exposures (Momentum, Growth, Value, Volatility), and institutional ETF asset allocation baselines (SPY, QQQ, 80/20 VUG/SHY, 60/40) using audited US FDDK quantitative benchmarks.',
-            parameters: z.object({
+            inputSchema: z.object({
               query: z
                 .string()
                 .optional()
@@ -2935,7 +2938,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showInstitutionalFlow: {
             description:
               'Display Taiwan (TWSE/TPEX) Three Major Institutional Investors (Foreign Investors, Domestic Investment Trusts, Proprietary Dealers) daily net buy/sell in lots (張數), 5-day cumulative, streaks, and institutional signals.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe(
@@ -2998,7 +3001,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showEconomicCalendar: {
             description:
               'Display global real-time economic calendar (NFP, CPI, PMI, Fed speeches, central bank decisions) and cross-asset macro market dashboard (Index Futures, Bond Yields, Commodities, Crypto) from Investing.com via 2MD.',
-            parameters: z.object({
+            inputSchema: z.object({
               query: z
                 .string()
                 .optional()
@@ -3060,7 +3063,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showEarningsCalls: {
             description:
               'Display corporate earnings call conferences (法人說明會 / 財報電話會議), scheduled dates, live audio/video webcast streams, presentation slide decks (PDF), and management guidance highlights.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .optional()
@@ -3128,7 +3131,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showCompanyNetwork: {
             description:
               'Display Taiwan Company Network (台灣公司關係網) corporate registry profile, capital, tax ID, representative, parent/major shareholder relationships (upstream), and subsidiary/affiliate ecosystems (downstream) with interactive graph link.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .optional()
@@ -3200,7 +3203,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showGovProcurement: {
             description:
               'Display Taiwan Government Procurement intelligence (政府標案與公標案情報), historical contract totals, bidding win rate, top procuring client agencies, competitor head-to-head records, advance procurement forecasts, and Article 101 black swan debarment compliance check via ToBid.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .optional()
@@ -3306,7 +3309,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockPredictions: {
             description:
               'Display Stockdata LSTM, TimesFM, Xuantie, resonance, latest batch snapshot, or per-symbol prediction history. Use only the requested model/strategy and label all outputs as forecasts.',
-            parameters: z.object({
+            inputSchema: z.object({
               kind: z
                 .enum([
                   'resonance',
@@ -3409,7 +3412,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockBrokerBranches: {
             description:
               'Display Stockdata broker branch summary, trade detail, and trend for one ticker. This is separate from official TWSE/TPEX institutional flow.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z
                 .string()
                 .describe(
@@ -3474,7 +3477,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showMarketInstitutionalLeaderboard: {
             description:
               'Display Stockdata market-wide institutional net-buy/net-sell leaders. Do not use this for a single stock official TWSE/TPEX institutional flow request.',
-            parameters: z.object({
+            inputSchema: z.object({
               market: z.string().optional(),
               direction: z.enum(['buy', 'sell', 'all']).default('all')
             }),
@@ -3504,7 +3507,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockCompanyProfile: {
             description:
               'Display Stockdata structured company profile, business description, market cap, and linked live news. Preserve ambiguous resolver states and partial batch failures.',
-            parameters: z.object({
+            inputSchema: z.object({
               symbol: z.string().optional(),
               query: z.string().optional(),
               batchSymbols: z.array(z.string()).max(15).optional()
@@ -3592,7 +3595,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showMacroRiskRegime: {
             description:
               'Display Stockdata macro market regime, VIX, index trend flags, and bounded 0.0–1.0 exposure recommendation. Do not fabricate exposure if missing.',
-            parameters: z.object({ market: z.string().optional() }),
+            inputSchema: z.object({ market: z.string().optional() }),
             generate: async function* ({ market }) {
               yield (
                 <BotCard>
@@ -3615,7 +3618,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showStockdataMacroDataset: {
             description:
               'Display one Stockdata macro dataset: FedWatch, US earnings calendar, global economic calendar, commodities, or a combined Investing summary. Keep existing Investing.com showEconomicCalendar contract separate.',
-            parameters: z.object({
+            inputSchema: z.object({
               dataset: z.enum([
                 'summary',
                 'fed-rate',
@@ -3650,7 +3653,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           showPolymarketSentiment: {
             description:
               'Display Polymarket prediction-market probabilities from Stockdata with event context and a clear non-factual sentiment disclaimer.',
-            parameters: z.object({ query: z.string().optional() }),
+            inputSchema: z.object({ query: z.string().optional() }),
             generate: async function* ({ query }) {
               yield (
                 <BotCard>
@@ -3675,7 +3678,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           searchFinancialWeb: {
             description:
               'Search live financial intelligence via 2MD and synthesize a direct answer to the user from the returned evidence. Use for company profiles and business models, unknown ticker/listing verification, live news, supply chains, macro data, institutional flows, commodities, and crypto. The tool result must answer the question; a raw search-results list is not a substitute for an answer.',
-            parameters: z.object({
+            inputSchema: z.object({
               query: z
                 .string()
                 .describe('The search query for live 2MD web search.')
@@ -3766,7 +3769,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           readWebPage: {
             description:
               'Read full web page, online article, or financial news content and convert to clean markdown using 2MD Web Reader. Use this when the user supplies a specific URL, or when you need the complete text from a search result link to do deeper research.',
-            parameters: z.object({
+            inputSchema: z.object({
               url: z
                 .string()
                 .describe(
@@ -3868,7 +3871,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           publishToDavid888Wiki: {
             description:
               'Publish an in-depth financial research report, stock thesis, comprehensive valuation summary, or multi-chapter analysis to David888 Wiki (https://wiki.david888.com/api). This automatically creates a permanent public share link (shareUrl), 2D presentation deck (shareUrl + "/present"), and dual-pane eBook reader (shareUrl + "/book"). Always use this whenever an extensive report, investment thesis, or research document is ready to be published for the user.',
-            parameters: z.object({
+            inputSchema: z.object({
               title: z
                 .string()
                 .describe('The title of the report or research article.'),
@@ -4016,7 +4019,7 @@ Assistant (you): { "tool_call": { "id": "pending", "type": "function", "function
           readFinancialReport: {
             description:
               'Read, parse, and analyze an official financial report, annual report (10-K), quarterly report (10-Q), earnings release, investor presentation, or financial PDF from a URL using 2MD AnyDoc Engine. Use this whenever the user provides a link to a PDF, financial statement, SEC filing, or asks to parse a report.',
-            parameters: z.object({
+            inputSchema: z.object({
               url: z
                 .string()
                 .describe(

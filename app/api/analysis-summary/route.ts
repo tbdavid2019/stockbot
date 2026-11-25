@@ -1,5 +1,5 @@
 import { generateText } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible'
 import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 import { isSafeApiBaseUrl } from '@/lib/security-url'
@@ -353,15 +353,16 @@ The result is research commentary, not personalized investment advice.`
     const providers = getSummaryProviders(userKeyConfig).slice(0, 2)
     for (const provider of providers) {
       try {
-        const client = createOpenAI({
+        const client = createOpenAICompatible({
+          name: 'stockbotModelProvider',
           baseURL: provider.baseURL,
           apiKey: provider.apiKey
         })
         const result = await generateText({
-          model: client(provider.model),
+          model: client.chatModel(provider.model),
           system,
           prompt: JSON.stringify(compact),
-          maxTokens: 1400,
+          maxOutputTokens: 1400,
           temperature: 0.2,
           abortSignal: AbortSignal.timeout(10000)
         })

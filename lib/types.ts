@@ -1,7 +1,17 @@
-import { CoreMessage } from 'ai'
+export interface PersistedMessagePart {
+  type: string
+  text?: string
+  toolName?: string
+  toolCallId?: string
+  args?: Record<string, unknown>
+  result?: Record<string, unknown>
+  [key: string]: unknown
+}
 
-export type Message = CoreMessage & {
+export type Message = {
   id: string
+  role: 'system' | 'user' | 'assistant' | 'tool'
+  content: string | PersistedMessagePart[]
 }
 
 export interface Chat extends Record<string, any> {
